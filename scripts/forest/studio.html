@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forest studio</title>
+<style>
+  :root {
+    --bg: #f4f3ef;
+    --panel: #ffffff;
+    --text: #1d1d1b;
+    --muted: #6b6a64;
+    --line: #dddbd3;
+    --accent: #2f6f4f;
+    --waiting: #8a6d1d;
+    --waiting-bg: #fbf0cf;
+    --done: #23633f;
+    --done-bg: #d9f0e1;
+    --bad: #a3271f;
+    --bad-bg: #fadcd8;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #121311;
+    --panel: #1c1d1a;
+    --text: #ecebe6;
+    --muted: #9d9b93;
+    --line: #34352f;
+    --accent: #7cc49b;
+    --waiting: #f0cf72;
+    --waiting-bg: #3b3218;
+    --done: #8fdcae;
+    --done-bg: #1c3527;
+    --bad: #ff9c92;
+    --bad-bg: #44201c;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.4 system-ui, -apple-system, sans-serif;
+  }
+  body.editing { overflow: hidden; }
+  button, select, input { font: inherit; color: inherit; }
+  button, select {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  button.on { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .muted { color: var(--muted); }
+  .error { color: var(--bad); background: var(--bad-bg); padding: 8px 12px; border-radius: 6px; }
+
+  .bar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar h1 { font-size: 16px; margin: 0 8px 0 0; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; }
+  .bar .spacer { flex: 1; }
+  #changes.alert { border-color: var(--bad); color: var(--bad); }
+  #filter { width: 140px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+
+  main { padding: 16px; max-width: 1600px; margin: 0 auto; }
+  .live { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+  .live .controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 10px; }
+  .live .controls label { display: inline-flex; gap: 6px; align-items: center; }
+  .stage-wrap { overflow-x: auto; }
+  #stage { position: relative; }
+  #stage canvas { position: absolute; left: 0; top: 0; image-rendering: pixelated; }
+  #water { cursor: crosshair; }
+  .live .now { margin: 8px 0 0; color: var(--muted); }
+
+  h2 { font-size: 15px; margin: 24px 0 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+  .card header { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
+  .card h3 { font-size: 14px; margin: 0; }
+  .facts { margin: 2px 0 8px; color: var(--muted); font-size: 12px; }
+  .where { font: 12px ui-monospace, monospace; padding: 1px 6px; color: var(--muted); }
+  .where.copied { color: var(--done); border-color: var(--done); }
+  .poses { display: flex; flex-wrap: wrap; gap: 10px; }
+  .pose { margin: 0; max-width: 100%; }
+  .thumbs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .thumb { image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; cursor: zoom-in; max-width: 100%; }
+  .thumb:hover { outline: 2px solid var(--accent); }
+  .pose figcaption { font-size: 12px; margin-top: 2px; display: flex; flex-wrap: wrap; gap: 0 4px; align-items: center; }
+  .badge { font-size: 11px; padding: 0 6px; border-radius: 99px; white-space: nowrap; }
+  .badge.waiting, .badge.missing { color: var(--waiting); background: var(--waiting-bg); }
+  .badge.in-code { color: var(--done); background: var(--done-bg); }
+  .badge.differs { color: var(--bad); background: var(--bad-bg); }
+
+  #drawer {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(560px, 100vw);
+    z-index: 10;
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    box-shadow: -8px 0 24px rgb(0 0 0 / 0.15);
+    display: flex;
+    flex-direction: column;
+  }
+  #drawer > header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  #drawer h2 { margin: 0; }
+  #changes-list { overflow-y: auto; padding: 12px 16px; }
+  .change { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-bottom: 10px; }
+  .change header { display: flex; justify-content: space-between; gap: 8px; }
+  .change p { margin: 2px 0 6px; font-size: 12px; }
+  .minis { display: flex; gap: 8px; flex-wrap: wrap; }
+  .minis figure { margin: 0; }
+  .minis canvas { image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; display: block; }
+  .minis figcaption { font-size: 11px; color: var(--muted); }
+  .row { display: flex; gap: 8px; margin-top: 8px; }
+  .row.end { justify-content: flex-end; }
+
+  #editor {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: var(--bg);
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  #editor > header {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  #editor-title { font-size: 15px; margin: 0; }
+  #frames { display: inline-flex; gap: 4px; }
+  #editor aside { overflow-y: auto; padding: 12px 14px; border-right: 1px solid var(--line); background: var(--panel); }
+  #editor aside h4 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; }
+  .toggles { display: grid; gap: 4px; margin-top: 10px; }
+  .toggles label { display: flex; gap: 6px; align-items: center; }
+  #current { display: flex; gap: 8px; align-items: center; margin-top: 10px; font: 12px ui-monospace, monospace; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 4px; }
+  .swatch { width: 26px; height: 26px; padding: 0; display: inline-flex; overflow: hidden; border-radius: 5px; }
+  .swatch i { flex: 1; }
+  .swatch.raw { border-style: dashed; }
+  .swatch.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .key-row { display: grid; grid-template-columns: 76px 1fr; gap: 6px; align-items: center; margin-bottom: 4px; font: 11px ui-monospace, monospace; }
+  .key-row span { overflow: hidden; text-overflow: ellipsis; }
+  #canvases { overflow: auto; padding: 16px; display: flex; gap: 24px; align-items: flex-start; }
+  .edit-col { display: grid; gap: 6px; }
+  .edit-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+  .previews { display: inline-flex; gap: 8px; align-items: end; }
+  .actual { image-rendering: pixelated; border: 1px solid var(--line); }
+  canvas.edit { image-rendering: pixelated; border: 1px solid var(--line); cursor: crosshair; touch-action: none; }
+  #editor > footer {
+    grid-column: 1 / -1;
+    padding: 8px 16px;
+    font: 12px ui-monospace, monospace;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+  }
+  .keys { font-size: 12px; color: var(--muted); margin-top: 14px; }
+  .keys kbd { font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+  .events { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+  .events button { font: 12px ui-monospace, monospace; padding: 2px 8px; }
+  .card.proposal { border-color: var(--accent); }
+
+  #review {
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+  #review > header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  #review h2 { font-size: 15px; margin: 0; }
+  .review-body { overflow: auto; padding: 16px; display: grid; gap: 16px; }
+  .review-notes p { margin: 0 0 6px; max-width: 80ch; }
+  .transport { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .review-columns { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+  .review-col { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; max-width: 100%; }
+  .review-col header { margin-bottom: 4px; }
+  .review-col p { margin: 4px 0; font-size: 12px; max-width: 48ch; }
+  .review-col .thumb { cursor: default; }
+  .review-scene, .review-form { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .review-scene p { margin: 4px 0 8px; font-size: 12px; }
+  #review-stage { image-rendering: pixelated; display: block; max-width: 100%; }
+  .error-text { color: var(--bad); font-size: 12px; }
+  .review-form { display: grid; gap: 8px; }
+  #review-input { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+
+  #flash { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 30; background: var(--text); color: var(--bg); padding: 8px 14px; border-radius: 8px; }
+
+  @media (max-width: 720px) {
+    #editor { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; }
+    #editor aside { border-right: 0; border-bottom: 1px solid var(--line); max-height: 40vh; }
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>Forest studio</h1>
+  <select id="scene" aria-label="Scene"></select>
+  <select id="family" aria-label="Family" title="Show one family from every scene, side by side"></select>
+  <span id="scene-where"></span>
+  <label>Size <input id="zoom" type="range" min="1" max="10" step="1"></label>
+  <label title="Draw every sprite at the size slider's zoom, so sizes compare across the scene"><input id="one-scale" type="checkbox"> One scale</label>
+  <label><input id="animate" type="checkbox"> Animate frames</label>
+  <input id="filter" type="search" placeholder="Filter elements" aria-label="Filter elements">
+  <span class="spacer"></span>
+  <button id="changes">Changes</button>
+  <button id="reload" title="Reload the page to draw the code as it is on disk">Reload code</button>
+  <button id="theme">Dark</button>
+</div>
+<main>
+  <section class="live">
+    <div class="controls">
+      <strong>Scene</strong>
+      <label>Stage <input id="stage-range" type="range" min="0" max="8" value="8"> <span id="stage-value">8</span></label>
+      <button id="water-btn" title="Water once, as the sign-in page does (or click the scene)">Water</button>
+      <button id="replant">Replant</button>
+      <button id="pause">Pause</button>
+      <label>Size
+        <select id="size">
+          <option value="desktop">Desktop 1200×520</option>
+          <option value="phone">Phone 390×700</option>
+          <option value="laptop">Laptop 960×480</option>
+        </select>
+      </label>
+      <span class="muted">Theme follows the page (top right).</span>
+    </div>
+    <div class="stage-wrap"><div id="stage"><canvas id="ground"></canvas><canvas id="water"></canvas></div></div>
+    <p class="now">On the page: <span id="on-page">none yet</span></p>
+    <div class="events" id="events"></div>
+  </section>
+  <div id="board"></div>
+</main>
+
+<div id="drawer" hidden>
+  <header><h2>Changes</h2><button id="drawer-close">Close</button></header>
+  <div id="changes-list"></div>
+</div>
+
+<div id="editor" hidden>
+  <header>
+    <h2 id="editor-title"></h2>
+    <span id="editor-where"></span>
+    <span id="frames"></span>
+    <span class="spacer" style="flex:1"></span>
+    <button id="close">Close</button>
+    <button id="save" class="primary">Save edit</button>
+  </header>
+  <aside>
+    <div class="tools">
+      <button data-tool="pencil" class="on">Pencil</button>
+      <button data-tool="eraser">Eraser</button>
+      <button data-tool="picker">Picker</button>
+    </div>
+    <div class="tools" style="margin-top:6px">
+      <button id="undo">Undo</button>
+      <button id="redo">Redo</button>
+      <button id="original" title="Hold to see the original">Hold: original</button>
+      <button id="reset" title="Undo every edit in this frame">Reset frame</button>
+    </div>
+    <div class="toggles">
+      <label><input id="link" type="checkbox" checked> Paint light and dark together</label>
+      <label><input id="grid" type="checkbox" checked> Grid</label>
+      <label><input id="marks" type="checkbox" checked> Mark changed pixels</label>
+    </div>
+    <div id="current"></div>
+    <div id="palette"></div>
+    <p class="keys">
+      <kbd>B</kbd> pencil · <kbd>E</kbd> eraser · <kbd>I</kbd> picker (or <kbd>⌥</kbd>-click) ·
+      right-click erases · hold <kbd>O</kbd> for the original · <kbd>G</kbd> grid ·
+      <kbd>⌘Z</kbd> undo · <kbd>⇧⌘Z</kbd> redo · <kbd>⌘S</kbd> save · <kbd>Esc</kbd> close.
+      Dashed lines mark x 40 and the feet row (under the lowest pixel), where dx and dy count from. A swatch shows its
+      light colour on the left and dark on the right.
+    </p>
+  </aside>
+  <div id="canvases"></div>
+  <footer id="status"></footer>
+</div>
+
+<div id="review" hidden>
+  <header>
+    <h2 id="review-title"></h2>
+    <span id="review-state" class="badge"></span>
+    <span id="review-meta" class="muted"></span>
+    <span style="flex:1"></span>
+    <button id="review-theme" title="Switch the page and the scene between day and night">Day / night</button>
+    <button id="review-close">Close</button>
+  </header>
+  <div class="review-body">
+    <div id="review-notes" class="review-notes"></div>
+    <div class="transport">
+      <button id="review-play">Pause</button>
+      <button id="review-back" title="One frame back">◀</button>
+      <button id="review-forward" title="One frame on">▶</button>
+      <button id="review-restart">Restart</button>
+      <label>Speed
+        <select id="review-speed">
+          <option value="0.25">¼×</option>
+          <option value="0.5">½×</option>
+          <option value="1" selected>1×</option>
+          <option value="2">2×</option>
+        </select>
+      </label>
+      <span id="review-time" class="muted"></span>
+    </div>
+    <div id="review-columns" class="review-columns"></div>
+    <section class="review-scene">
+      <div class="row"><strong>In the scene</strong><span id="review-scene-pick" class="tools"></span></div>
+      <p class="muted">The live scene behind, at its stage and theme; Trigger and Water on the main page still work.</p>
+      <canvas id="review-stage"></canvas>
+      <p id="review-scene-error" class="error-text"></p>
+    </section>
+    <section class="review-form">
+      <div id="review-none"></div>
+      <textarea id="review-input" rows="4" placeholder="Notes for the agent: what to keep, what to change"></textarea>
+      <div class="row">
+        <button id="review-changes">Request changes</button>
+        <button id="review-approve" class="primary">Approve choice</button>
+        <span id="review-saved" class="muted"></span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="flash" hidden></div>
+<script type="module" src="studio.js"></script>
+</body>
+</html>

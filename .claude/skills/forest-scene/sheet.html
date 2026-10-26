@@ -1,0 +1,31 @@
+<!doctype html><meta charset="utf-8"><body style="margin:0">
+<script type="module">
+import { SCENES } from "./js/forest_scene.js";
+const spec = await import(`./${new URLSearchParams(location.search).get("spec")}`);
+const Z = spec.zoom ?? 4, CW = spec.cell?.[0] ?? 44, CH = spec.cell?.[1] ?? 40, PER = spec.per ?? 8, LABEL = 26;
+const out = [];
+try {
+  for (const theme of ["light", "dark"]) {
+    const rows = Math.ceil(spec.items.length / PER);
+    const c = document.createElement("canvas");
+    c.width = PER * CW * Z; c.height = rows * (CH * Z + LABEL);
+    const x = c.getContext("2d");
+    x.fillStyle = theme === "dark" ? "#14161a" : "#eef1ee"; x.fillRect(0, 0, c.width, c.height);
+    spec.items.forEach((it, i) => {
+      const scene = SCENES.find((s) => s.id === it.scene);
+      const art = document.createElement("canvas"); art.width = CW; art.height = CH;
+      const ctx = art.getContext("2d");
+      ctx.fillStyle = it.bg?.[theme] ?? scene.palettes[theme].haze; ctx.fillRect(0, 0, CW, CH);
+      const g = { ctx, pal: { ...scene.palettes[theme], ...(it.pal?.[theme] ?? {}) }, time: it.time ?? 0, groundY: CH - 9, cols: CW };
+      ctx.fillStyle = "rgba(0,0,0,0.12)"; ctx.fillRect(0, CH - 2, CW, 1);
+      it.draw(g);
+      const cx = (i % PER) * CW * Z, cy = Math.floor(i / PER) * (CH * Z + LABEL);
+      x.imageSmoothingEnabled = false; x.drawImage(art, cx, cy + LABEL, CW * Z, CH * Z);
+      x.fillStyle = theme === "dark" ? "#e8e8e8" : "#222"; x.font = "600 13px sans-serif";
+      x.fillText(it.label, cx + 4, cy + 17);
+    });
+    out.push({ name: `${spec.name}-${theme}`, url: c.toDataURL() });
+  }
+  window.result = out;
+} catch (e) { window.result = { error: String(e.stack || e) }; }
+</script>
