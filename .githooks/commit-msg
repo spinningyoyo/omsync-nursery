@@ -1,0 +1,10 @@
+#!/bin/sh
+subject=$(head -n 1 "$1")
+case "$subject" in
+    "Merge "* | "Revert "* | "fixup! "* | "squash! "* | "amend! "*) exit 0 ;;
+esac
+if echo "$subject" | grep -qE '^(feat|fix|docs|refactor|test|chore|perf|build|ci|style)(\([a-z0-9/-]+\))?: [a-z]'; then
+    exit 0
+fi
+echo "commit-msg: expected 'type(scope): imperative summary', got: $subject" >&2
+exit 1

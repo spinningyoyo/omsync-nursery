@@ -1,0 +1,188 @@
+/*
+ * Each scene's colours for the page that hosts it. The host owns the layout and how the colours
+ * are used; this file only names them, per scene id.
+ *
+ * Tint, on [data-tint="<id>"] (the host's <html> while signed in): --scene-tint in light and
+ * --scene-tint-dark in dark. The host mixes them into its page background.
+ *
+ * Backdrop, on [data-scene="<id>"] (the sign-in page): the five --landing-* washes, light, then
+ * dark under [data-theme="dark"]. The host's backdrop paints them as soft gradients and the
+ * scene's bloom.
+ *
+ * A new scene adds both, plus its entry in scenes.json and SCENES in js/nursery.js.
+ */
+
+/* Tints. */
+
+[data-tint="meadow"] { --scene-tint: #b7dc98; --scene-tint-dark: rgb(96 160 84); }
+[data-tint="rainforest"] { --scene-tint: #9fd6b4; --scene-tint-dark: rgb(56 160 120); }
+[data-tint="hawaii"] { --scene-tint: #a9dcf2; --scene-tint-dark: rgb(60 140 200); }
+[data-tint="desert"] { --scene-tint: #fbcfa6; --scene-tint-dark: rgb(220 110 80); }
+[data-tint="smokies"] { --scene-tint: #f9cf9c; --scene-tint-dark: rgb(220 140 60); }
+[data-tint="serengeti"] { --scene-tint: #f7d28f; --scene-tint-dark: rgb(120 100 180); }
+[data-tint="iceland"] { --scene-tint: #bfe0ec; --scene-tint-dark: rgb(70 130 170); }
+[data-tint="yellowstone"] { --scene-tint: #cfe3ec; --scene-tint-dark: rgb(60 110 170); }
+[data-tint="hundredacre"] { --scene-tint: #d3e2b0; --scene-tint-dark: rgb(110 140 80); }
+[data-tint="wonderland"] { --scene-tint: #f3d6f0; --scene-tint-dark: rgb(120 90 170); }
+
+/* Backdrops. */
+[data-scene="meadow"] {
+  --landing-green: #b7dc98;
+  --landing-green-soft: #d3eac0;
+  --landing-peach: #fbdfc8;
+  --landing-blush: #fdeceb;
+  --landing-bloom: #cfeab4;
+}
+
+[data-theme="dark"] [data-scene="meadow"] {
+  --landing-green: rgb(96 160 84 / 0.4);
+  --landing-green-soft: rgb(96 160 84 / 0.2);
+  --landing-peach: rgb(206 128 84 / 0.22);
+  --landing-blush: rgb(196 96 120 / 0.14);
+  --landing-bloom: rgb(110 178 92 / 0.34);
+}
+
+[data-scene="rainforest"] {
+  --landing-green: #8fbf9c;
+  --landing-green-soft: #c0d9c5;
+  --landing-peach: #e2e4bc;
+  --landing-blush: #d3e2d6;
+  --landing-bloom: #9fc8aa;
+}
+
+[data-theme="dark"] [data-scene="rainforest"] {
+  --landing-green: rgb(56 160 120 / 0.42);
+  --landing-green-soft: rgb(70 150 100 / 0.22);
+  --landing-peach: rgb(214 190 90 / 0.15);
+  --landing-blush: rgb(60 150 140 / 0.14);
+  --landing-bloom: rgb(70 180 120 / 0.34);
+}
+
+[data-scene="hawaii"] {
+  --landing-green: #a9dcf2;
+  --landing-green-soft: #f6e6b8;
+  --landing-peach: #fddcc0;
+  --landing-blush: #cdeeee;
+  --landing-bloom: #9fe0d8;
+}
+
+[data-theme="dark"] [data-scene="hawaii"] {
+  --landing-green: rgb(60 140 200 / 0.42);
+  --landing-green-soft: rgb(210 180 110 / 0.16);
+  --landing-peach: rgb(230 130 90 / 0.18);
+  --landing-blush: rgb(60 170 170 / 0.14);
+  --landing-bloom: rgb(60 190 170 / 0.3);
+}
+
+[data-scene="desert"] {
+  --landing-green: #c9e0f2;
+  --landing-green-soft: #f5deb0;
+  --landing-peach: #fbcfa6;
+  --landing-blush: #f8e0ea;
+  --landing-bloom: #f6bfd6;
+}
+
+[data-theme="dark"] [data-scene="desert"] {
+  --landing-green: rgb(70 70 170 / 0.42);
+  --landing-green-soft: rgb(200 150 80 / 0.16);
+  --landing-peach: rgb(220 110 80 / 0.2);
+  --landing-blush: rgb(190 80 150 / 0.16);
+  --landing-bloom: rgb(210 90 150 / 0.3);
+}
+
+[data-scene="smokies"] {
+  --landing-green: #f9cf9c;
+  --landing-green-soft: #f4e1a4;
+  --landing-peach: #f4b9a0;
+  --landing-blush: #d8e4ec;
+  --landing-bloom: #f3b56f;
+}
+
+[data-theme="dark"] [data-scene="smokies"] {
+  --landing-green: rgb(220 140 60 / 0.38);
+  --landing-green-soft: rgb(200 160 60 / 0.18);
+  --landing-peach: rgb(190 80 50 / 0.2);
+  --landing-blush: rgb(80 120 160 / 0.16);
+  --landing-bloom: rgb(230 140 50 / 0.3);
+}
+
+[data-scene="serengeti"] {
+  --landing-green: #f2c879;
+  --landing-green-soft: #f7e3a6;
+  --landing-peach: #f5a77a;
+  --landing-blush: #d7e0ea;
+  --landing-bloom: #e9a14f;
+}
+
+[data-theme="dark"] [data-scene="serengeti"] {
+  --landing-green: rgb(200 150 70 / 0.3);
+  --landing-green-soft: rgb(90 90 170 / 0.2);
+  --landing-peach: rgb(170 90 60 / 0.18);
+  --landing-blush: rgb(60 70 130 / 0.2);
+  --landing-bloom: rgb(210 150 70 / 0.22);
+}
+
+[data-scene="iceland"] {
+  --landing-green: #c9e3ee;
+  --landing-green-soft: #e8f4f1;
+  --landing-peach: #d5e9b2;
+  --landing-blush: #dccbef;
+  --landing-bloom: #f0d98e;
+}
+
+[data-theme="dark"] [data-scene="iceland"] {
+  --landing-green: rgb(80 140 170 / 0.32);
+  --landing-green-soft: rgb(90 150 130 / 0.18);
+  --landing-peach: rgb(120 160 80 / 0.2);
+  --landing-blush: rgb(130 100 180 / 0.2);
+  --landing-bloom: rgb(90 230 170 / 0.28);
+}
+
+[data-scene="yellowstone"] {
+  --landing-green: #bcd9e6;
+  --landing-green-soft: #f2e6b0;
+  --landing-peach: #f5c3a0;
+  --landing-blush: #dfe6dc;
+  --landing-bloom: #f2c66e;
+}
+
+[data-theme="dark"] [data-scene="yellowstone"] {
+  --landing-green: rgb(70 120 180 / 0.4);
+  --landing-green-soft: rgb(200 180 90 / 0.18);
+  --landing-peach: rgb(200 100 60 / 0.2);
+  --landing-blush: rgb(90 130 120 / 0.16);
+  --landing-bloom: rgb(230 150 50 / 0.3);
+}
+
+/* Shepard's pale washes on white paper: heath green, a little sand and sky. */
+[data-scene="hundredacre"] {
+  --landing-green: #dbe6bd;
+  --landing-green-soft: #edf1da;
+  --landing-peach: #f3e7c8;
+  --landing-blush: #e2ecf0;
+  --landing-bloom: #c9dca2;
+}
+
+[data-theme="dark"] [data-scene="hundredacre"] {
+  --landing-green: rgb(110 140 80 / 0.3);
+  --landing-green-soft: rgb(150 160 100 / 0.16);
+  --landing-peach: rgb(170 140 90 / 0.18);
+  --landing-blush: rgb(80 110 130 / 0.16);
+  --landing-bloom: rgb(140 170 90 / 0.3);
+}
+
+[data-scene="wonderland"] {
+  --landing-green: #a6e9b8;
+  --landing-green-soft: #d6f5e1;
+  --landing-peach: #ffc2b8;
+  --landing-blush: #ffd6ea;
+  --landing-bloom: #ffa6cb;
+}
+
+[data-theme="dark"] [data-scene="wonderland"] {
+  --landing-green: rgb(110 200 150 / 0.36);
+  --landing-green-soft: rgb(150 120 220 / 0.2);
+  --landing-peach: rgb(230 110 150 / 0.2);
+  --landing-blush: rgb(120 90 170 / 0.16);
+  --landing-bloom: rgb(255 120 190 / 0.3);
+}

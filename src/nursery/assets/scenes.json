@@ -1,0 +1,12 @@
+[
+  {"id": "meadow", "label": "Yosemite Meadows"},
+  {"id": "rainforest", "label": "Thailand Khao Sok Rainforest"},
+  {"id": "hawaii", "label": "Waikiki Beach"},
+  {"id": "desert", "label": "Joshua Tree Desert"},
+  {"id": "smokies", "label": "Great Smoky Mountains"},
+  {"id": "serengeti", "label": "Serengeti Savanna"},
+  {"id": "iceland", "label": "Icelandic Lava Field"},
+  {"id": "yellowstone", "label": "Yellowstone"},
+  {"id": "hundredacre", "label": "Hundred Acre Wood"},
+  {"id": "wonderland", "label": "Wonderland"}
+]
