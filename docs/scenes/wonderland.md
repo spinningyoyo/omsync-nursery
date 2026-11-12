@@ -9,8 +9,8 @@ Wonderland, after Lewis Carroll's Alice's Adventures in Wonderland: a candy-brig
 | Stage | New plants | New animals | Effects |
 | --- | --- | --- | --- |
 | 0 | none (bare soil) | none | clouds (light theme), stars and a moon (dark theme) |
-| 1 | mushroom | none | none |
-| 2 | hill, cardHedge, wildflower, rose, rabbitHole | White Rabbit (`rabbit`) | soap bubbles |
+| 1 | mushroom | White Rabbit (`rabbit`) | none |
+| 2 | hill, cardHedge, wildflower, rose, rabbitHole | none | soap bubbles |
 | 3 | willow, witchTree, tigerLily | caterpillar, Bread-and-butterflies | hookah smoke rings |
 | 4 | teaTable | the Hatter's hat, hovering, March Hare, sipping his tea, the Pigeon (`pigeon`) | none |
 | 5 | none | dodo (`dodo`) | none |
@@ -37,7 +37,7 @@ Wonderland, after Lewis Carroll's Alice's Adventures in Wonderland: a candy-brig
 | **witchTree** | plant | 3-4 | 3 / 3 / 3 | middle / near | painter `witchTree` [L311](../../src/nursery/assets/js/scenes/wonderland.js#L311); placed [L904](../../src/nursery/assets/js/scenes/wonderland.js#L904), [L906](../../src/nursery/assets/js/scenes/wonderland.js#L906) |
 | **willow** | plant | 3 | 2 / 2 / 2 | middle | painter `willow` [L362](../../src/nursery/assets/js/scenes/wonderland.js#L362); placed [L909](../../src/nursery/assets/js/scenes/wonderland.js#L909) |
 | **rabbitHole** | plant | 2 | 1 / 1 / 1 | near | painter `rabbitHole` [L412](../../src/nursery/assets/js/scenes/wonderland.js#L412); placed [L911](../../src/nursery/assets/js/scenes/wonderland.js#L911) |
-| White Rabbit (`rabbit`) | animal | 2 (`rabbit`) | 1 instance (any width) | in front of the plants | `rabbitAt` [L612](../../src/nursery/assets/js/scenes/wonderland.js#L612); arrives [L976](../../src/nursery/assets/js/scenes/wonderland.js#L976); drawn [L1082](../../src/nursery/assets/js/scenes/wonderland.js#L1082) |
+| White Rabbit (`rabbit`) | animal | 1 (`rabbit`) | 1 instance (any width) | in front of the plants | `rabbitAt` [L612](../../src/nursery/assets/js/scenes/wonderland.js#L612); arrives [L976](../../src/nursery/assets/js/scenes/wonderland.js#L976); drawn [L1082](../../src/nursery/assets/js/scenes/wonderland.js#L1082) |
 | caterpillar (`caterpillar`) | animal | 3 | 1 (any width) | in front of the plants | `caterpillarAt` [L617](../../src/nursery/assets/js/scenes/wonderland.js#L617); arrives [L993](../../src/nursery/assets/js/scenes/wonderland.js#L993); drawn [L1073](../../src/nursery/assets/js/scenes/wonderland.js#L1073) |
 | the Hatter's hat, hovering (`hat`) | animal | 4 | 1 (any width) | in front of the plants | `hatAt` [L628](../../src/nursery/assets/js/scenes/wonderland.js#L628); arrives [L995](../../src/nursery/assets/js/scenes/wonderland.js#L995); drawn [L1075](../../src/nursery/assets/js/scenes/wonderland.js#L1075) |
 | March Hare, sipping his tea (`hare`, `hare-sipping`) | animal | 4 | 1 (any width) | in front of the plants | `hareAt` [L623](../../src/nursery/assets/js/scenes/wonderland.js#L623); arrives [L996](../../src/nursery/assets/js/scenes/wonderland.js#L996); drawn [L1077](../../src/nursery/assets/js/scenes/wonderland.js#L1077) |

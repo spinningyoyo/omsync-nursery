@@ -925,17 +925,16 @@ const extras = {
     };
   },
 
-  // The lion comes on last, at stage 8, on the pride rock, and his cubs with him (one on a phone);
-  // his first call comes a little after. The elephant pair comes at 7.
+  // The secretary bird comes at stage 1. The lion comes on last, at stage 8, on the pride rock, and
+  // his cubs with him (one on a phone); his first call comes a little after. The elephant pair
+  // comes at 7.
   onGrow(f) {
     const x = f.extra;
+    if (f.stage >= 1) enter(f, x.secretary);
     if (f.stage >= 2) enter(f, x.zebra);
     if (f.stage >= 4) {
       enter(f, x.giraffe);
-      if (!narrow(f)) {
-        enter(f, x.secretary);
-        enterBehind(f, x.foal, x.zebra, 9);
-      }
+      if (!narrow(f)) enterBehind(f, x.foal, x.zebra, 9);
     }
     if (f.stage >= 7) {
       enter(f, x.elephant);

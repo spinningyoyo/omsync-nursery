@@ -9,9 +9,9 @@ The meadow scene: grass, flowers, round and pine trees, birches, flowering dogwo
 | Stage | New plants | New animals | Effects |
 | --- | --- | --- | --- |
 | 0 | none (bare soil) | none | none |
-| 1 | tuft, flower | none | none |
+| 1 | tuft, flower | cottontail (`rabbit`) | none |
 | 2 | hill, elcap, tree | kingfisher (`kingfisher`) | none |
-| 3 | sequoia, bush | cottontail (`rabbit`) | none |
+| 3 | sequoia, bush | none | none |
 | 4 | none | bear and cub (`bears[0]`), bear and cub (`bears[1]`), Steller's jay (`jay`) | Horsetail Fall firefall |
 | 5 | none | red fox (`fox`) | butterfly |
 | 6 | mushroom | golden eagle (slow flyby, side-on) (`eagle`) | none |
@@ -34,7 +34,7 @@ The meadow scene: grass, flowers, round and pine trees, birches, flowering dogwo
 | **tuft** | plant | 1-4 | 34 / 60 / 90 | middle / near | painter `tuft` [L114](../../src/nursery/assets/js/scenes/meadow.js#L114); scatter [L406](../../src/nursery/assets/js/scenes/meadow.js#L406), [L411](../../src/nursery/assets/js/scenes/meadow.js#L411) |
 | **sequoia** | plant | 3-5 | 6 / 9 / 11 | middle | painter `sequoia` [L217](../../src/nursery/assets/js/scenes/meadow.js#L217); scatter [L407](../../src/nursery/assets/js/scenes/meadow.js#L407) |
 | **mushroom** | plant | 6-8 | 2 / 4 / 5 | near | painter `mushroom` [L247](../../src/nursery/assets/js/scenes/meadow.js#L247); scatter [L412](../../src/nursery/assets/js/scenes/meadow.js#L412) |
-| cottontail (`rabbit`) | animal | 3 (`rabbit`) | 1 instance (any width) | in front of the plants | `hareAt` [L721](../../src/nursery/assets/js/kit/animals.js#L721); arrives [L491](../../src/nursery/assets/js/scenes/meadow.js#L491); drawn [L593](../../src/nursery/assets/js/scenes/meadow.js#L593) |
+| cottontail (`rabbit`) | animal | 1 (`rabbit`) | 1 instance (any width) | in front of the plants | `hareAt` [L721](../../src/nursery/assets/js/kit/animals.js#L721); arrives [L491](../../src/nursery/assets/js/scenes/meadow.js#L491); drawn [L593](../../src/nursery/assets/js/scenes/meadow.js#L593) |
 | red fox (`fox`, `fox-pounce`) | animal | 5 (`fox`) | 1 instance (any width) | in front of the plants | `canidAt` [L283](../../src/nursery/assets/js/kit/animals.js#L283); arrives [L497](../../src/nursery/assets/js/scenes/meadow.js#L497); drawn [L592](../../src/nursery/assets/js/scenes/meadow.js#L592) |
 | bull elk (`elk`, `elk-sitting`) | animal | 7 (`elk`) | 1 instance (any width) | in front of the plants | `cervidAt` [L456](../../src/nursery/assets/js/kit/animals.js#L456); arrives [L498](../../src/nursery/assets/js/scenes/meadow.js#L498); drawn [L591](../../src/nursery/assets/js/scenes/meadow.js#L591) |
 | butterfly (`butterfly`) | effect | 5 | up to 4 (any width) | in front of the plants | `butterflyAt` [L432](../../src/nursery/assets/js/scenes/meadow.js#L432); starts [L500](../../src/nursery/assets/js/scenes/meadow.js#L500); drawn [L575](../../src/nursery/assets/js/scenes/meadow.js#L575) |

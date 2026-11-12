@@ -483,12 +483,12 @@ const extras = {
   },
 
   // Butterflies arrive a little after the forest is old enough, one more per watering. A rabbit
-  // comes at stage 3, a bear and cub at 4 (when El Capitan has grown in and the firefall starts),
+  // comes at stage 1, a bear and cub at 4 (when El Capitan has grown in and the firefall starts),
   // a fox at 5 and an elk at 7.
   onGrow(f) {
     const { bears, firefall } = f.extra;
     if (f.stage >= 4 && firefall.next === Infinity) firefall.next = f.time + 3;
-    if (f.stage >= 3) enter(f, f.extra.rabbit);
+    if (f.stage >= 1) enter(f, f.extra.rabbit);
     if (f.stage >= 4) {
       const [bear, cub] = bears;
       enter(f, bear);

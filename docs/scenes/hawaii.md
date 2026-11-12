@@ -9,9 +9,9 @@ The Hawaii beach scene: coconut palms and plumeria over golden sand, with fluted
 | Stage | New plants | New animals | Effects |
 | --- | --- | --- | --- |
 | 0 | none (bare soil) | none | none |
-| 1 | dune | none | sea to 3 rows, surf spray |
+| 1 | dune | ghost crab (ʻōhiki) (`crabs[0]`) | sea to 3 rows, surf spray |
 | 2 | tree, taro, shell | white-tailed tropicbird (koaʻe kea) (`tropicbirds[0]`) | sea to 9 rows |
-| 3 | ridge, paradise, hibiscus | ghost crab (ʻōhiki) (`crabs[0]`), moa (feral chicken) (`moa`) | sea to 12 rows |
+| 3 | ridge, paradise, hibiscus | moa (feral chicken) (`moa`) | sea to 12 rows |
 | 4 | none | ʻiʻiwi (`iiwi`), Hawaiian monk seal and pup (`seals[0]`), Hawaiian monk seal and pup (`seals[1]`) | none |
 | 5 | surfboard | honu (green sea turtle), honu hatchling (`hatchling`) | none |
 | 6 | none | white-tailed tropicbird (koaʻe kea) (`tropicbirds[1]`) | none |
@@ -39,7 +39,7 @@ The Hawaii beach scene: coconut palms and plumeria over golden sand, with fluted
 | surf spray (`spray`) | effect | 1 | up to 60 droplets at once (any width) | behind the plants (drawBack) | starts [L387](../../src/nursery/assets/js/scenes/hawaii.js#L387); drawn [L480](../../src/nursery/assets/js/scenes/hawaii.js#L480) |
 | white-tailed tropicbird (koaʻe kea) (`tropicbird`) | bird | 2 (`tropicbirds[0]`), 6 (`tropicbirds[1]`) | 2 instances (any width) | in front of the plants | `tropicbirdAt` [L260](../../src/nursery/assets/js/scenes/hawaii.js#L260); arrives [L438](../../src/nursery/assets/js/scenes/hawaii.js#L438), [L440](../../src/nursery/assets/js/scenes/hawaii.js#L440); drawn [L504](../../src/nursery/assets/js/scenes/hawaii.js#L504) |
 | ʻiʻiwi (`iiwi`) | bird | 4 (`iiwi`) | 1 instance (any width) | in front of the plants | `flyerAt` [L1316](../../src/nursery/assets/js/kit/animals.js#L1316); arrives [L439](../../src/nursery/assets/js/scenes/hawaii.js#L439); drawn [L505](../../src/nursery/assets/js/scenes/hawaii.js#L505) |
-| ghost crab (ʻōhiki) (`crab`) | animal | 3 (`crabs[0]`) | 1 instance (any width) | in front of the plants | `crabAt` [L869](../../src/nursery/assets/js/kit/animals.js#L869); arrives [L419](../../src/nursery/assets/js/scenes/hawaii.js#L419); drawn [L506](../../src/nursery/assets/js/scenes/hawaii.js#L506) |
+| ghost crab (ʻōhiki) (`crab`) | animal | 1 (`crabs[0]`) | 1 instance (any width) | in front of the plants | `crabAt` [L869](../../src/nursery/assets/js/kit/animals.js#L869); arrives [L419](../../src/nursery/assets/js/scenes/hawaii.js#L419); drawn [L506](../../src/nursery/assets/js/scenes/hawaii.js#L506) |
 | moa (feral chicken) (`moa`, `moa-pecking`) | animal | 3 (`moa`) | 1 instance (any width) | in front of the plants | `moaAt` [L317](../../src/nursery/assets/js/scenes/hawaii.js#L317); arrives [L421](../../src/nursery/assets/js/scenes/hawaii.js#L421); drawn [L508](../../src/nursery/assets/js/scenes/hawaii.js#L508) |
 | honu (green sea turtle) (`honu`) | animal | 5 | 1 (any width) | behind the plants (drawBack) | `honuAt` [L275](../../src/nursery/assets/js/scenes/hawaii.js#L275); arrives [L448](../../src/nursery/assets/js/scenes/hawaii.js#L448); drawn [L486](../../src/nursery/assets/js/scenes/hawaii.js#L486) |
 | honu hatchling (`honu-hatchling`) | animal | 5 (`hatchling`) | 1 instance (any width) | behind the plants (drawBack) | arrives [L429](../../src/nursery/assets/js/scenes/hawaii.js#L429); drawn [L487](../../src/nursery/assets/js/scenes/hawaii.js#L487) |

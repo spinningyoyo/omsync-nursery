@@ -9,8 +9,8 @@ Iceland: a moss-covered lava field under ice-capped mountains, with basalt outcr
 | Stage | New plants | New animals | Effects |
 | --- | --- | --- | --- |
 | 0 | none (bare soil) | none | stars and aurora (dark theme) |
-| 1 | moss, tussock, basalt | none | mist bands |
-| 2 | glacier, hill | arctic fox and pup (`fox`), arctic fox and pup (`pup`), short-eared owl (`owl`) | none |
+| 1 | moss, tussock, basalt | arctic fox and pup (`fox`), arctic fox and pup (`pup`) | mist bands |
+| 2 | glacier, hill | short-eared owl (`owl`) | none |
 | 3 | lupine, birch, stack | whooper swan pair (`swan`), whooper swan pair (`mate`), puffins: a flock of three, and three nesting on the sea stack (`puffins`) | fjord (water behind the hills) |
 | 4 | falls | whooper swan flying by (`flyingSwan`) | none |
 | 5 | none | none | none |
@@ -34,7 +34,7 @@ Iceland: a moss-covered lava field under ice-capped mountains, with basalt outcr
 | fjord (water behind the hills) (`fjord`) | effect | 3 | 16 rows at full tide (any width) | behind the plants (drawBack) | `fjord` [L600](../../src/nursery/assets/js/scenes/iceland.js#L600); starts [L450](../../src/nursery/assets/js/scenes/iceland.js#L450); drawn [L721](../../src/nursery/assets/js/scenes/iceland.js#L721) |
 | stars and aurora (dark theme) (`night`) | effect | 0 | 60 stars, and the aurora (any width) | behind the plants (drawBack, dark theme only) | `night` [L539](../../src/nursery/assets/js/scenes/iceland.js#L539); starts [L719](../../src/nursery/assets/js/scenes/iceland.js#L719), [L727](../../src/nursery/assets/js/scenes/iceland.js#L727); drawn [L720](../../src/nursery/assets/js/scenes/iceland.js#L720) |
 | mist bands (`mist`) | effect | 1 | 6 bands (any width) | in front of the plants | `mistAt` [L19](../../src/nursery/assets/js/kit/effects.js#L19); starts [L629](../../src/nursery/assets/js/scenes/iceland.js#L629); drawn [L729](../../src/nursery/assets/js/scenes/iceland.js#L729) |
-| arctic fox and pup (`fox`, `fox-winter`, `fox-pup`, `fox-pup-sitting`) | animal | 2 (`fox`), 2 (`pup`) | 2 instances (any width) | in front of the plants | `canidAt` [L283](../../src/nursery/assets/js/kit/animals.js#L283); arrives [L648](../../src/nursery/assets/js/scenes/iceland.js#L648), [L649](../../src/nursery/assets/js/scenes/iceland.js#L649); drawn [L738](../../src/nursery/assets/js/scenes/iceland.js#L738), [L739](../../src/nursery/assets/js/scenes/iceland.js#L739) |
+| arctic fox and pup (`fox`, `fox-winter`, `fox-pup`, `fox-pup-sitting`) | animal | 1 (`fox`), 1 (`pup`) | 2 instances (any width) | in front of the plants | `canidAt` [L283](../../src/nursery/assets/js/kit/animals.js#L283); arrives [L648](../../src/nursery/assets/js/scenes/iceland.js#L648), [L649](../../src/nursery/assets/js/scenes/iceland.js#L649); drawn [L738](../../src/nursery/assets/js/scenes/iceland.js#L738), [L739](../../src/nursery/assets/js/scenes/iceland.js#L739) |
 | short-eared owl (`owl`) | bird | 2 (`owl`) | 1 instance (any width) | in front of the plants | `owlAt` [L918](../../src/nursery/assets/js/kit/animals.js#L918); arrives [L665](../../src/nursery/assets/js/scenes/iceland.js#L665); drawn [L731](../../src/nursery/assets/js/scenes/iceland.js#L731) |
 | whooper swan flying by (`swan-flying`) | bird | 4 (`flyingSwan`) | 1 instance (any width) | in front of the plants | `swanAt` [L1186](../../src/nursery/assets/js/kit/animals.js#L1186); arrives [L672](../../src/nursery/assets/js/scenes/iceland.js#L672); drawn [L735](../../src/nursery/assets/js/scenes/iceland.js#L735) |
 | whooper swan pair (`swan`, `swan-feeding`) | animal | 3 (`swan`), 3 (`mate`) | 2 instances (any width) | in front of the plants | `swanAt` [L1186](../../src/nursery/assets/js/kit/animals.js#L1186); arrives [L652](../../src/nursery/assets/js/scenes/iceland.js#L652), [L653](../../src/nursery/assets/js/scenes/iceland.js#L653); drawn [L734](../../src/nursery/assets/js/scenes/iceland.js#L734) |

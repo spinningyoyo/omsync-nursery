@@ -969,11 +969,11 @@ const extras = {
     };
   },
 
-  // The White Rabbit comes at stage 2, the Dodo at 5, the two soldiers together at 6. The
+  // The White Rabbit comes at stage 1, the Dodo at 5, the two soldiers together at 6. The
   // Bread-and-butterflies arrive one per watering from stage 3.
   onGrow(f) {
     const x = f.extra;
-    if (f.stage >= 2) enter(f, x.rabbit);
+    if (f.stage >= 1) enter(f, x.rabbit);
     if (f.stage >= 5) enter(f, x.dodo);
     if (f.stage >= 6) {
       const [lead, mate] = x.soldiers;

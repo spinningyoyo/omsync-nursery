@@ -668,8 +668,8 @@ const extras = {
     };
   },
 
-  // A roadrunner comes at stage 3, the tortoise at 4, a coyote with its pup at 5, the jackrabbit at
-  // 7; the snake shows itself on some visits only.
+  // The jackrabbit comes at stage 1, a roadrunner at 3, the tortoise at 4, a coyote with its pup at
+  // 5; the snake shows itself on some visits only. The hawk stoops at the jackrabbit from stage 7.
   onGrow(f) {
     const x = f.extra;
     if (f.stage >= 3) enter(f, x.runner);
@@ -680,7 +680,7 @@ const extras = {
       if (!narrow(f)) enterBehind(f, pup, coyote, 13);
     }
     if (f.stage >= 6 && x.snakeShows) enter(f, x.snake);
-    if (f.stage >= 7) enter(f, x.rabbit);
+    if (f.stage >= 1) enter(f, x.rabbit);
   },
 
   busy: () => true,

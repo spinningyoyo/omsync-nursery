@@ -1125,10 +1125,11 @@ const extras = {
     };
   },
 
-  // Owl and the bees from stage 2, then Pooh, Piglet at his side, Eeyore, Rabbit, Tigger and Roo,
-  // and last the blue balloon and, a little after it, the first balloon flight.
+  // Rabbit at stage 1, Owl and the bees from stage 2, then Pooh, Piglet at his side, Eeyore, Tigger
+  // and Roo, and last the blue balloon and, a little after it, the first balloon flight.
   onGrow(f) {
     const x = f.extra;
+    if (f.stage >= 1) enter(f, x.rabbit);
     if (f.stage >= 3) enter(f, x.pooh);
     if (x.pooh.active && !x.flight.goal) x.flight.goal = x.pooh.x < f.cols / 2 ? 1 : -1;
     if (f.stage >= 4 && x.pooh.active && !x.piglet.active) {
@@ -1136,7 +1137,6 @@ const extras = {
       x.piglet.x = x.pooh.x + x.pooh.dir * PIGLET_GAP;
     }
     if (f.stage >= 5) enter(f, x.eeyore);
-    if (f.stage >= 6) enter(f, x.rabbit);
     if (f.stage >= 7) {
       enter(f, x.tigger);
       enter(f, x.roo);

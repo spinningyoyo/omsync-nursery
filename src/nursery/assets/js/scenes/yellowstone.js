@@ -620,12 +620,12 @@ const extras = {
     };
   },
 
-  // The pronghorn comes at stage 3, the bison at 4, the wolves at 5 (the geyser starts erupting
+  // The pronghorn comes at stage 1, the bison at 4, the wolves at 5 (the geyser starts erupting
   // then), the elk at 6, the grizzly at 7 and the bison calf at 8. The bighorn takes its crag once
   // the crag has grown.
   onGrow(f) {
     const x = f.extra;
-    if (f.stage >= 3) enter(f, x.pronghorn);
+    if (f.stage >= 1) enter(f, x.pronghorn);
     if (f.stage >= 4) enter(f, x.bison);
     if (f.stage >= 5) {
       enter(f, x.wolves[0]);

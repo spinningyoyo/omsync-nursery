@@ -9,11 +9,11 @@ The Great Smoky Mountains in fall, its trees from the park's list of common spec
 | Stage | New plants | New animals | Effects |
 | --- | --- | --- | --- |
 | 0 | none (bare soil) | none | mist bands, stars and an arched Milky Way (dark theme) |
-| 1 | fern, boulder | barred owl (night) | falling leaves |
+| 1 | fern, boulder | groundhog (`groundhog`), barred owl (night) | falling leaves |
 | 2 | ridge, tree, flower | golden eagle (slow flyby, side-on) (`eagle`) | none |
 | 3 | rhodo | northern cardinal (`cardinal`), wild turkey (`turkey`) | none |
 | 4 | log | chimney swift (`swift`), white-tailed deer (`deer[0]`) | none |
-| 5 | none | golden eagle (circling) (`soarer`), groundhog (`groundhog`) | none |
+| 5 | none | golden eagle (circling) (`soarer`) | none |
 | 6 | none | black bear and cub (`bears[0]`) | none |
 | 7 | none | white-tailed deer (`deer[1]`), bull elk in the rut (`elk`) | none |
 | 8 | none | black bear and cub (`bears[1]`) | none |
@@ -43,9 +43,9 @@ The Great Smoky Mountains in fall, its trees from the park's list of common spec
 | golden eagle (circling) (`eagle`, `eagle-flapping`) | bird | 5 (`soarer`) | 1 instance (any width) | in front of the plants | `raptorAt` [L1104](../../src/nursery/assets/js/kit/animals.js#L1104); arrives [L525](../../src/nursery/assets/js/scenes/smokies.js#L525); drawn [L582](../../src/nursery/assets/js/scenes/smokies.js#L582) |
 | northern cardinal (`cardinal`) | bird | 3 (`cardinal`) | 1 instance (any width) | in front of the plants | `flyerAt` [L1316](../../src/nursery/assets/js/kit/animals.js#L1316); arrives [L523](../../src/nursery/assets/js/scenes/smokies.js#L523); drawn [L584](../../src/nursery/assets/js/scenes/smokies.js#L584) |
 | chimney swift (`swift`) | bird | 4 (`swift`) | 1 instance (any width) | in front of the plants | `flyerAt` [L1316](../../src/nursery/assets/js/kit/animals.js#L1316); arrives [L524](../../src/nursery/assets/js/scenes/smokies.js#L524); drawn [L585](../../src/nursery/assets/js/scenes/smokies.js#L585) |
-| wild turkey (`turkey`) | animal | 3 (`turkey`) | 1 instance (any width) | in front of the plants | `turkeyAt` [L363](../../src/nursery/assets/js/scenes/smokies.js#L363); arrives [L427](../../src/nursery/assets/js/scenes/smokies.js#L427); drawn [L560](../../src/nursery/assets/js/scenes/smokies.js#L560) |
-| groundhog (`groundhog`, `groundhog-sitting`) | animal | 5 (`groundhog`) | 1 instance (any width) | in front of the plants | `groundhogAt` [L345](../../src/nursery/assets/js/scenes/smokies.js#L345); arrives [L429](../../src/nursery/assets/js/scenes/smokies.js#L429); drawn [L563](../../src/nursery/assets/js/scenes/smokies.js#L563) |
-| white-tailed deer (`deer`, `deer-antlered`, `deer-flag`) | animal | 4 (`deer[0]`), 7 (`deer[1]`) | 2 instances (any width) | in front of the plants | `cervidAt` [L456](../../src/nursery/assets/js/kit/animals.js#L456); arrives [L428](../../src/nursery/assets/js/scenes/smokies.js#L428), [L430](../../src/nursery/assets/js/scenes/smokies.js#L430); drawn [L561](../../src/nursery/assets/js/scenes/smokies.js#L561) |
+| wild turkey (`turkey`) | animal | 3 (`turkey`) | 1 instance (any width) | in front of the plants | `turkeyAt` [L363](../../src/nursery/assets/js/scenes/smokies.js#L363); arrives [L428](../../src/nursery/assets/js/scenes/smokies.js#L428); drawn [L560](../../src/nursery/assets/js/scenes/smokies.js#L560) |
+| groundhog (`groundhog`, `groundhog-sitting`) | animal | 1 (`groundhog`) | 1 instance (any width) | in front of the plants | `groundhogAt` [L345](../../src/nursery/assets/js/scenes/smokies.js#L345); arrives [L427](../../src/nursery/assets/js/scenes/smokies.js#L427); drawn [L563](../../src/nursery/assets/js/scenes/smokies.js#L563) |
+| white-tailed deer (`deer`, `deer-antlered`, `deer-flag`) | animal | 4 (`deer[0]`), 7 (`deer[1]`) | 2 instances (any width) | in front of the plants | `cervidAt` [L456](../../src/nursery/assets/js/kit/animals.js#L456); arrives [L429](../../src/nursery/assets/js/scenes/smokies.js#L429), [L430](../../src/nursery/assets/js/scenes/smokies.js#L430); drawn [L561](../../src/nursery/assets/js/scenes/smokies.js#L561) |
 | black bear and cub (`bear`, `bear-rearing`, `bear-cub`) | animal | 6 (`bears[0]`), 8 (`bears[1]`) | 2 instances (any width) | in front of the plants | `bearAt` [L93](../../src/nursery/assets/js/kit/animals.js#L93); arrives [L431](../../src/nursery/assets/js/scenes/smokies.js#L431), [L433](../../src/nursery/assets/js/scenes/smokies.js#L433); drawn [L565](../../src/nursery/assets/js/scenes/smokies.js#L565), [L569](../../src/nursery/assets/js/scenes/smokies.js#L569) |
 | mist bands (`mist`) | effect | 0 | 7 bands, always (any width) | in front of the plants | `mistAt` [L19](../../src/nursery/assets/js/kit/effects.js#L19); starts [L405](../../src/nursery/assets/js/scenes/smokies.js#L405); drawn [L559](../../src/nursery/assets/js/scenes/smokies.js#L559) |
 | bull elk in the rut (`elk`, `elk-bugle`) | animal | 7 (`elk`) | 1 instance (any width) | in front of the plants | `cervidAt` [L456](../../src/nursery/assets/js/kit/animals.js#L456); arrives [L432](../../src/nursery/assets/js/scenes/smokies.js#L432); drawn [L562](../../src/nursery/assets/js/scenes/smokies.js#L562) |

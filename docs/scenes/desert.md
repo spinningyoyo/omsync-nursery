@@ -9,13 +9,13 @@ The Joshua Tree scene: Joshua trees, yucca, cholla and ocotillo on open sand, wi
 | Stage | New plants | New animals | Effects |
 | --- | --- | --- | --- |
 | 0 | none (bare soil) | none | stars and the Milky Way (dark theme) |
-| 1 | yucca, sage, boulders | great horned owl (night) | none |
+| 1 | yucca, sage, boulders | jackrabbit (`rabbit`), great horned owl (night) | none |
 | 2 | tree, granite, pad, cholla, ocotillo | red-tailed hawk | none |
 | 3 | rockpile, wildflower | roadrunner (`runner`), desert bighorn on its granite pile | Perseid showers (night): a wide burst from Perseus, then a rain across the sky |
 | 4 | none | desert tortoise (`tortoise`) | tumbleweed (`tumble`) |
 | 5 | none | coyote and pup (`coyotes[0]`), coyote and pup (`coyotes[1]`) | none |
 | 6 | none | turkey vultures (`vultures`), snake | none |
-| 7 | none | jackrabbit (`rabbit`) | none |
+| 7 | none | none | none |
 | 8 | none | none | none |
 
 ## Elements
@@ -36,7 +36,7 @@ The Joshua Tree scene: Joshua trees, yucca, cholla and ocotillo on open sand, wi
 | turkey vultures (`vulture`, `vulture-tilt`) | bird | 6 (`vultures`) | 1 instance (any width) | in front of the plants | `vulturesAt` [L423](../../src/nursery/assets/js/scenes/desert.js#L423); arrives [L715](../../src/nursery/assets/js/scenes/desert.js#L715); drawn [L761](../../src/nursery/assets/js/scenes/desert.js#L761) |
 | roadrunner (`roadrunner`, `roadrunner-standing`) | animal | 3 (`runner`) | 1 instance (any width) | in front of the plants | `roadrunnerAt` [L459](../../src/nursery/assets/js/scenes/desert.js#L459); arrives [L675](../../src/nursery/assets/js/scenes/desert.js#L675); drawn [L778](../../src/nursery/assets/js/scenes/desert.js#L778) |
 | snake (`snake`) | animal | 6 | 1, on about 4 visits in 10 (any width) | in front of the plants | `snakeAt` [L477](../../src/nursery/assets/js/scenes/desert.js#L477); arrives [L682](../../src/nursery/assets/js/scenes/desert.js#L682); drawn [L776](../../src/nursery/assets/js/scenes/desert.js#L776) |
-| jackrabbit (`rabbit`) | animal | 7 (`rabbit`) | 1 instance (any width) | in front of the plants | `hareAt` [L721](../../src/nursery/assets/js/kit/animals.js#L721); arrives [L683](../../src/nursery/assets/js/scenes/desert.js#L683); drawn [L777](../../src/nursery/assets/js/scenes/desert.js#L777) |
+| jackrabbit (`rabbit`) | animal | 1 (`rabbit`) | 1 instance (any width) | in front of the plants | `hareAt` [L721](../../src/nursery/assets/js/kit/animals.js#L721); arrives [L683](../../src/nursery/assets/js/scenes/desert.js#L683); drawn [L777](../../src/nursery/assets/js/scenes/desert.js#L777) |
 | coyote and pup (`coyote`, `coyote-howl`, `coyote-pup`, `coyote-pup-sitting`, `coyote-pup-howl`) | animal | 5 (`coyotes[0]`), 5 (`coyotes[1]`) | 2 instances (any width) | in front of the plants | `canidAt` [L283](../../src/nursery/assets/js/kit/animals.js#L283); arrives [L679](../../src/nursery/assets/js/scenes/desert.js#L679), [L680](../../src/nursery/assets/js/scenes/desert.js#L680); drawn [L775](../../src/nursery/assets/js/scenes/desert.js#L775) |
 | tumbleweed (`tumbleweed`) | effect | 4 (`tumble`) | 1 instance (any width) | in front of the plants | `tumbleAt` [L495](../../src/nursery/assets/js/scenes/desert.js#L495); starts [L713](../../src/nursery/assets/js/scenes/desert.js#L713); drawn [L762](../../src/nursery/assets/js/scenes/desert.js#L762) |
 | stars and the Milky Way (dark theme) (`sky`) | effect | 0 | 70 stars and the Milky Way (any width) | behind the plants (drawBack, dark theme only) | `skyAt` [L522](../../src/nursery/assets/js/scenes/desert.js#L522); starts [L752](../../src/nursery/assets/js/scenes/desert.js#L752); drawn [L753](../../src/nursery/assets/js/scenes/desert.js#L753) |

@@ -9,9 +9,9 @@ Yellowstone National Park in Wyoming: sagebrush steppe and lodgepole pines under
 | Stage | New plants | New animals | Effects |
 | --- | --- | --- | --- |
 | 0 | none (bare soil) | none | stars (dark theme) |
-| 1 | sagebrush, boulder | none | none |
+| 1 | sagebrush, boulder | pronghorn (`pronghorn`) | none |
 | 2 | range, lodgepole, wildflower, hotSpring, geyserCone | bald eagle (slow flyby, side-on) (`eagle`) | hot spring steam |
-| 3 | aspen, crag | pronghorn (`pronghorn`), bighorn ram on its crag, mountain bluebird (`bluebird`) | aspen seed fluff |
+| 3 | aspen, crag | bighorn ram on its crag, mountain bluebird (`bluebird`) | aspen seed fluff |
 | 4 | log | bison and calf (`bison`) | none |
 | 5 | none | gray wolf and yearling (`wolves[0]`), gray wolf and yearling (`wolves[1]`) | geyser eruption, steam surge (dark theme) |
 | 6 | none | elk (bull and cow) (`elk[0]`), elk (bull and cow) (`elk[1]`), bald eagle (circling) (`soarer`), trumpeter swan (`swan`) | none |
@@ -34,7 +34,7 @@ Yellowstone National Park in Wyoming: sagebrush steppe and lodgepole pines under
 | **hotSpring** | plant | 2 | 1 / 1 / 1 | near | painter `hotSpring` [L245](../../src/nursery/assets/js/scenes/yellowstone.js#L245); placed [L349](../../src/nursery/assets/js/scenes/yellowstone.js#L349) |
 | bison and calf (`bison`, `bison-grazing`, `bison-calf`) | animal | 4 (`bison`), 8 (`calf`) | 2 instances (any width) | in front of the plants | `bisonAt` [L443](../../src/nursery/assets/js/scenes/yellowstone.js#L443); arrives [L629](../../src/nursery/assets/js/scenes/yellowstone.js#L629), [L640](../../src/nursery/assets/js/scenes/yellowstone.js#L640); drawn [L755](../../src/nursery/assets/js/scenes/yellowstone.js#L755), [L756](../../src/nursery/assets/js/scenes/yellowstone.js#L756) |
 | gray wolf and yearling (`wolf`, `wolf-sitting`, `wolf-yearling`, `wolf-yearling-sitting`) | animal | 5 (`wolves[0]`), 5 (`wolves[1]`) | 2 instances (any width) | in front of the plants | `canidAt` [L283](../../src/nursery/assets/js/kit/animals.js#L283); arrives [L631](../../src/nursery/assets/js/scenes/yellowstone.js#L631), [L632](../../src/nursery/assets/js/scenes/yellowstone.js#L632); drawn [L757](../../src/nursery/assets/js/scenes/yellowstone.js#L757) |
-| pronghorn (`pronghorn`) | animal | 3 (`pronghorn`) | 1 instance (any width) | in front of the plants | `cervidAt` [L456](../../src/nursery/assets/js/kit/animals.js#L456); arrives [L628](../../src/nursery/assets/js/scenes/yellowstone.js#L628); drawn [L753](../../src/nursery/assets/js/scenes/yellowstone.js#L753) |
+| pronghorn (`pronghorn`) | animal | 1 (`pronghorn`) | 1 instance (any width) | in front of the plants | `cervidAt` [L456](../../src/nursery/assets/js/kit/animals.js#L456); arrives [L628](../../src/nursery/assets/js/scenes/yellowstone.js#L628); drawn [L753](../../src/nursery/assets/js/scenes/yellowstone.js#L753) |
 | bighorn ram on its crag (`bighorn`, `bighorn-look`) | animal | 3 | 1, perched (any width) | in front of the plants | `sheepAt` [L524](../../src/nursery/assets/js/kit/animals.js#L524); arrives [L705](../../src/nursery/assets/js/scenes/yellowstone.js#L705); drawn [L747](../../src/nursery/assets/js/scenes/yellowstone.js#L747) |
 | grizzly bear (`grizzly`) | animal | 7 (`grizzly`) | 1 instance (any width) | in front of the plants | `bearAt` [L93](../../src/nursery/assets/js/kit/animals.js#L93); arrives [L639](../../src/nursery/assets/js/scenes/yellowstone.js#L639); drawn [L758](../../src/nursery/assets/js/scenes/yellowstone.js#L758) |
 | elk (bull and cow) (`elk`, `elk-cow`) | animal | 6 (`elk[0]`), 6 (`elk[1]`) | 2 instances (any width) | in front of the plants | `cervidAt` [L456](../../src/nursery/assets/js/kit/animals.js#L456); arrives [L636](../../src/nursery/assets/js/scenes/yellowstone.js#L636), [L637](../../src/nursery/assets/js/scenes/yellowstone.js#L637); drawn [L754](../../src/nursery/assets/js/scenes/yellowstone.js#L754) |

@@ -644,7 +644,7 @@ const extras = {
   onGrow(f) {
     const x = f.extra;
     if (f.reduced) x.fjord = fjordLevel(f);
-    if (f.stage >= 2) {
+    if (f.stage >= 1) {
       enter(f, x.fox);
       enterBehind(f, x.pup, x.fox, 12);
     }

@@ -424,9 +424,9 @@ const extras = {
 
   onGrow(f) {
     const x = f.extra;
+    if (f.stage >= 1) enter(f, x.groundhog);
     if (f.stage >= 3) enter(f, x.turkey);
     if (f.stage >= 4) enter(f, x.deer[0]);
-    if (f.stage >= 5 && !narrow(f)) enter(f, x.groundhog);
     if (f.stage >= 7 && !narrow(f)) enterBehind(f, x.deer[1], x.deer[0], 22);
     if (f.stage >= 6) enter(f, x.bears[0]);
     if (f.stage >= 7) enter(f, x.elk);

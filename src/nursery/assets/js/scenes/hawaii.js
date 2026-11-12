@@ -416,7 +416,7 @@ const extras = {
     const x = f.extra;
     if (f.reduced) x.sea = tide(f);
     x.crabs.forEach((crab, i) => {
-      if (f.stage >= 3 + i * 3) enter(f, crab);
+      if (f.stage >= 1 + i * 3) enter(f, crab);
     });
     if (f.stage >= 3) enter(f, x.moa);
     if (f.stage >= 4) {

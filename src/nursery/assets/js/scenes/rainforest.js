@@ -859,12 +859,13 @@ const extras = {
   },
 
   // Each stage brings something new: kingfishers, the hornbill pair, the gibbon, the
-  // macaque, the langur, the otters, the elephants.
+  // macaque, the langur, the otters, the elephants. The first otter comes at stage 1, the rest of
+  // the line at 7.
   onGrow(f) {
     const { monkey, otters, elephants } = f.extra;
     if (f.stage >= 4) enter(f, monkey);
+    if (f.stage >= 1) enter(f, otters[0]);
     if (f.stage >= 7) {
-      enter(f, otters[0]);
       enterBehind(f, otters[1], otters[0], 10);
       if (!narrow(f)) enterBehind(f, otters[2], otters[1], 10);
     }

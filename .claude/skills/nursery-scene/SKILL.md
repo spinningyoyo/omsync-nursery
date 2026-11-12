@@ -52,6 +52,9 @@ Which path:
 - **Feel and density.** Open scenes (desert, beach, savanna) have at most 5 ground animals and 1
   flyer at a time; dense scenes (rainforest, woods) at most 8. Use `narrow(f)` to leave out the
   young and extras on a phone.
+- **First watering.** Every scene brings one ground animal at stage 1, so the first watering always
+  shows an animal by day. Pick the smallest walker the scene has, and keep it out of `narrow(f)` so
+  phones show it too.
 - **Food chain.** At least one predator, and more prey than predators.
 - **Motion mix.** At least one fast mover, slow walkers, one constant ambient layer (mist, leaves,
   dust, fireflies) and the timed event. Every walker has an idle pose and keeps its legs down when

@@ -9,12 +9,12 @@ The Hundred Acre Wood from A. Source: [scenes/hundredacre.js](../../src/nursery/
 | Stage | New plants | New animals | Effects |
 | --- | --- | --- | --- |
 | 0 | none (bare soil) | none | shepard's birds (light theme), stars and a moon (dark theme), fireflies (dark theme) |
-| 1 | bracken, heather | none | none |
+| 1 | bracken, heather | rabbit (`rabbit`) | none |
 | 2 | hills, pine | owl (`owl`), Kessie (`kessie`), bee swarm (`bees`) | none |
 | 3 | tree, fir, gorse, slim, poohHouse | pooh bear (`pooh`) | none |
 | 4 | owlHouse, pigletHouse, honeyPots | piglet, at pooh's side (`piglet`) | none |
 | 5 | beeTree, gloomyPlace, thistle, hive | eeyore (`eeyore`) | none |
-| 6 | tracks, pit | rabbit (`rabbit`) | none |
+| 6 | tracks, pit | none | none |
 | 7 | none | tigger (`tigger`), roo (`roo`) | none |
 | 8 | none | blue balloon (`balloon`) | balloon flight (pooh and piglet, with the bees) |
 
@@ -50,11 +50,11 @@ The Hundred Acre Wood from A. Source: [scenes/hundredacre.js](../../src/nursery/
 | Kessie (`kessie`) | bird | 2 (`kessie`) | 1 instance (any width) | in front of the plants | `flyerAt` [L1316](../../src/nursery/assets/js/kit/animals.js#L1316); arrives [L1154](../../src/nursery/assets/js/scenes/hundredacre.js#L1154); drawn [L1188](../../src/nursery/assets/js/scenes/hundredacre.js#L1188) |
 | bee swarm (`bees`) | bird | 2 (`bees`) | 1 instance (any width) | in front of the plants | `beesAt` [L891](../../src/nursery/assets/js/scenes/hundredacre.js#L891); arrives [L1156](../../src/nursery/assets/js/scenes/hundredacre.js#L1156); drawn [L1189](../../src/nursery/assets/js/scenes/hundredacre.js#L1189) |
 | blue balloon (`balloon`) | bird | 8 (`balloon`) | 1 instance (any width) | in front of the plants | `balloonAt` [L876](../../src/nursery/assets/js/scenes/hundredacre.js#L876); arrives [L1159](../../src/nursery/assets/js/scenes/hundredacre.js#L1159); drawn [L1190](../../src/nursery/assets/js/scenes/hundredacre.js#L1190) |
-| pooh bear (`pooh`, `pooh-sitting`) | animal | 3 (`pooh`) | 1 instance (any width) | in front of the plants | `poohAt` [L669](../../src/nursery/assets/js/scenes/hundredacre.js#L669); arrives [L1132](../../src/nursery/assets/js/scenes/hundredacre.js#L1132); drawn [L1196](../../src/nursery/assets/js/scenes/hundredacre.js#L1196) |
-| piglet, at pooh's side (`piglet`) | animal | 4 (`piglet`) | 1 instance (any width) | in front of the plants | `pigletAt` [L717](../../src/nursery/assets/js/scenes/hundredacre.js#L717); arrives [L1135](../../src/nursery/assets/js/scenes/hundredacre.js#L1135); drawn [L1197](../../src/nursery/assets/js/scenes/hundredacre.js#L1197) |
+| pooh bear (`pooh`, `pooh-sitting`) | animal | 3 (`pooh`) | 1 instance (any width) | in front of the plants | `poohAt` [L669](../../src/nursery/assets/js/scenes/hundredacre.js#L669); arrives [L1133](../../src/nursery/assets/js/scenes/hundredacre.js#L1133); drawn [L1196](../../src/nursery/assets/js/scenes/hundredacre.js#L1196) |
+| piglet, at pooh's side (`piglet`) | animal | 4 (`piglet`) | 1 instance (any width) | in front of the plants | `pigletAt` [L717](../../src/nursery/assets/js/scenes/hundredacre.js#L717); arrives [L1136](../../src/nursery/assets/js/scenes/hundredacre.js#L1136); drawn [L1197](../../src/nursery/assets/js/scenes/hundredacre.js#L1197) |
 | balloon flight (pooh and piglet, with the bees) (`pooh-balloon`, `piglet-balloon`, `bees`) | effect | 8 | one at 12 s after growth, then one each time pooh walks to the far edge (any width) | in front of the plants | `flight` [L1033](../../src/nursery/assets/js/scenes/hundredacre.js#L1033); starts [L1036](../../src/nursery/assets/js/scenes/hundredacre.js#L1036); drawn [L1191](../../src/nursery/assets/js/scenes/hundredacre.js#L1191) |
-| eeyore (`eeyore`, `eeyore-sitting`) | animal | 5 (`eeyore`) | 1 instance (any width) | in front of the plants | `eeyoreAt` [L777](../../src/nursery/assets/js/scenes/hundredacre.js#L777); arrives [L1138](../../src/nursery/assets/js/scenes/hundredacre.js#L1138); drawn [L1192](../../src/nursery/assets/js/scenes/hundredacre.js#L1192) |
-| rabbit (`rabbit`) | animal | 6 (`rabbit`) | 1 instance (any width) | in front of the plants | `rabbitAt` [L844](../../src/nursery/assets/js/scenes/hundredacre.js#L844); arrives [L1139](../../src/nursery/assets/js/scenes/hundredacre.js#L1139); drawn [L1193](../../src/nursery/assets/js/scenes/hundredacre.js#L1193) |
+| eeyore (`eeyore`, `eeyore-sitting`) | animal | 5 (`eeyore`) | 1 instance (any width) | in front of the plants | `eeyoreAt` [L777](../../src/nursery/assets/js/scenes/hundredacre.js#L777); arrives [L1139](../../src/nursery/assets/js/scenes/hundredacre.js#L1139); drawn [L1192](../../src/nursery/assets/js/scenes/hundredacre.js#L1192) |
+| rabbit (`rabbit`) | animal | 1 (`rabbit`) | 1 instance (any width) | in front of the plants | `rabbitAt` [L844](../../src/nursery/assets/js/scenes/hundredacre.js#L844); arrives [L1132](../../src/nursery/assets/js/scenes/hundredacre.js#L1132); drawn [L1193](../../src/nursery/assets/js/scenes/hundredacre.js#L1193) |
 | tigger (`tigger`, `tigger-sitting`) | animal | 7 (`tigger`) | 1 instance (any width) | in front of the plants | `tiggerAt` [L797](../../src/nursery/assets/js/scenes/hundredacre.js#L797); arrives [L1141](../../src/nursery/assets/js/scenes/hundredacre.js#L1141); drawn [L1194](../../src/nursery/assets/js/scenes/hundredacre.js#L1194) |
 | roo (`roo`) | animal | 7 (`roo`) | 1 instance (any width) | in front of the plants | `rooAt` [L861](../../src/nursery/assets/js/scenes/hundredacre.js#L861); arrives [L1142](../../src/nursery/assets/js/scenes/hundredacre.js#L1142); drawn [L1195](../../src/nursery/assets/js/scenes/hundredacre.js#L1195) |
 
