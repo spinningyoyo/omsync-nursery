@@ -201,15 +201,23 @@ def page(driver: Any, host_server: HostServer) -> Page:
 def nursery_template(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """A git repository holding the code under test, committed on `main`, with no remote.
 
-    It has what the commands need to run (the package, pyproject.toml, uv.lock and .gitignore) and
-    is never the real checkout, so a test cannot change the owner's files or their git history.
+    It has what the commands need to run (the package, pyproject.toml, uv.lock, .gitignore, and the
+    README.md and LICENSE that pyproject.toml names for the build) and is never the real checkout,
+    so a test cannot change the owner's files or their git history.
     """
     repo = tmp_path_factory.mktemp("template") / "nursery"
     repo.mkdir()
     shutil.copytree(
         PACKAGE, repo / "src" / "nursery", ignore=shutil.ignore_patterns("__pycache__", "*.pyc")
     )
-    for name in ("pyproject.toml", "uv.lock", ".gitignore", ".python-version"):
+    for name in (
+        "pyproject.toml",
+        "uv.lock",
+        ".gitignore",
+        ".python-version",
+        "README.md",
+        "LICENSE",
+    ):
         if (ROOT / name).is_file():
             shutil.copy2(ROOT / name, repo / name)
     pin_version(repo, TEMPLATE_VERSION)

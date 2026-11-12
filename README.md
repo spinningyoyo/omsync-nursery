@@ -1,61 +1,65 @@
 # omsync-nursery
 
-The pixel-art scenes that grow on the sign-in page of omsync, and the Nursery Studio that you use
-to draw them. Start with [docs/overview.md](docs/overview.md). It shows how the owner and the
-agent work together, and what omsync uses from this repository.
+omsync-nursery holds the pixel-art scenes that grow on the sign-in page of omsync, a personal
+finance tracker. It also holds the Nursery Studio, where you draw the scenes, and omsync's pixel
+mascot. omsync installs this repository as a Python package and serves the scene files from it. The
+studio and the `nursery` command run from a checkout of this repository.
 
-## Set up
+> Pull requests are by invitation only. Open an issue first. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Getting started
+
+You need [uv](https://docs.astral.sh/uv/) and Chrome (or another Chromium browser). The checks, the
+previews and the tests drive headless Chrome.
 
 ```sh
+git clone https://github.com/spinningyoyo/omsync-nursery
+cd omsync-nursery
 uv sync
-git config core.hooksPath .githooks   # do this one time for each clone: it runs the checks and checks commit messages
+git config core.hooksPath .githooks   # once for each clone: it runs the checks before each commit
+uv run nursery                        # open the studio
 ```
 
-## Commands
-
-```sh
-sh scripts/check.sh               # lint, format and check everything (the pre-commit hook runs it)
-uv run nursery                    # open the studio in its own window
-uv run nursery check [SCENE]      # compare your saved pixel edits with the code
-uv run nursery render SCENE NAME  # draw a proposal into its sheet
-uv run nursery proposals [SCENE]  # show each review and the pixel edits on proposals
-uv run nursery catalog            # make docs/scenes/<scene>.md again from the code
-uv run nursery brand [--check]    # build the mascot, the favicons and the studio's mark from the grid
-uv run nursery preview ...        # draw scenes or a sprite sheet to images
-uv run nursery release [--patch|--minor|--major] [--dry-run]  # check the scenes, tag vX.Y.Z, move the release branch
-```
-
-The studio opens in a Chrome window without tabs. If no Chromium browser is installed, it opens in
-a normal browser tab. Use `--no-window` to start the server only. Run the command from this
-checkout, because the studio draws the scenes from the files in it.
+The studio opens in its own Chrome window. If no Chromium browser is installed, it opens a tab in
+your normal browser. Use `uv run nursery studio --no-window` to start the server only.
+The studio is a local tool. Do not expose its port to a network.
+[docs/overview.md](docs/overview.md) shows how to edit pixels and review art in the studio.
 
 ## Development
 
 ```sh
-sh scripts/check.sh                # lint, format, import boundaries, brand and catalogue freshness
-uv run pytest                      # every test; needs Chrome (a few minutes)
-uv run pytest -m "not browser"     # only the tests that need no Chrome
-uv run pytest -m "not slow"        # leave out the tests that build a wheel
+sh scripts/check.sh                 # ruff, Biome, import boundaries, brand files and scene docs
+uv run pytest                       # the end-to-end tests
+uv run nursery brand                # build the mascot and the favicons from the mascot's grid
+uv run nursery catalog              # build docs/scenes/<scene>.md from the code
+uv run nursery release --dry-run    # check a release and change nothing
+uv run nursery --help               # every command
 ```
 
-The tests are end-to-end only, in `tests/e2e/`: the engine in headless Chrome on a page that stands
-in for omsync, the `nursery` command as a subprocess in a throwaway git repository, the studio in
-Chrome, and the wheel in a fresh venv. There are no unit tests. GitHub Actions runs the checks and
-the tests on each push (`.github/workflows/ci.yml`).
+The tests are end-to-end tests only. They are in `tests/e2e/`. GitHub Actions runs the checks and
+the tests on each push.
 
-## Where things are
+## Using it from omsync
 
-- `src/nursery/assets/`: the files that omsync installs. `js/nursery.js` is the engine, and its
-  header tells what a scene must supply. `js/scenes/` has one module for each scene. `js/kit/` has
-  the shared drawing code. `scenes.json` and `css/scenes.css` give the scene names and colours.
-  `brand/` has the grid of omsync's mascot and the mascot and favicon files built from it.
-- `src/nursery/`: the `nursery` command. `studio/` is the studio (a Python server, and Lit
-  components in `studio/app/`).
-- `docs/scenes/`: one catalogue file for each scene. Do not edit them. `nursery catalog` writes
-  them.
-- `docs/adr/`: the decisions, and the reasons for them.
-- `.claude/skills/nursery-scene/`: the skill that agents use for scene work.
+omsync names this repository by its git URL and the `release` branch, in its `pyproject.toml`:
 
-## License
+```toml
+[tool.uv.sources]
+omsync-nursery = { git = "https://github.com/spinningyoyo/omsync-nursery", branch = "release" }
+```
 
-AGPL-3.0. See [LICENSE](LICENSE).
+omsync's `uv.lock` records the exact commit. omsync reads the scene files through `nursery.assets`.
+[docs/overview.md](docs/overview.md) describes this contract and the release rules.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) first. [AGENTS.md](AGENTS.md) has the rules for agents and
+for people who work in the repository. [docs/README.md](docs/README.md) is the index of the
+documents.
+
+## Licence
+
+omsync-nursery is licensed under the [AGPL-3.0-only](LICENSE). Copyright (C) 2026 spinningyoyo.
+
+The studio includes third-party files under their own licences: Lit (BSD-3-Clause) and Lucide
+(ISC). [VENDOR.md](src/nursery/studio/app/vendor/VENDOR.md) lists them and links the licence texts.

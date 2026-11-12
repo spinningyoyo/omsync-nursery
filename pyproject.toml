@@ -2,7 +2,21 @@
 name = "omsync-nursery"
 version = "0.1.1"
 description = "Pixel-art scenes for omsync's sign-in page, and the Nursery Studio that draws them."
+readme = "README.md"
 requires-python = ">=3.12"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+authors = [{ name = "spinningyoyo" }]
+keywords = ["pixel-art", "canvas", "sign-in", "scenes", "omsync"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: JavaScript",
+    "Topic :: Multimedia :: Graphics",
+]
 # The installed package is the scene files and nursery.assets, which need nothing. The studio and
 # its tools (catalogue, check, render, preview, release) drive Chrome, so they live in the dev group,
 # which `uv sync` and `uv run` in this checkout install.
@@ -14,6 +28,11 @@ dev = [
     "ruff",
     "selenium>=4.20",
 ]
+
+[project.urls]
+Repository = "https://github.com/spinningyoyo/omsync-nursery"
+Issues = "https://github.com/spinningyoyo/omsync-nursery/issues"
+Changelog = "https://github.com/spinningyoyo/omsync-nursery/blob/main/CHANGELOG.md"
 
 [project.scripts]
 nursery = "nursery.cli:main"

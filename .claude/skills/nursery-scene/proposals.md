@@ -1,9 +1,9 @@
 # Proposals
 
 A proposal is a module at `.nursery/<scene>/proposals/<name>.js` (name: letters, digits, `-`,
-`_`). The running studio picks it up within a few seconds and shows it in the Inbox: today's
-sprite beside each variant in day and night, played, stepped and slowed, and the chosen variant
-over the live scene. Import with absolute paths: `/js/kit/animals.js`, `/js/kit/pixel.js`, and
+`_`). The running studio picks it up within a few seconds and shows it in the Inbox: the
+current sprite beside each variant in day and night, played, stepped and slowed, and the chosen
+variant over the live scene. Import with absolute paths: `/js/kit/animals.js`, `/js/kit/pixel.js`, and
 `/copies/<scene>.js` for the scene's own painters and `...At` functions.
 
 ```js

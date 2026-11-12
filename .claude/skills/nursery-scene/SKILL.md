@@ -40,12 +40,11 @@ Which path:
    `src/nursery/assets/scenes.json` (id and picker label, in picker order) and
    `src/nursery/assets/css/scenes.css` (tint and backdrop washes, day and night); the omsync
    contract in `docs/overview.md` says what omsync reads.
-7. **Release** only when the user asks: `uv run nursery release --patch` for a new scene or an art
-   fix, or `--minor` for a change to the omsync contract (while the major version is 0). Add
-   `--dry-run` first. The first release of a version needs no flag. A release changes nothing in
-   omsync. omsync takes it when its owner runs its upgrade script. To see the art in omsync before
-   a release, run `sh scripts/dev-nursery.sh serve` in omsync. When what the user sees changes,
-   update the scene paragraph in omsync's `docs/architecture/interface.md`.
+7. **Release** only when the user asks. The [Release section of docs/overview.md](../../../docs/overview.md#release)
+   has the steps and says which flag to use. Run with `--dry-run` first. A release changes nothing
+   in omsync. omsync takes it when its owner runs its upgrade script. To see the art in omsync
+   before a release, run `sh scripts/dev-nursery.sh serve` in omsync. When what the user sees
+   changes, update the scene paragraph in omsync's `docs/architecture/interface.md`.
 
 ## Design rules
 
@@ -64,9 +63,9 @@ Which path:
   it stops. Flyers are fly-across (`flyBy`), circling in place (`soarAt`, as the rainforest eagle
   does, never crossing the whole page), or perched (`percher`). A scene's daytime flyers cover a
   slow (up to 14 px/s), a medium (15 to 30) and a fast (31 and up) flyby and one circler.
-- **Size tiers**, in art px at scale 1. Large animals are compressed and small ones floored so they
-  stay readable; no animal is wider than the 32-px mascot. Storybook casts only keep consistent
-  within their scene.
+- **Size tiers**, in art px at scale 1. The tiers compress large animals and set a minimum size for
+  small ones, so each stays readable. No animal is wider than the 32-px mascot. A storybook cast
+  stays consistent only within its own scene.
 
   | Tier | Who | Width | Height |
   |---|---|---|---|
@@ -89,8 +88,8 @@ Which path:
 - **Style.** Flat colour with one darker shade and no ink outlines; storybook scenes follow the
   public-domain illustrations (Shepard, Tenniel) unless the user has chosen otherwise.
 - **Families.** Every animal and tree belongs to a family with one shared design, listed in
-  `src/nursery/studio/shared/families.js`. Members differ only in size, colour and the traits the family names:
-  a tiger would be the lion without the mane, with its own colour and stripes, and a fox, coyote and
+  `src/nursery/studio/shared/families.js`. Members differ only in size, colour and the traits the
+  family names: a tiger would be the lion without the mane, with its own colour and stripes, and a fox, coyote and
   wolf are one design at three sizes. Refresh a whole family at once, never one member alone. When
   something has no family, add one. Storybook characters are listed with their real family to
   compare, but keep their book's look.
@@ -114,9 +113,10 @@ defined, so read the file's header and the comment above the function.
 - `pixel.js`: placement (`placeLandmarks`, `grove`, `scatter`, `clearing`) and drawing (`part`,
   `scaledPart`, `sprite`).
 - `critters.js`: walkers, flyers (`flyBy`, `drift`, `soarAt`, `circlingPair`, `flock`), perchers and their idle
-  moves, `isNight`, `narrow`.
+  moves, `rest` (a stopped walker takes one of its poses), `isNight`, `narrow`.
 - `animals.js`: one design per family, a habitat variant chosen by `kind`. Extend a family with a
-  new `kind` rather than drawing a scene-local copy.
+  new `kind` rather than drawing a scene-local copy. The cats (`felidAt`) rest in `felidPoses(kind)`,
+  and the house cat's coats (`HOUSECAT_COATS`) spread into a scene's palettes.
 - `trees.js`: `broadleafTree`, `coniferTree`.
 - `plants.js`: `crossFlower`, `meadowFlower`.
 - `effects.js`: mist, stars, the Milky Way.

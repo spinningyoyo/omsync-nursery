@@ -296,6 +296,17 @@ class Studio(http.server.BaseHTTPRequestHandler):
     def route(self) -> list[str]:
         return [part for part in urlparse(self.path).path.split("/") if part]
 
+    def local(self) -> bool:
+        """True when the request names this machine. The server listens on 127.0.0.1 only, but a
+        web page can still reach it through DNS rebinding: its own host name then resolves to
+        127.0.0.1, and the Host header keeps that name. So a request for any other host is
+        refused."""
+        host = (self.headers.get("Host") or "").rsplit(":", 1)[0]
+        if host in ("127.0.0.1", "localhost"):
+            return True
+        self.send(403)
+        return False
+
     def send_static(self, parts: list[str]) -> bool:
         """Answer a request for one of the studio's own files; False when the path is not one."""
         if not parts:
@@ -331,6 +342,8 @@ class Studio(http.server.BaseHTTPRequestHandler):
         return True
 
     def do_GET(self):
+        if not self.local():
+            return
         parts = self.route()
         try:
             if self.send_static(parts) or self.send_api(parts):
@@ -350,6 +363,8 @@ class Studio(http.server.BaseHTTPRequestHandler):
             self.send(404)
 
     def do_PUT(self):
+        if not self.local():
+            return
         parts = self.route()
         try:
             if target := edit_folder(parts):
@@ -371,6 +386,8 @@ class Studio(http.server.BaseHTTPRequestHandler):
         self.send(204)
 
     def do_DELETE(self):
+        if not self.local():
+            return
         parts = self.route()
         try:
             if target := edit_folder(parts):

@@ -37,8 +37,8 @@ says they saved a mascot edit:
    pixel. The grid has one drawing for day and night. If the day and night patches differ in
    shape, ask the user.
 3. Run `uv run nursery brand`. It builds `mascot.svg`, `favicon.svg` and `favicon-32.png` in
-   `src/nursery/assets/brand/`, and the studio's mark and favicon in `studio/app/brand/`. Never
+   `src/nursery/assets/brand/`, and the studio's mark and favicon in `src/nursery/studio/app/brand/`. Never
    edit a built file, and never paste a copy of the mascot.
 4. `uv run nursery check brand` until every edit reads `in code`.
 5. Show the user the new mascot on the Icons page, then let them clear the edits there with Accept
-   and clear. omsync gets the new art when it takes the next release.
+   and clear. omsync gets the new art when it takes a release.

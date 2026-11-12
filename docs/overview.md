@@ -1,18 +1,50 @@
 # Overview
 
 omsync-nursery holds the pixel-art scenes for the sign-in page of omsync. It also holds the
-Nursery Studio. You use the studio to look at the scenes, edit their pixels and review new art.
+Nursery Studio and omsync's pixel mascot. You use the studio to look at the scenes, edit their
+pixels and review new art.
 
 The owner and a coding agent do the work together. The owner decides how the art looks. The
 agent changes the code. The studio is the place where each one shows work to the other.
 
 ## The parts
 
+```mermaid
+flowchart LR
+    subgraph Package ["The package: what omsync installs"]
+        Engine["nursery.js<br/>the engine"] --> Scenes["scenes/<br/>ten scene modules"]
+        Engine --> Kit["kit/<br/>shared drawing code"]
+        Scenes --> Kit
+        Files["scenes.json, scenes.css<br/>brand/"]
+        Assets["nursery.assets<br/>the file locations"] -.-> Engine
+        Assets -.-> Files
+    end
+    subgraph Tools ["Dev tools: a checkout only"]
+        Studio
+        Catalogue
+        Preview
+        Release
+        BrandBuild["Brand build"]
+    end
+    Studio --> Package
+    Catalogue --> Package
+    Preview --> Package
+    Release --> Package
+    BrandBuild -- writes --> Files
+    Catalogue -- writes --> Docs["docs/scenes/"]
+    Studio -- writes --> Work[".nursery/"]
+    omsync -- reads --> Assets
+```
+
+An arrow points from a part to the part that it needs. The package needs no dev tool. The engine
+imports scenes and the kit. A scene imports only the kit. A kit module imports only the kit.
+`sh scripts/check.sh` enforces these rules. omsync reads the package through `nursery.assets` only.
+
 | Part | Where | What it does |
 |---|---|---|
-| Scenes | `src/nursery/assets/js/` | The engine, ten scene modules and the kit that they draw with. omsync runs this code. |
+| Engine, scenes and kit | `src/nursery/assets/js/` | The code that omsync runs on its sign-in page. |
+| Mascot | `src/nursery/assets/brand/` | The grid of omsync's pixel mascot, and the files that `nursery brand` builds from it. |
 | Studio | `uv run nursery` | Shows each scene and each sprite from the code on disk. You edit pixels and review proposals here. |
-| Mascot | `src/nursery/assets/brand/` | The grid of omsync's pixel mascot, and the mascot and favicon files that `nursery brand` builds from it. |
 | Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `brand`, `preview` and `release`. Agents use most of them. |
 | Working folder | `.nursery/<scene>/` | Your saved edits, the proposals and your reviews. Git ignores this folder. |
 | Catalogue | `docs/scenes/<scene>.md` | One file for each scene. It lists each element and the line of code that draws it. |
@@ -83,73 +115,108 @@ sequenceDiagram
 7. Tell the agent that you reviewed the proposal.
 8. When the Inbox shows the proposal as Built, click Clear built.
 
-## Workflow 3: release
+## Release
 
 ```mermaid
 flowchart LR
-    subgraph N [This repository]
+    subgraph N ["This repository"]
         A[Commit here] --> B[nursery release]
         B --> C{Ready?}
         C -- No --> D[Stop and show the problem]
         C -- Yes --> E[Tag the release and move the release branch]
     end
-    subgraph O [omsync, on its own schedule]
+    subgraph O ["omsync, on its own schedule"]
         F[Run the upgrade script] --> G[Lock the newest release]
         G --> H[Run omsync's checks and tests]
         H --> I[One commit in omsync]
     end
-    E -. later .-> F
+    E -. "omsync takes it when its owner chooses" .-> F
 ```
 
-1. Commit all changes in this repository.
+1. Commit all changes in this repository. Move the `[Unreleased]` entries of `CHANGELOG.md` to
+   a section for the new version, and commit that change.
 2. Run `uv run nursery release --dry-run`. Correct each problem that it shows.
-3. Run `uv run nursery release` with a flag: `--patch`, `--minor` or `--major`. The flag raises the
-   version in `pyproject.toml`, commits it, and tags that commit `vX.Y.Z`. The first release of a
-   version (`v0.1.0` today) needs no flag.
+3. Run `uv run nursery release --patch`, `--minor` or `--major`. The flag raises the version in
+   `pyproject.toml`. The command commits the new version and tags that commit `vX.Y.Z`. If
+   `pyproject.toml` holds a version that has no tag, run the command with no flag. It releases
+   that version.
 
-While the major version is 0, a change to the omsync contract raises the minor (`--minor`, 0.1.0 to
-0.2.0). Any other change, such as a new scene or an art fix, raises the patch (`--patch`). From
-1.0.0, `--major` is a contract change, `--minor` is a new scene, and `--patch` is an art fix.
+[`release.py`](../src/nursery/release.py) is the full list of checks and steps. The release stops
+when a saved edit is not in the code, when an approved proposal is not built, or when a brand file
+is not what the grid builds.
 
-The release stops when a saved edit is not in the code, or when an approved proposal is not built.
-The release branch moves forward only. If it holds work that this commit does not, the release
-stops. A release does not change omsync. It pushes the tag and the branch only when this
+**Decision: omsync follows a branch.** The `main` branch holds work in progress. The `release`
+branch holds only tagged releases, and it moves forward only. omsync names the branch, and its
+lock file records the commit. Art reaches omsync when omsync upgrades, not when a commit lands
+here. The release does not change omsync. It pushes the tag and the branch only when this
 repository has a remote.
 
+**Decision: the version says if omsync must change.** The tag is `vX.Y.Z`, and `X.Y.Z` is the
+version in `pyproject.toml`. omsync gives a version range. A contract change raises a number that
+the range excludes, so omsync's lock refuses the release until omsync widens the range together
+with its host code. Choose the flag with this table.
+
+| Change | Major version 0 | From 1.0.0 |
+|---|---|---|
+| Contract change | `--minor` | `--major` |
+| New scene | `--patch` | `--minor` |
+| Art fix, or anything else | `--patch` | `--patch` |
+
 omsync takes a release when its owner runs `sh scripts/upgrade-nursery.sh` in omsync. The script
-locks the newest release, runs omsync's checks and tests, and commits. Then open the omsync
-sign-in page and look at the scene.
+locks the newest release inside the range, runs omsync's checks and tests, and commits. Then open
+the omsync sign-in page and look at the scene.
 
 To see art in omsync before a release, run `sh scripts/dev-nursery.sh serve` in omsync. It also
 shows colour changes.
 
+## The mascot
+
+```mermaid
+flowchart LR
+    Grid["mascot-grid.txt<br/>the master"] --> Build["nursery brand"]
+    Build --> Mascot["mascot.svg"]
+    Build --> Favicons["favicon.svg<br/>favicon-32.png"]
+    Build --> Mark["the studio's mark"]
+    Edit["Saved edit in the studio"] -. "the agent applies it" .-> Grid
+```
+
+**Decision: this repository owns omsync's mascot.** The mascot and the scenes draw at one art pixel
+size. One owner keeps that size in one place. The
+grid is the only master. [`brand.py`](../src/nursery/brand.py) builds every other file from it, so
+no copy can drift. `nursery brand --check` and `nursery release` stop when a built file is stale.
+
+**Decision: the studio treats the mascot as a pseudo-scene.** It has the id `brand`. It is not a
+scene: it has no module, no stages and no catalogue file. The studio edits it, saves its edits
+and checks them with the code that works for scenes, so the studio needs no second editor. The
+edits are in `.nursery/brand/edits/`, and `uv run nursery check brand` checks them.
+
 ## The omsync contract
 
 omsync uses the items in this section. If you change one of them, change omsync's host code at the
-same time. The host code is `static/js/controllers/nursery_controller.js`, `scene_controller.js`,
-`styles/tint.css` and `styles/landing.css` in omsync.
+same time. The host code is these files in omsync:
 
-**Package.** omsync installs this repository as the Python package `omsync-nursery`. omsync's
-`pyproject.toml` names this repository by its git URL and its `release` branch. Its `uv.lock`
-records the exact commit. Today the URL is a `file://` path to this checkout. omsync requires
-`>=0.1,<0.2`. A contract change raises the minor, so omsync refuses it at its lock. Then omsync
-must widen its range together with its host code.
+- `src/omsync/web/static/js/controllers/nursery_controller.js`
+- `src/omsync/web/static/js/controllers/scene_controller.js`
+- `src/omsync/web/styles/tint.css`
+- `src/omsync/web/styles/landing.css`
+- `src/omsync/web/styles/brand.css`
 
-**Files.** `nursery.assets` (`src/nursery/assets.py`) gives the location of these things:
+**Package.** omsync installs this repository as the Python package `omsync-nursery`. Its
+`pyproject.toml` names the repository by its GitHub URL and the `release` branch. Its `uv.lock`
+records the exact commit. A contract change raises the version past omsync's range. See
+[Release](#release).
+
+**Files.** `nursery.assets` ([`assets.py`](../src/nursery/assets.py)) gives the location of these
+things:
 
 - `JS`: the engine, the scenes and the kit. omsync serves this folder at `/static/vendor/nursery/`.
 - `SCENES_JSON`: the id and the picker label of each scene, in picker order. omsync makes its
   scene pickers from this file. A new scene shows in omsync with no change to omsync.
 - `SCENES_CSS`: the colours of each scene. omsync links this file as its own stylesheet.
 - `MASCOT_SVG`, `FAVICON_SVG` and `FAVICON_PNG`: omsync's pixel mascot and its two favicons. omsync
-  will serve them as its own `mascot.svg`, `favicon.svg` and `favicon-32.png`, with no copy.
-  `MASCOT_SVG` uses `currentColor` for the outline and the eye, and the CSS variable
-  `--mascot-body` for the body, as omsync's `brand.css` expects. `nursery brand` builds the three
-  files from the grid, and `nursery release` stops when they are out of date.
-
-  These three exports are a contract addition. They are in the next release, which raises the
-  minor version. Until omsync takes that release and changes its host code, it keeps its own
-  copies.
+  serves them as its own `mascot.svg`, `favicon.svg` and `favicon-32.png`, with no copy.
+  `MASCOT_SVG` uses `currentColor` for the outline and the eye. It uses the CSS variable
+  `--mascot-body` for the body, as omsync's `brand.css` expects.
 
 **Exports.** omsync imports `Nursery`, `SCENES`, `MAX_STAGE`, `WATER_MS`, `COOLDOWN_MS`,
 `FINALE_MS`, `releaseMs` and `showMs` from `nursery.js`. It imports `iconSvg` and `clamp` from
@@ -158,18 +225,20 @@ must widen its range together with its host code.
 **Engine.** omsync makes the engine with `{ ground, water, reducedMotion, scene, stage }`. It reads
 `stage`. It calls `sprinkle(clientX, clientY, level)`, `setScene(scene, stage)` and `destroy()`. The
 engine reads `data-theme` on `<html>` on each frame. The value "dark" is night. omsync waits
-`COOLDOWN_MS` between two waterings, and its watering animation lasts `WATER_MS`.
+`COOLDOWN_MS` between two waterings.
 
-**Charged watering.** The `level` argument of `sprinkle` is optional, from 1 to 8. If a host omits
-it, `sprinkle` gives one stage and the upright fountain, as before. This plain click is level 0.
-With a level, the plants gain that many stages (up to `MAX_STAGE`). The fountain starts as the
-click's spray and then opens wider while it runs. Each level reaches farther than the click, and
-level 8 wets the whole ground. The opening lasts `releaseMs(level)` milliseconds: 1 200 at level 1,
-and 200 more for each level, to 2 600 at level 8. At level 8, jets follow for `FINALE_MS`
-milliseconds, 150 ms after the opening ends. A host can use these two values to drain its water at
-the same speed as the spray. `showMs(level)` is the whole release (`WATER_MS` without a level). A
-host waits for it before the next `sprinkle`. The rainbow, the mist and the fireflies show on the
-ground canvas, behind the page. Under reduced motion the plants grow and nothing else shows.
+**Watering.** The `level` argument of `sprinkle` is optional. The header of
+[`nursery.js`](../src/nursery/assets/js/nursery.js) gives the numbers and the exact behavior.
+
+| Level | Stages gained | Fountain | How long the host waits |
+|---|---|---|---|
+| 0 (a plain click, no `level`) | 1 | A short, upright spray. | `WATER_MS` |
+| 1 to 7 | The level, up to `MAX_STAGE`. | Starts as the click's spray, then opens wider. Each level reaches farther. | `showMs(level)`, which is `releaseMs(level)` here |
+| 8 | 8 | Wets the whole ground. Jets follow for `FINALE_MS`, with a mist and a rainbow. At night: a moonbow and fireflies. | `showMs(8)` |
+
+A host can use `releaseMs(level)` to drain its water at the same speed as the spray. The rainbow,
+the mist and the fireflies show on the ground canvas, behind the page. Under reduced motion the
+plants grow and nothing else shows.
 
 **Scenes.** omsync reads the `id` and the `icon` of each scene. Each palette, light and dark, has
 the keys `soil`, `line`, `wet`, `water` and `haze`.

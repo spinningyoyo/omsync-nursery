@@ -17,7 +17,8 @@ A release, in order, stopping at the first problem:
 
 Which flag, while the major version is 0: a contract change (what omsync reads, see
 docs/overview.md) bumps the minor (0.1.0 -> 0.2.0); any other change, new scenes and art fixes,
-bumps the patch. omsync requires `>=0.1,<0.2`, so a contract change is refused at omsync's lock.
+bumps the patch. omsync's version range excludes the new minor version, so omsync's lock refuses a
+contract change.
 From 1.0.0: --major is a contract change, --minor a new scene, --patch an art fix.
 
 --dry-run runs step 1 and prints what the rest would do, changing nothing.
