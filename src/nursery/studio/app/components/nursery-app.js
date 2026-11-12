@@ -10,7 +10,7 @@
 import { api } from "../services/api.js";
 import { EditorSession } from "../services/editor-session.js";
 import { ReviewSession } from "../services/review-session.js";
-import { SceneModel, SCENES } from "../services/scene-model.js";
+import { SceneModel, SCENES, sceneById } from "../services/scene-model.js";
 import { watch } from "../services/watch.js";
 import { css, html, LitElement } from "../ui/lit.js";
 import { shared } from "../ui/shared.js";
@@ -187,7 +187,7 @@ export class NurseryApp extends LitElement {
       tab: this.tab,
       selected: this.selected,
       family: this.family,
-      edit: this.view === "editor" ? { sid: this.sid, name: this.editor.job.name, f: this.editor.f } : null,
+      edit: this.view === "editor" ? { sid: this.editor.model.sid, name: this.editor.job.name, f: this.editor.f } : null,
       review: this.view === "review" ? { sid: this.review.model.sid, proposal: this.review.proposal.name } : null,
     });
     location.reload();
@@ -248,7 +248,8 @@ export class NurseryApp extends LitElement {
         // The editor returns to where it was opened from: a view, or a review.
         if (this.view !== "editor") this.editorBack = this.view;
         this.pending = null;
-        this.sid = model.sid;
+        // The mascot is not a scene: the scene on show stays where it is.
+        if (sceneById(model.sid)) this.sid = model.sid;
         this.editor = new EditorSession(model, job, { theme: a.theme, f: a.f });
         this.view = "editor";
         break;

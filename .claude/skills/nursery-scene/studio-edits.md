@@ -20,3 +20,25 @@ the code exactly, with no proposal. When the user says they saved edits:
 Done when every edit reads `in code` and the user has seen each moved sprite. The user clears the
 scene with Accept and clear in the studio's Changes tab; `.nursery/` is theirs, so leave its files
 in place.
+
+## The mascot's edits
+
+The Icons page of the studio also shows omsync's mascot, with an Edit button. The mascot is not a
+scene, but its saved edits work in the same way: they are in `.nursery/brand/edits/`. The mascot's
+grid, `src/nursery/assets/brand/mascot-grid.txt`, is the master of every brand file. When the user
+says they saved a mascot edit:
+
+1. Read each `.nursery/brand/edits/*.json` and look at the `.png` beside it. `drawnBy` names the
+   grid. Each pixel has `x` (the column) and `y` (the row) in that grid, and the keys of its colour
+   before and after.
+2. Change the grid. Key `ink` is `#` and key `eye` is `E`. Key `body`, and an erased pixel, is `.`.
+   Paper that touches the edge of the grid, or that connects to the edge through paper, is
+   exterior and is not drawn. All other paper is the body, so close the outline around each body
+   pixel. The grid has one drawing for day and night. If the day and night patches differ in
+   shape, ask the user.
+3. Run `uv run nursery brand`. It builds `mascot.svg`, `favicon.svg` and `favicon-32.png` in
+   `src/nursery/assets/brand/`, and the studio's mark and favicon in `studio/app/brand/`. Never
+   edit a built file, and never paste a copy of the mascot.
+4. `uv run nursery check brand` until every edit reads `in code`.
+5. Show the user the new mascot on the Icons page, then let them clear the edits there with Accept
+   and clear. omsync gets the new art when it takes the next release.

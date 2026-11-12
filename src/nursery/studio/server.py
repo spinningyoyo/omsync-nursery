@@ -42,6 +42,8 @@ from nursery import catalog
 from nursery.launcher import open_app
 from nursery.paths import (
     APP,
+    BRAND_DIR,
+    BRAND_ID,
     CSS_DIR,
     JS_DIR,
     ROOT,
@@ -60,6 +62,8 @@ TYPES = {
     ".json": "application/json",
     ".css": "text/css",
     ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".txt": "text/plain; charset=utf-8",
 }
 
 
@@ -98,7 +102,7 @@ def version() -> str:
     """A fingerprint of the code the studio draws and runs, so an open studio can reload itself
     when any of it changes on disk."""
     digest = hashlib.sha256()
-    watched = [JS_DIR, CSS_DIR, STUDIO, SCENES_JSON, Path(catalog.__file__)]
+    watched = [JS_DIR, CSS_DIR, BRAND_DIR, STUDIO, SCENES_JSON, Path(catalog.__file__)]
     for root in watched:
         files = [root] if root.is_file() else sorted(root.rglob("*"))
         for path in files:
@@ -158,7 +162,8 @@ def meta() -> dict:
 
 
 def scene_dir(sid: str) -> Path:
-    if sid not in catalog.SCENE_IDS:
+    """A scene's folder in .nursery. The mascot has one too, though it is not a scene."""
+    if sid != BRAND_ID and sid not in catalog.SCENE_IDS:
         raise KeyError(sid)
     return STORE / sid
 
@@ -300,6 +305,8 @@ class Studio(http.server.BaseHTTPRequestHandler):
                 self.send_file(CSS_DIR.joinpath(*parts[1:]), CSS_DIR)
             elif parts[0] == "app":
                 self.send_file(APP.joinpath(*parts[1:]) if parts[1:] else APP / "index.html", APP)
+            elif len(parts) == 2 and parts[0] == "brand":
+                self.send_file(BRAND_DIR / parts[1], BRAND_DIR)
             elif parts == ["scenes.json"]:
                 self.send_file(SCENES_JSON, ROOT)
             elif parts == ["api", "version"]:
@@ -437,8 +444,9 @@ def headless(query: str) -> dict:
 
 def check(only: str | None) -> int:
     """Runs the studio's check page headless and prints each edit's state. Returns the exit code."""
-    sids = [only] if only else [s for s in catalog.SCENE_IDS if (STORE / s / "edits").is_dir()]
-    if only and only not in catalog.SCENE_IDS:
+    every = (*catalog.SCENE_IDS, BRAND_ID)
+    sids = [only] if only else [s for s in every if (STORE / s / "edits").is_dir()]
+    if only and only not in every:
         raise SystemExit(f"unknown scene {only!r}")
     if not sids:
         print("No saved edits.")

@@ -1,11 +1,13 @@
 // The scene icons, in the centre: all ten side by side at the picker's real size and enlarged, on
 // day and night, so each reads as its scene's best-known subject and no two share both a shape
 // and a colour. The icons are each scene module's `icon` grid; Edit opens one in the pixel
-// editor, like any sprite.
+// editor, like any sprite. Below them is the brand: omsync's mascot (Edit opens it in the same
+// editor), the favicons and the studio's mark, all built from the mascot's grid.
 import { iconSvg } from "/js/kit/pixel.js";
-import { SCENES } from "../services/scene-model.js";
+import { acceptAndClear } from "../services/edits.js";
+import { BRAND_ID, BRAND_PALETTES, SCENES, SceneModel } from "../services/scene-model.js";
 import { act } from "../ui/action.js";
-import { css, html, LitElement, unsafeSVG } from "../ui/lit.js";
+import { css, html, LitElement, nothing, unsafeSVG } from "../ui/lit.js";
 import { shared } from "../ui/shared.js";
 
 // An icon's most-used colour, from its grid.
@@ -37,8 +39,13 @@ function closePairs() {
 const sized = (scene, px) =>
   iconSvg(scene.icon.grid, scene.icon.colours).replace('width="36" height="36"', `width="${px}" height="${px}"`);
 
+// How omsync draws the mascot by day and by night: the outline follows the text colour and the
+// body its --mascot-body variable (brand.css).
+const brandTile = (theme) =>
+  `color:${BRAND_PALETTES[theme].ink};--mascot-body:${BRAND_PALETTES[theme].body};background:${theme === "light" ? "#fff" : "#111"}`;
+
 export class IconsView extends LitElement {
-  static properties = { sid: {} };
+  static properties = { sid: {}, mascot: { state: true }, brand: { state: true } };
 
   static styles = [
     shared,
@@ -122,6 +129,56 @@ export class IconsView extends LitElement {
         gap: var(--space-2);
         align-items: center;
       }
+      .brand-head {
+        margin-top: var(--space-5);
+      }
+      .brand {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3);
+        margin-top: var(--space-2);
+      }
+      .brand .card {
+        flex: 1 1 240px;
+        align-content: start;
+      }
+      .brand .card.wide {
+        flex: 2 1 440px;
+      }
+      .tiles {
+        display: flex;
+        gap: var(--space-2);
+      }
+      .tiles > div {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-3);
+        flex: 1;
+        min-width: 0;
+        padding: var(--space-3);
+        border-radius: var(--radius-md);
+        border: 1px solid var(--border);
+      }
+      .tiles .mascot {
+        width: 192px;
+        max-width: 100%;
+      }
+      .tiles .mascot svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .mascot-body {
+        fill: var(--mascot-body);
+      }
+      .tiles img {
+        display: block;
+        image-rendering: pixelated;
+      }
+      .follows {
+        color: var(--muted);
+      }
       .swatch {
         width: 14px;
         height: 14px;
@@ -130,6 +187,85 @@ export class IconsView extends LitElement {
       }
     `,
   ];
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.loadBrand();
+  }
+
+  // The built mascot (what omsync will serve) and the mascot's saved edits.
+  async loadBrand() {
+    const [mascot, model] = await Promise.all([
+      fetch("/brand/mascot.svg").then((r) => r.text()),
+      SceneModel.load(BRAND_ID),
+    ]);
+    await model.refresh();
+    this.mascot = mascot;
+    this.brand = model;
+  }
+
+  async clearBrandEdits() {
+    await acceptAndClear(this.brand);
+    this.requestUpdate();
+  }
+
+  renderBrand() {
+    const edits = this.brand ? [...this.brand.edits.values()] : [];
+    const waiting = edits.filter((e) => this.brand.editState(e) !== "in code").length;
+    const tiles = (draw, themes = ["light", "dark"]) =>
+      html`<div class="tiles">
+        ${themes.map((theme) => html`<div style=${brandTile(theme)}>${draw(theme)}</div>`)}
+      </div>`;
+    return html`
+      <div class="brand-head">
+        <div class="eyebrow">Brand</div>
+        <div class="muted">The mascot's grid is the one master. Every other brand file is built from it.</div>
+      </div>
+      <div class="brand">
+        <div class="card wide">
+          <div class="line"><strong>Mascot</strong><span class="muted">omsync's elephant, day and night</span></div>
+          ${tiles(() => html`<div class="mascot">${unsafeSVG(this.mascot ?? "")}</div>`)}
+          <div class="line">
+            <span class="muted">32×22 px</span>
+            <button class="btn" ?disabled=${!this.brand} @click=${() => act(this, "edit", { sid: BRAND_ID, name: "brand-mascot" })}>
+              <n-icon name="pencil"></n-icon>Edit
+            </button>
+          </div>
+          ${edits.length
+            ? html`<div class="line">
+                <span class="muted">${edits.length} saved ${edits.length === 1 ? "edit" : "edits"}: ${waiting ? `${waiting} waiting for the agent` : "all in the grid"}</span>
+                <button class="btn" @click=${() => this.clearBrandEdits()}>Accept and clear</button>
+              </div>`
+            : nothing}
+        </div>
+        <div class="card">
+          <div class="line"><strong>omsync favicon</strong><span class="follows">follows the mascot</span></div>
+          ${tiles(
+            (theme) => html`<img src="/brand/favicon.svg" width="32" height="32" alt="" />
+              ${theme === "light"
+                ? html`<img src="/brand/favicon.svg" width="96" height="96" alt="" />`
+                : html`<img src="/brand/favicon-32.png" width="32" height="32" alt="" />
+                    <img src="/brand/favicon-32.png" width="96" height="96" alt="" />`}`,
+          )}
+          <div class="muted">favicon.svg at 32 px and enlarged; favicon-32.png on the right</div>
+        </div>
+        <div class="card">
+          <div class="line"><strong>Studio mark</strong><span class="follows">follows the mascot</span></div>
+          ${tiles(() => html`<n-logo size="32"></n-logo><n-logo size="96"></n-logo>`)}
+          <div class="muted">The sprout is vector (Lucide) and is not editable here.</div>
+        </div>
+        <div class="card">
+          <div class="line"><strong>Studio favicon</strong><span class="follows">follows the mascot</span></div>
+          ${tiles(
+            () => html`<img src="/app/brand/favicon.svg" width="32" height="32" alt="" />
+              <img src="/app/brand/favicon.svg" width="96" height="96" alt="" />`,
+            ["light"],
+          )}
+          <div class="muted">The tab icon, at 32 px and enlarged</div>
+        </div>
+      </div>
+    `;
+  }
 
   render() {
     return html`
@@ -168,6 +304,7 @@ export class IconsView extends LitElement {
           </div>`,
         )}
       </div>
+      ${this.renderBrand()}
     `;
   }
 }

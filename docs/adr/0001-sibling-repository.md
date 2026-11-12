@@ -24,6 +24,8 @@ releases; omsync upgrades when it wants new art.
 - The nursery has its own tools and workflow: the studio, the checks, the catalogue and the skill.
 - omsync depends on a contract, not on a copy of the files. `docs/overview.md` lists the contract.
   A change to the contract must change the two repositories together.
+- The nursery also owns omsync's pixel mascot and favicons. A change to omsync's brand art is made
+  here, in the mascot's grid, and reaches omsync through a release.
 - A release makes no change in omsync. Art reaches omsync only when omsync upgrades. To see art
   before that, use `scripts/dev-nursery.sh` in omsync.
 - The nursery cannot check omsync at release time. omsync's own tests catch a release that breaks

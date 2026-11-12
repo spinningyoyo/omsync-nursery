@@ -7,6 +7,8 @@ the files at the same place:
   /static/vendor/nursery/.
 - SCENES_JSON: each scene's id and picker label, in picker order.
 - SCENES_CSS: each scene's page tint and sign-in backdrop colours, for the host's CSS build.
+- MASCOT_SVG, FAVICON_SVG, FAVICON_PNG: omsync's pixel mascot and its favicons, built from
+  MASCOT_GRID by `nursery brand`. The grid is the master; never edit the built files by hand.
 """
 
 from pathlib import Path
@@ -15,3 +17,8 @@ ASSETS = Path(__file__).resolve().parent / "assets"
 JS = ASSETS / "js"
 SCENES_JSON = ASSETS / "scenes.json"
 SCENES_CSS = ASSETS / "css" / "scenes.css"
+BRAND = ASSETS / "brand"
+MASCOT_GRID = BRAND / "mascot-grid.txt"
+MASCOT_SVG = BRAND / "mascot.svg"
+FAVICON_SVG = BRAND / "favicon.svg"
+FAVICON_PNG = BRAND / "favicon-32.png"

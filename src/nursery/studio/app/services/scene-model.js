@@ -146,7 +146,7 @@ const models = new Map();
 export class SceneModel {
   // The scene's model, built once and kept; refresh() reloads its saved work.
   static async load(sid) {
-    if (!models.has(sid)) models.set(sid, new SceneModel(sid).build());
+    if (!models.has(sid)) models.set(sid, new (sid === BRAND_ID ? BrandModel : SceneModel)(sid).build());
     return models.get(sid);
   }
 
@@ -466,6 +466,90 @@ export class SceneModel {
     out.push({ rule: "Every walker has an idle pose, legs down", state: "eye", detail: "Watch a walker stop" });
     return out;
   }
+}
+
+// ---- The mascot -------------------------------------------------------------------------------
+
+// omsync's pixel mascot is not a scene, but it is edited like a sprite: a pseudo-scene "brand"
+// with one job, the grid of assets/brand/mascot-grid.txt. Saved edits land in .nursery/brand/
+// edits/ and are applied to the grid (see studio-edits.md); `nursery brand` rebuilds every file
+// from it. Its colours are the day and night look in omsync; the eye is drawn apart from the
+// outline here, so an edit can tell the two apart.
+export const BRAND_ID = "brand";
+export const BRAND_GRID = "src/nursery/assets/brand/mascot-grid.txt";
+export const BRAND_PALETTES = {
+  light: { ink: "#0b0b0b", eye: "#2563eb", body: "#d3d7d9" },
+  dark: { ink: "#ffffff", eye: "#60a5fa", body: "#242424" },
+};
+const BRAND_HAZE = { light: "#ffffff", dark: "#111111" };
+
+// The grid's cells as "ink", "eye", "body" or null (exterior): paper reached from the edge through
+// paper is exterior, the rest is body. The same rule as brand.py.
+export function mascotKinds(text) {
+  const rows = text.split("\n").filter(Boolean);
+  const h = rows.length;
+  const w = rows[0].length;
+  const exterior = new Set();
+  const queue = [];
+  const reach = (x, y) => {
+    if (x < 0 || y < 0 || x >= w || y >= h || rows[y][x] !== "." || exterior.has(y * w + x)) return;
+    exterior.add(y * w + x);
+    queue.push([x, y]);
+  };
+  for (let y = 0; y < h; y += 1) for (let x = 0; x < w; x += 1) if (x === 0 || y === 0 || x === w - 1 || y === h - 1) reach(x, y);
+  while (queue.length) {
+    const [x, y] = queue.pop();
+    reach(x + 1, y);
+    reach(x - 1, y);
+    reach(x, y + 1);
+    reach(x, y - 1);
+  }
+  return rows.map((row, y) =>
+    [...row].map((ch, x) => (ch === "#" ? "ink" : ch === "E" ? "eye" : exterior.has(y * w + x) ? null : "body")),
+  );
+}
+
+export class BrandModel extends SceneModel {
+  constructor() {
+    super(BRAND_ID);
+    // Only the studio's own code reads this; "haze" is the backdrop of the pictures it saves.
+    this.scene = {
+      id: BRAND_ID,
+      label: "Brand",
+      palettes: Object.fromEntries(THEMES.map((t) => [t, { ...BRAND_PALETTES[t], haze: BRAND_HAZE[t] }])),
+    };
+  }
+
+  async build() {
+    const kinds = mascotKinds(await fetch("/brand/mascot-grid.txt").then((r) => r.text()));
+    const job = {
+      name: "brand-mascot",
+      title: "mascot",
+      sid: BRAND_ID,
+      box: { w: kinds[0].length, h: kinds.length },
+      pals: BRAND_PALETTES,
+      brand: true,
+      item: { label: "Mascot", where: { path: BRAND_GRID, line: null } },
+      paint: (ctx, pal) => {
+        kinds.forEach((row, y) =>
+          row.forEach((kind, x) => {
+            if (!kind) return;
+            ctx.fillStyle = pal[kind];
+            ctx.fillRect(x, y, 1, 1);
+          }),
+        );
+      },
+    };
+    renderJob(job);
+    this.groups = [];
+    this.jobs = new Map([[job.name, job]]);
+    if (job.error) this.errors.push(`${job.name}: ${job.error}`);
+    await this.refresh();
+    return this;
+  }
+
+  // The mascot has no other sprites for a change to ripple into.
+  async saveBaseline() {}
 }
 
 function familyOf(sid, sprite) {

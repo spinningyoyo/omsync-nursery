@@ -19,6 +19,7 @@ uv run nursery check [SCENE]      # compare your saved pixel edits with the code
 uv run nursery render SCENE NAME  # draw a proposal into its sheet
 uv run nursery proposals [SCENE]  # show each review and the pixel edits on proposals
 uv run nursery catalog            # make docs/scenes/<scene>.md again from the code
+uv run nursery brand [--check]    # build the mascot, the favicons and the studio's mark from the grid
 uv run nursery preview ...        # draw scenes or a sprite sheet to images
 uv run nursery release [--patch|--minor|--major] [--dry-run]  # check the scenes, tag vX.Y.Z, move the release branch
 ```
@@ -32,6 +33,7 @@ checkout, because the studio draws the scenes from the files in it.
 - `src/nursery/assets/`: the files that omsync installs. `js/nursery.js` is the engine, and its
   header tells what a scene must supply. `js/scenes/` has one module for each scene. `js/kit/` has
   the shared drawing code. `scenes.json` and `css/scenes.css` give the scene names and colours.
+  `brand/` has the grid of omsync's mascot and the mascot and favicon files built from it.
 - `src/nursery/`: the `nursery` command. `studio/` is the studio (a Python server, and Lit
   components in `studio/app/`).
 - `docs/scenes/`: one catalogue file for each scene. Do not edit them. `nursery catalog` writes

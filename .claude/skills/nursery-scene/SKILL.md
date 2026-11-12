@@ -12,7 +12,10 @@ end to end and its `docs/scenes/<scene>.md`.
 
 Which path:
 
-- **The user saved pixel edits**: follow [studio-edits.md](studio-edits.md); no proposal.
+- **The user saved pixel edits**: follow [studio-edits.md](studio-edits.md); no proposal. This
+  includes the mascot: its master is `src/nursery/assets/brand/mascot-grid.txt`, the user edits it
+  on the studio's Icons page, and `uv run nursery brand` builds every brand file from it. Never
+  paste copies.
 - **New or changed art**, still or animated: the steps below.
 - **The user reviewed a proposal**: [proposals.md](proposals.md), "The loop".
 

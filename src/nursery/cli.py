@@ -6,6 +6,7 @@ nursery check [SCENE]           compare saved pixel edits with what the code dra
 nursery render SCENE PROPOSAL   draw a proposal headless into its .sheet.png
 nursery proposals [SCENE]       print each proposal's review and pixel edits
 nursery catalog [--only IDS] [--out DIR]  rebuild docs/scenes/<id>.md from the code
+nursery brand [--check]         build the mascot, the favicons and the studio's mark from the grid
 nursery release [--patch|--minor|--major] [--dry-run]
                                 check the scenes and release them as a new version tag
 nursery preview scene|sheet ... render scenes or a sprite sheet headless (see the skill)
@@ -40,6 +41,9 @@ def parser() -> argparse.ArgumentParser:
     proposals = commands.add_parser("proposals", help="print reviews and pixel edits")
     proposals.add_argument("scene", nargs="?")
 
+    brand = commands.add_parser("brand", help="build the mascot and the favicons from its grid")
+    brand.add_argument("--check", action="store_true", help="list stale files; change nothing")
+
     release = commands.add_parser(
         "release", help="check the scenes and release them on the release branch"
     )
@@ -72,6 +76,10 @@ def main(argv: list[str] | None = None) -> None:
             return
 
         args = parser().parse_args(argv)
+        if args.command == "brand":
+            from nursery import brand
+
+            sys.exit(brand.main(["--check"] if args.check else []))
         from nursery.studio import server
 
         if args.command in (None, "studio"):

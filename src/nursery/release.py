@@ -63,10 +63,15 @@ def readiness() -> list[str]:
     if dirty:
         problems.append(f"the nursery has uncommitted changes:\n{dirty}")
 
-    from nursery import catalog
+    from nursery import brand, catalog
+    from nursery.paths import BRAND_ID
     from nursery.studio import server
 
-    result = server.headless(f"check={','.join(catalog.SCENE_IDS)}")
+    for path in brand.stale():
+        problems.append(
+            f"{path.relative_to(ROOT)} is not what the mascot's grid builds; run `nursery brand`"
+        )
+    result = server.headless(f"check={','.join([*catalog.SCENE_IDS, BRAND_ID])}")
     for sid, scene in result["scenes"].items():
         for edit in scene["edits"]:
             if edit["status"] != "in code":

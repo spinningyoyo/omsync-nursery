@@ -12,7 +12,8 @@ agent changes the code. The studio is the place where each one shows work to the
 |---|---|---|
 | Scenes | `src/nursery/assets/js/` | The engine, ten scene modules and the kit that they draw with. omsync runs this code. |
 | Studio | `uv run nursery` | Shows each scene and each sprite from the code on disk. You edit pixels and review proposals here. |
-| Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `preview` and `release`. Agents use most of them. |
+| Mascot | `src/nursery/assets/brand/` | The grid of omsync's pixel mascot, and the mascot and favicon files that `nursery brand` builds from it. |
+| Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `brand`, `preview` and `release`. Agents use most of them. |
 | Working folder | `.nursery/<scene>/` | Your saved edits, the proposals and your reviews. Git ignores this folder. |
 | Catalogue | `docs/scenes/<scene>.md` | One file for each scene. It lists each element and the line of code that draws it. |
 | Skill | `.claude/skills/nursery-scene/` | The design rules and the steps that agents follow. |
@@ -134,12 +135,21 @@ records the exact commit. Today the URL is a `file://` path to this checkout. om
 `>=0.1,<0.2`. A contract change raises the minor, so omsync refuses it at its lock. Then omsync
 must widen its range together with its host code.
 
-**Files.** `nursery.assets` (`src/nursery/assets.py`) gives the location of three things:
+**Files.** `nursery.assets` (`src/nursery/assets.py`) gives the location of these things:
 
 - `JS`: the engine, the scenes and the kit. omsync serves this folder at `/static/vendor/nursery/`.
 - `SCENES_JSON`: the id and the picker label of each scene, in picker order. omsync makes its
   scene pickers from this file. A new scene shows in omsync with no change to omsync.
 - `SCENES_CSS`: the colours of each scene. omsync links this file as its own stylesheet.
+- `MASCOT_SVG`, `FAVICON_SVG` and `FAVICON_PNG`: omsync's pixel mascot and its two favicons. omsync
+  will serve them as its own `mascot.svg`, `favicon.svg` and `favicon-32.png`, with no copy.
+  `MASCOT_SVG` uses `currentColor` for the outline and the eye, and the CSS variable
+  `--mascot-body` for the body, as omsync's `brand.css` expects. `nursery brand` builds the three
+  files from the grid, and `nursery release` stops when they are out of date.
+
+  These three exports are a contract addition. They are in the next release, which raises the
+  minor version. Until omsync takes that release and changes its host code, it keeps its own
+  copies.
 
 **Exports.** omsync imports `Nursery`, `SCENES`, `MAX_STAGE`, `WATER_MS`, `COOLDOWN_MS`,
 `FINALE_MS`, `releaseMs` and `showMs` from `nursery.js`. It imports `iconSvg` and `clamp` from

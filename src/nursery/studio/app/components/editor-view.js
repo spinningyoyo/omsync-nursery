@@ -410,10 +410,12 @@ export class EditorView extends LitElement {
         </div>
         <div class="strip">
           <frame-strip .session=${s}></frame-strip>
-          <div class="context">
-            <div class="section-label"><n-icon name="ruler" size="12"></n-icon>On its soil, real scale</div>
-            <canvas class="pixels soil" ${ref(this.soil)}></canvas>
-          </div>
+          ${job.brand
+            ? nothing
+            : html`<div class="context">
+                <div class="section-label"><n-icon name="ruler" size="12"></n-icon>On its soil, real scale</div>
+                <canvas class="pixels soil" ${ref(this.soil)}></canvas>
+              </div>`}
         </div>
       </div>
     `;
