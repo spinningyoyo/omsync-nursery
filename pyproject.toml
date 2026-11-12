@@ -1,6 +1,6 @@
 [project]
 name = "omsync-nursery"
-version = "0.1.0"
+version = "0.1.1"
 description = "Pixel-art scenes for omsync's sign-in page, and the Nursery Studio that draws them."
 requires-python = ">=3.12"
 # The installed package is the scene files and nursery.assets, which need nothing. The studio and
