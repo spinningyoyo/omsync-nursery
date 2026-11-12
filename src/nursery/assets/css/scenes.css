@@ -17,20 +17,52 @@
 /* The size of one grid cell on the page, in CSS pixels: the art's pixel size times its grid
    cell (4px * 16). The host draws its backdrop grid with it. */
 
-:root { --landing-cell: 64px; }
+:root {
+  --landing-cell: 64px;
+}
 
 /* Tints. */
 
-[data-tint="meadow"] { --scene-tint: #b7dc98; --scene-tint-dark: rgb(96 160 84); }
-[data-tint="rainforest"] { --scene-tint: #9fd6b4; --scene-tint-dark: rgb(56 160 120); }
-[data-tint="hawaii"] { --scene-tint: #a9dcf2; --scene-tint-dark: rgb(60 140 200); }
-[data-tint="desert"] { --scene-tint: #fbcfa6; --scene-tint-dark: rgb(220 110 80); }
-[data-tint="smokies"] { --scene-tint: #f9cf9c; --scene-tint-dark: rgb(220 140 60); }
-[data-tint="serengeti"] { --scene-tint: #f7d28f; --scene-tint-dark: rgb(120 100 180); }
-[data-tint="iceland"] { --scene-tint: #bfe0ec; --scene-tint-dark: rgb(70 130 170); }
-[data-tint="yellowstone"] { --scene-tint: #cfe3ec; --scene-tint-dark: rgb(60 110 170); }
-[data-tint="hundredacre"] { --scene-tint: #d3e2b0; --scene-tint-dark: rgb(110 140 80); }
-[data-tint="wonderland"] { --scene-tint: #f3d6f0; --scene-tint-dark: rgb(120 90 170); }
+[data-tint="meadow"] {
+  --scene-tint: #b7dc98;
+  --scene-tint-dark: rgb(96 160 84);
+}
+[data-tint="rainforest"] {
+  --scene-tint: #9fd6b4;
+  --scene-tint-dark: rgb(56 160 120);
+}
+[data-tint="hawaii"] {
+  --scene-tint: #a9dcf2;
+  --scene-tint-dark: rgb(60 140 200);
+}
+[data-tint="desert"] {
+  --scene-tint: #fbcfa6;
+  --scene-tint-dark: rgb(220 110 80);
+}
+[data-tint="smokies"] {
+  --scene-tint: #f9cf9c;
+  --scene-tint-dark: rgb(220 140 60);
+}
+[data-tint="serengeti"] {
+  --scene-tint: #f7d28f;
+  --scene-tint-dark: rgb(120 100 180);
+}
+[data-tint="iceland"] {
+  --scene-tint: #bfe0ec;
+  --scene-tint-dark: rgb(70 130 170);
+}
+[data-tint="yellowstone"] {
+  --scene-tint: #cfe3ec;
+  --scene-tint-dark: rgb(60 110 170);
+}
+[data-tint="hundredacre"] {
+  --scene-tint: #d3e2b0;
+  --scene-tint-dark: rgb(110 140 80);
+}
+[data-tint="wonderland"] {
+  --scene-tint: #f3d6f0;
+  --scene-tint-dark: rgb(120 90 170);
+}
 
 /* Backdrops. */
 [data-scene="meadow"] {

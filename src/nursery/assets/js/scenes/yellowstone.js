@@ -93,7 +93,19 @@ const LIGHT = {
   sheep: ["#7a6a58", "#e4dccb", "#c9b48a", "#4a3c30", "#97845e"],
   elk: ["#a87648", "#4e3420", "#e6d2ae", "#dccaa2", "#3a2616", "#86592f"],
   eagle: ["#4a3426", "#f6f2ea", "#f6f2ea", "#e2a52e", "#7a5a44"],
-  bluebird: { C: "#4a9ae0", H: "#4a9ae0", E: "#14202c", K: "#1a1a1a", T: "#2f6fb0", b: "#2f6fb0", B: "#4a9ae0", l: "#a7d2f0", t: "#4a9ae0", p: "#cfe8fa", d: "#2f6fb0" },
+  bluebird: {
+    C: "#4a9ae0",
+    H: "#4a9ae0",
+    E: "#14202c",
+    K: "#1a1a1a",
+    T: "#2f6fb0",
+    b: "#2f6fb0",
+    B: "#4a9ae0",
+    l: "#a7d2f0",
+    t: "#4a9ae0",
+    p: "#cfe8fa",
+    d: "#2f6fb0",
+  },
   swan: ["#f0ebdc", "#8a8578", "#1f1f1f", "#1f1f1f"],
   wet: "#8a7455",
   water: ["#46aae6", "#8fd3f6", "#ffffff"],
@@ -132,7 +144,19 @@ const DARK = {
   sheep: ["#625347", "#b9ad93", "#b7a57f", "#332a22", "#857552"],
   elk: ["#94683e", "#46301e", "#d2c09c", "#c4b48e", "#342316", "#74502c"],
   eagle: ["#33241a", "#e6e3d8", "#e6e3d8", "#c99326", "#5a4432"],
-  bluebird: { C: "#30618d", H: "#30618d", E: "#101821", K: "#141416", T: "#204770", b: "#204770", B: "#30618d", l: "#688396", t: "#30618d", p: "#80909c", d: "#204770" },
+  bluebird: {
+    C: "#30618d",
+    H: "#30618d",
+    E: "#101821",
+    K: "#141416",
+    T: "#204770",
+    b: "#204770",
+    B: "#30618d",
+    l: "#688396",
+    t: "#30618d",
+    p: "#80909c",
+    d: "#204770",
+  },
   swan: ["#e9e6dc", "#7a766c", "#161616", "#161616"],
   star: ["#9fb4d8", "#ffffff"],
   wet: "#1b140d",
@@ -149,7 +173,7 @@ function mountain(g, p, s, base) {
   for (let r = 0; r < height; r += 1) {
     const f = r / height;
     const bulge = (hash(r, p.seed, 1) - 0.5) * 2;
-    const half = Math.round((width / 2) * Math.pow(1 - f, 0.9) + bulge);
+    const half = Math.round((width / 2) * (1 - f) ** 0.9 + bulge);
     if (half < 1) break;
     row(g, base - 1 - r, p.x - half, p.x + half, (x) => {
       if (f > 0.7 + (hash(x, 0, p.seed) - 0.5) * 0.14) return pal.snow;
@@ -438,7 +462,12 @@ const BISON_CALF = [
 const BISON_LEG = 6;
 const BISON_LEGS = [2, 5, 13, 16];
 // The calf's legs, [column, width]: near hind, far hind, far fore, near fore.
-const CALF_LEGS = [[1, 2], [3, 1], [7, 2], [9, 1]];
+const CALF_LEGS = [
+  [1, 2],
+  [3, 1],
+  [7, 2],
+  [9, 1],
+];
 
 function bisonAt(g, b) {
   const [dark, tan, horn, beard] = g.pal.bison;
@@ -449,7 +478,9 @@ function bisonAt(g, b) {
   const walking = b.state === "walk";
   const up = (i) => walking && (Math.floor(b.phase) % 2 === 0) === (i === 0 || i === 3);
   if (b.scale < 1) {
-    CALF_LEGS.forEach(([dx, w], i) => px(i === 1 || i === 2 ? calfDark : calfTan, dx, -3, w, up(i) ? 2 : 3));
+    CALF_LEGS.forEach(([dx, w], i) => {
+      px(i === 1 || i === 2 ? calfDark : calfTan, dx, -3, w, up(i) ? 2 : 3);
+    });
     sprite(g, BISON_CALF, { T: calfTan, S: calfDark }, x, y, b.dir, 1, BISON_CALF.length + 3);
     return;
   }
@@ -577,9 +608,7 @@ function steamAt(g, spring, time, night, surge = -1) {
 function columnAt(g, cone, age, length, time) {
   const rise = smooth(clamp(age / 1.4, 0, 1));
   const fall = clamp((length - age) / 1.2, 0, 1);
-  const rows = Math.round(
-    COLUMN_ROWS * Math.min(rise, fall) * (0.93 + 0.07 * hash(0, Math.floor(time * 8), 9)),
-  );
+  const rows = Math.round(COLUMN_ROWS * Math.min(rise, fall) * (0.93 + 0.07 * hash(0, Math.floor(time * 8), 9)));
   const [body, light, white] = g.pal.spout;
   let sway = 0;
   for (let k = 0; k < rows; k += 1) {
@@ -610,7 +639,10 @@ const extras = {
       pronghorn: { ...walker(f), kind: "pronghorn", sex: "m" },
       bison: walker(f),
       calf: walker(f, 0.55),
-      wolves: [{ ...walker(f), kind: "wolf" }, { ...walker(f, 0.9), kind: "wolf" }],
+      wolves: [
+        { ...walker(f), kind: "wolf" },
+        { ...walker(f, 0.9), kind: "wolf" },
+      ],
       bighorn: null,
       grizzly: { ...walker(f), kind: "grizzly" },
       elk: [

@@ -89,7 +89,9 @@ export class BoardView extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.timer = setInterval(() => this.animate && (this.tick += 1), 250);
+    this.timer = setInterval(() => {
+      if (this.animate) this.tick += 1;
+    }, 250);
   }
 
   disconnectedCallback() {

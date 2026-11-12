@@ -1,7 +1,8 @@
 // The live scene: the real engine at a fixed page size instead of the window's, so the studio
 // can show a desktop, laptop or phone page in any space.
-import { MAX_STAGE, Nursery, SCENES } from "/js/nursery.js";
+
 import { SOIL_ROWS } from "/js/kit/pixel.js";
+import { MAX_STAGE, Nursery, SCENES } from "/js/nursery.js";
 
 export const PAGE_SIZES = {
   desktop: { label: "Desktop", icon: "monitor", cols: 300, rows: 130 },
@@ -53,7 +54,10 @@ export class LiveScene {
   }
 
   setScene(sid, stage = this.engine.stage) {
-    this.engine.setScene(SCENES.find((s) => s.id === sid), stage);
+    this.engine.setScene(
+      SCENES.find((s) => s.id === sid),
+      stage,
+    );
     this.redraw();
   }
 

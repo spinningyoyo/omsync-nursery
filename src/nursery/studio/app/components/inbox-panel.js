@@ -117,11 +117,13 @@ export class InboxPanel extends LitElement {
           })}
         `;
       })}
-      ${built.length
-        ? html`<div class="footer">
+      ${
+        built.length
+          ? html`<div class="footer">
             <button class="btn" @click=${() => this.clearBuilt(built)}><n-icon name="trash-2"></n-icon>Clear ${built.length} built</button>
           </div>`
-        : nothing}
+          : nothing
+      }
     `;
   }
 

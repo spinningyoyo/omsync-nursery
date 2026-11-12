@@ -231,21 +231,25 @@ export class IconsView extends LitElement {
               <n-icon name="pencil"></n-icon>Edit
             </button>
           </div>
-          ${edits.length
-            ? html`<div class="line">
+          ${
+            edits.length
+              ? html`<div class="line">
                 <span class="muted">${edits.length} saved ${edits.length === 1 ? "edit" : "edits"}: ${waiting ? `${waiting} waiting for the agent` : "all in the grid"}</span>
                 <button class="btn" @click=${() => this.clearBrandEdits()}>Accept and clear</button>
               </div>`
-            : nothing}
+              : nothing
+          }
         </div>
         <div class="card">
           <div class="line"><strong>omsync favicon</strong><span class="follows">follows the mascot</span></div>
           ${tiles(
             (theme) => html`<img src="/brand/favicon.svg" width="32" height="32" alt="" />
-              ${theme === "light"
-                ? html`<img src="/brand/favicon.svg" width="96" height="96" alt="" />`
-                : html`<img src="/brand/favicon-32.png" width="32" height="32" alt="" />
-                    <img src="/brand/favicon-32.png" width="96" height="96" alt="" />`}`,
+              ${
+                theme === "light"
+                  ? html`<img src="/brand/favicon.svg" width="96" height="96" alt="" />`
+                  : html`<img src="/brand/favicon-32.png" width="32" height="32" alt="" />
+                    <img src="/brand/favicon-32.png" width="96" height="96" alt="" />`
+              }`,
           )}
           <div class="muted">favicon.svg at 32 px and enlarged; favicon-32.png on the right</div>
         </div>

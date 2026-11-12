@@ -1,6 +1,7 @@
 // <n-icon name="play" size="16">: a Lucide line icon that follows the text colour.
-import { ICONS } from "./lucide.js";
+
 import { css, html, LitElement, unsafeSVG } from "./lit.js";
+import { ICONS } from "./lucide.js";
 
 export class NIcon extends LitElement {
   static properties = { name: {}, size: { type: Number } };

@@ -96,7 +96,9 @@ export class SidePanel extends LitElement {
     return html`
       <nav role="tablist">
         ${TABS.map(
-          (t) => html`<button role="tab" aria-selected=${this.tab === t.id} @click=${() => act(this, "tab", { tab: t.id })}>
+          (
+            t,
+          ) => html`<button role="tab" aria-selected=${this.tab === t.id} @click=${() => act(this, "tab", { tab: t.id })}>
             <n-icon name=${t.icon}></n-icon>${t.label}
             ${t.id === "inbox" && waiting ? html`<span class="badge count">${waiting}</span>` : nothing}
           </button>`,

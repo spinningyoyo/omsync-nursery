@@ -23,8 +23,8 @@ import {
 } from "../kit/critters.js";
 import { mistAt, mistBand } from "../kit/effects.js";
 import {
-  CLEARING,
   blob,
+  CLEARING,
   clamp,
   clearing,
   foliage,
@@ -255,7 +255,14 @@ function treefern(g, p, s, base) {
   const y = base - height;
   const length = Math.max(2, Math.round(height * 0.62));
   // Fronds two wide, the lit green over a darker midrib, arching out and down.
-  for (const [dx, dy, droop] of [[-1, -0.6, 0.9], [1, -0.6, 0.9], [-1, -0.1, 1.1], [1, -0.1, 1.1], [-0.5, -1, 0.6], [0.5, -1, 0.6]]) {
+  for (const [dx, dy, droop] of [
+    [-1, -0.6, 0.9],
+    [1, -0.6, 0.9],
+    [-1, -0.1, 1.1],
+    [1, -0.1, 1.1],
+    [-0.5, -1, 0.6],
+    [0.5, -1, 0.6],
+  ]) {
     stroke(g, x, y, dx, dy, length, droop, 2, [pal.fern[1], pal.fern[0]]);
   }
   // New fronds unrolling at the crown.
@@ -274,7 +281,13 @@ function cycad(g, p, s, base) {
   rect(g, bark, p.x - 1, base - height, 3, height);
   for (let y = base - height + 1; y < base; y += 2) rect(g, dark, p.x - 1, y, 3, 1);
   const length = Math.max(2, Math.round(7 * p.scale * s));
-  for (const [dx, dy] of [[-1, -0.35], [1, -0.35], [-0.7, -0.8], [0.7, -0.8], [0, -1]]) {
+  for (const [dx, dy] of [
+    [-1, -0.35],
+    [1, -0.35],
+    [-0.7, -0.8],
+    [0.7, -0.8],
+    [0, -1],
+  ]) {
     for (let i = 1; i <= length; i += 1) {
       const fx = Math.round(p.x + dx * i);
       const fy = Math.round(base - height + dy * i + (i * i) / (length * 3));
@@ -295,7 +308,7 @@ function bamboo(g, p, s, base) {
     const x0 = p.x + offsets[i];
     let tipX = x0;
     for (let r = 0; r < height; r += 1) {
-      const bend = Math.round(sway * Math.pow(r / height, 2) * 2);
+      const bend = Math.round(sway * (r / height) ** 2 * 2);
       const x = x0 + bend;
       const y = base - 1 - r;
       if (r % 6 === 5) rect(g, pal.bamboo[0], x, y, width, 1);
@@ -328,7 +341,13 @@ function banana(g, p, s, base) {
   if (w > 1) rect(g, pal.leaf[3], p.x + 1, base - height, 1, height); // the shaded side
   const length = Math.round(height * 0.7) + 2;
   const wide = height >= 12 ? 3 : 2;
-  for (const [dx, dy, droop] of [[-1, -0.9, 0.3], [1, -0.9, 0.3], [-1, -0.2, 0.9], [1, -0.2, 0.9], [-1, -0.5, 0.6]]) {
+  for (const [dx, dy, droop] of [
+    [-1, -0.9, 0.3],
+    [1, -0.9, 0.3],
+    [-1, -0.2, 0.9],
+    [1, -0.2, 0.9],
+    [-1, -0.5, 0.6],
+  ]) {
     stroke(g, x, base - height, dx, dy, length, droop, wide, [pal.leaf[2], pal.leaf[0]]);
   }
   stroke(g, x, base - height, 0, -1, Math.max(2, length >> 1), 0, 1, [pal.leaf[1], pal.leaf[0]]);
@@ -391,9 +410,11 @@ function rafflesia(g, p, s, base) {
   const ringTop = top + Math.round(h * 0.04);
   const ringH = Math.max(4, Math.round(h * 0.8));
   const ringW = Math.round(w * 0.56);
-  blob(g, p.x, ringTop, ringW, ringH, (x, y) => (y < ringTop + ringH * 0.3 ? rimLight : rim));
+  blob(g, p.x, ringTop, ringW, ringH, (_x, y) => (y < ringTop + ringH * 0.3 ? rimLight : rim));
   blob(g, p.x, ringTop + 1, Math.round(ringW * 0.72), Math.max(2, ringH - 2), () => hole);
-  blob(g, p.x, ringTop + 2, Math.round(ringW * 0.5), Math.max(1, ringH - 4), (x) => ((x - p.x) % 2 === 0 ? spike : disc));
+  blob(g, p.x, ringTop + 2, Math.round(ringW * 0.5), Math.max(1, ringH - 4), (x) =>
+    (x - p.x) % 2 === 0 ? spike : disc,
+  );
   lobe(p.x, base - Math.round(h * 0.34), Math.round(w * 0.4), Math.round(h * 0.34));
 }
 
@@ -425,7 +446,11 @@ const FUNGUS = {
 
   cup(g, p, s, base) {
     const { pal } = g;
-    [[-3, 4], [0, 6], [3, 3]].forEach(([dx, tall], i) => {
+    [
+      [-3, 4],
+      [0, 6],
+      [3, 3],
+    ].forEach(([dx, tall], i) => {
       const h = Math.max(2, Math.round(tall * s));
       rect(g, pal.stink[2], p.x + dx, base - h, 1, h);
       rect(g, pal.cup[0], p.x + dx - 1, base - h - 1, 3, 1);
@@ -436,7 +461,13 @@ const FUNGUS = {
   coral(g, p, s, base) {
     const { pal } = g;
     const length = Math.max(2, Math.round(5 * p.scale * s));
-    for (const [dx, dy] of [[-0.7, -1], [-0.3, -1], [0, -1], [0.3, -1], [0.7, -1]]) {
+    for (const [dx, dy] of [
+      [-0.7, -1],
+      [-0.3, -1],
+      [0, -1],
+      [0.3, -1],
+      [0.7, -1],
+    ]) {
       stroke(g, p.x, base - 1, dx, dy, length, 0, 1, [pal.coral[0], pal.coral[1]]);
     }
   },
@@ -471,7 +502,11 @@ const FUNGUS = {
     g.ctx.globalAlpha = 0.16 + pulse * 0.2;
     blob(g, p.x, base - 10, 13, 10, () => pal.glow[1]);
     g.ctx.globalAlpha = 1;
-    [[-3, 3], [0, 5], [3, 4]].forEach(([dx, tall]) => {
+    [
+      [-3, 3],
+      [0, 5],
+      [3, 4],
+    ].forEach(([dx, tall]) => {
       const h = Math.max(1, Math.round(tall * s));
       rect(g, pal.glow[1], p.x + dx, base - h, 1, h);
       rect(g, pal.glow[0], p.x + dx - 1, base - h - 1, 3, 1);
@@ -494,7 +529,7 @@ function karst(g, p, s, base) {
   const ledges = [0.3, 0.52, 0.7].map((at, i) => Math.round(height * (at + (hash(i, p.seed, 7) - 0.5) * 0.1)));
   for (let r = 0; r < height; r += 1) {
     const f = r / height;
-    const half = Math.round((width / 2) * (1 - Math.pow(f, 5.5)) + (hash(r >> 1, p.seed, 1) - 0.5) * 2.4);
+    const half = Math.round((width / 2) * (1 - f ** 5.5) + (hash(r >> 1, p.seed, 1) - 0.5) * 2.4);
     if (half < 1) break;
     const y = base - 1 - r;
     const ledge = ledges.some((l) => r >= l && r < l + 2);
@@ -528,21 +563,102 @@ function generate(ctx) {
     { key: "banana2", half: 8, away: CLEARING + 4 },
   ]);
   const wide = cols >= 200;
-  scatter(plants, ctx, { kind: "karst", count: Math.round(cols / 40), born: [1, 3], scale: [0.75, 1.2], layer: -1, keep: middle });
-  scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 16), born: [1, 4], scale: [0.5, 0.8], layer: 0, species: TREES });
+  scatter(plants, ctx, {
+    kind: "karst",
+    count: Math.round(cols / 40),
+    born: [1, 3],
+    scale: [0.75, 1.2],
+    layer: -1,
+    keep: middle,
+  });
+  scatter(plants, ctx, {
+    kind: "tree",
+    count: Math.round(cols / 16),
+    born: [1, 4],
+    scale: [0.5, 0.8],
+    layer: 0,
+    species: TREES,
+  });
   scatter(plants, ctx, { kind: "treefern", count: Math.round(cols / 30), born: [1, 3], scale: [0.8, 1.1], layer: 0 });
   scatter(plants, ctx, { kind: "fern", count: Math.round(cols / 10), born: [0, 3], scale: [0.8, 1.2], layer: 0 });
-  scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 30), born: [1, 4], scale: [0.85, 1.3], depth: [3, 12], species: TREES });
-  grove(plants, ctx, { kind: "bamboo", x: spots.bamboo, count: 4, gap: 4, born: [1, 3], scale: [0.9, 1.25], depth: [3, 6] });
-  grove(plants, ctx, { kind: "banana", x: spots.banana, count: 4, gap: 5, born: [1, 3], scale: [0.85, 1.15], depth: [4, 9] });
-  if (wide) grove(plants, ctx, { kind: "bamboo", x: spots.bamboo2, count: 3, gap: 4, born: [2, 4], scale: [0.8, 1.1], depth: [2, 5] });
-  if (wide) grove(plants, ctx, { kind: "banana", x: spots.banana2, count: 3, gap: 5, born: [2, 4], scale: [0.75, 1], depth: [5, 10] });
-  scatter(plants, ctx, { kind: "treefern", count: Math.round(cols / 40), born: [2, 4], scale: [0.9, 1.3], depth: [3, 12] });
-  scatter(plants, ctx, { kind: "cycad", count: Math.round(cols / 45), born: [1, 4], scale: [0.9, 1.3], depth: [6, 14] });
+  scatter(plants, ctx, {
+    kind: "tree",
+    count: Math.round(cols / 30),
+    born: [1, 4],
+    scale: [0.85, 1.3],
+    depth: [3, 12],
+    species: TREES,
+  });
+  grove(plants, ctx, {
+    kind: "bamboo",
+    x: spots.bamboo,
+    count: 4,
+    gap: 4,
+    born: [1, 3],
+    scale: [0.9, 1.25],
+    depth: [3, 6],
+  });
+  grove(plants, ctx, {
+    kind: "banana",
+    x: spots.banana,
+    count: 4,
+    gap: 5,
+    born: [1, 3],
+    scale: [0.85, 1.15],
+    depth: [4, 9],
+  });
+  if (wide)
+    grove(plants, ctx, {
+      kind: "bamboo",
+      x: spots.bamboo2,
+      count: 3,
+      gap: 4,
+      born: [2, 4],
+      scale: [0.8, 1.1],
+      depth: [2, 5],
+    });
+  if (wide)
+    grove(plants, ctx, {
+      kind: "banana",
+      x: spots.banana2,
+      count: 3,
+      gap: 5,
+      born: [2, 4],
+      scale: [0.75, 1],
+      depth: [5, 10],
+    });
+  scatter(plants, ctx, {
+    kind: "treefern",
+    count: Math.round(cols / 40),
+    born: [2, 4],
+    scale: [0.9, 1.3],
+    depth: [3, 12],
+  });
+  scatter(plants, ctx, {
+    kind: "cycad",
+    count: Math.round(cols / 45),
+    born: [1, 4],
+    scale: [0.9, 1.3],
+    depth: [6, 14],
+  });
   scatter(plants, ctx, { kind: "bush", count: Math.round(cols / 26), born: [2, 5], scale: [0.8, 1.2], depth: [2, 13] });
   scatter(plants, ctx, { kind: "fern", count: Math.round(cols / 6), born: [0, 3], scale: [0.8, 1.3], depth: [0, 15] });
-  scatter(plants, ctx, { kind: "mushroom", count: Math.round(cols / 24), born: [2, 6], scale: [1.3, 1.8], depth: [2, 14], species: FUNGI });
-  scatter(plants, ctx, { kind: "rafflesia", count: Math.max(1, Math.round(cols / 110)), born: [3, 6], scale: [0.9, 1.3], depth: [5, 14], max: 2 });
+  scatter(plants, ctx, {
+    kind: "mushroom",
+    count: Math.round(cols / 24),
+    born: [2, 6],
+    scale: [1.3, 1.8],
+    depth: [2, 14],
+    species: FUNGI,
+  });
+  scatter(plants, ctx, {
+    kind: "rafflesia",
+    count: Math.max(1, Math.round(cols / 110)),
+    born: [3, 6],
+    scale: [0.9, 1.3],
+    depth: [5, 14],
+    max: 2,
+  });
   const tall = ["tree", "bamboo", "banana", "bush", "treefern"];
   for (const p of plants) {
     if (tall.includes(p.kind)) p.scale *= clearing(p.x, cols);
@@ -728,7 +844,7 @@ const MACAQUE = {
   sit: ["..BBB..", "..BFDF.", "..BFF..", ".BBBB..", "BBBBBB.", "BBSSBB.", "D.BBBB.", "DDBB.BB"],
 };
 
-function monkeyAt(g, m, time) {
+function monkeyAt(g, m, _time) {
   const [body, dark, face] = g.pal.monkey;
   const colours = { B: body, S: dark, F: face, D: dark };
   const x = Math.round(m.x);
@@ -849,12 +965,20 @@ const extras = {
       ],
       hornbills: { next: 4, bird: null },
       kingfisher: { next: 2, bird: null },
-      eagle: { cx: f.cols * (0.25 + f.rand() * 0.5), r: Math.min(60, f.cols * 0.3), y: 14 + f.rand() * 10, phase: f.rand() * 6 },
+      eagle: {
+        cx: f.cols * (0.25 + f.rand() * 0.5),
+        r: Math.min(60, f.cols * 0.3),
+        y: 14 + f.rand() * 10,
+        phase: f.rand() * 6,
+      },
       gibbon: { active: false, layer: 1, hx: 0, hy: 0, dir: 1, t: 0, leap: null },
       langur: null,
       monkey: walker(f),
       otters: [walker(f), walker(f), walker(f)],
-      elephants: [{ ...walker(f), kind: "asian" }, { ...walker(f, 0.55), kind: "asian" }],
+      elephants: [
+        { ...walker(f), kind: "asian" },
+        { ...walker(f, 0.55), kind: "asian" },
+      ],
     };
   },
 
@@ -885,7 +1009,8 @@ const extras = {
         spawn: () => ({ y: 18 + f.rand() * Math.max(10, f.groundY - 110), members: flock(f, 2, 16, 2) }),
       });
     }
-    if (f.stage >= 2 && !isNight(f)) flyBy(f, x.kingfisher, dt, { every: [4, 5], speed: 62, spawn: () => ({ y: f.groundY - 14 - f.rand() * 34 }) });
+    if (f.stage >= 2 && !isNight(f))
+      flyBy(f, x.kingfisher, dt, { every: [4, 5], speed: 62, spawn: () => ({ y: f.groundY - 14 - f.rand() * 34 }) });
     if (f.stage >= 5) moveGibbon(f, x.gibbon, dt);
     if (f.stage >= 6 && !x.langur) {
       const tree = bigCrown(f);

@@ -32,7 +32,7 @@
 //
 // Nothing here is stored: a reload plants a new random scene at stage 0.
 
-import { CELL, P, SOIL_ROWS, clamp, fade, rng, smooth } from "./kit/pixel.js";
+import { CELL, clamp, fade, P, rng, SOIL_ROWS, smooth } from "./kit/pixel.js";
 import desert from "./scenes/desert.js";
 import hawaii from "./scenes/hawaii.js";
 import hundredacre from "./scenes/hundredacre.js";

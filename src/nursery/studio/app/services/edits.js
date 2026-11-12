@@ -55,10 +55,10 @@ function patchFor(model, job, theme, f, original, target, linked) {
                 "rest of the paper is the body. Close the outline around any body pixel. The " +
                 "eye shows in its own colour here; in omsync it is drawn like the outline.",
             }
-        : {
-            drawnBy: w ? `${w.fn ? `${w.fn} at ` : ""}${w.path}:${w.line}` : null,
-            pose_in_sprites_js: `src/nursery/studio/shared/sprites.js SPRITES.${model.sid}["${job.name}"]`,
-          }),
+          : {
+              drawnBy: w ? `${w.fn ? `${w.fn} at ` : ""}${w.path}:${w.line}` : null,
+              pose_in_sprites_js: `src/nursery/studio/shared/sprites.js SPRITES.${model.sid}["${job.name}"]`,
+            }),
     box: { w: job.box.w, h: job.box.h },
     anchor: { x: 40, feet: job.feet },
     note:
@@ -70,7 +70,16 @@ function patchFor(model, job, theme, f, original, target, linked) {
     pixels,
     original: encode(original),
     target: encode(target),
-    picture: sheet([["original", original], ["edit", target], ["changed", target, true]], crop, bg, indexes),
+    picture: sheet(
+      [
+        ["original", original],
+        ["edit", target],
+        ["changed", target, true],
+      ],
+      crop,
+      bg,
+      indexes,
+    ),
     saved: new Date().toISOString(),
   };
 }

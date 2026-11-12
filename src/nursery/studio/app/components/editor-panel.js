@@ -143,9 +143,11 @@ export class EditorPanel extends LitElement {
         <div class="swatches">${s.usedColours().map(swatch)}</div>
         <div class="eyebrow">Scene palette · ${s.palette.length} colours</div>
         <div class="swatches">${s.palette.map(swatch)}</div>
-        ${s.job.themes.length > 1
-          ? html`<label class="opt"><input type="checkbox" .checked=${s.link} @change=${toggle("link")} /> Paint day and night together</label>`
-          : nothing}
+        ${
+          s.job.themes.length > 1
+            ? html`<label class="opt"><input type="checkbox" .checked=${s.link} @change=${toggle("link")} /> Paint day and night together</label>`
+            : nothing
+        }
         <label class="opt"><input type="checkbox" .checked=${s.marks} @change=${toggle("marks")} /> Mark changed pixels</label>
       </div>
     `;

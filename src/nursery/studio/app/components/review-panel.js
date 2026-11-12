@@ -103,7 +103,8 @@ export class ReviewPanel extends LitElement {
       <section>
         <span class="eyebrow">Your choice</span>
         ${s.variants.map(
-          (v) => html`<label class="choice"><input type="radio" name="v" .checked=${s.choice === v.title} @change=${choose(v.title)} /> Variant ${v.title}</label>`,
+          (v) =>
+            html`<label class="choice"><input type="radio" name="v" .checked=${s.choice === v.title} @change=${choose(v.title)} /> Variant ${v.title}</label>`,
         )}
         <label class="choice"><input type="radio" name="v" .checked=${s.choice === ""} @change=${choose("")} /> None of these</label>
       </section>
@@ -116,11 +117,13 @@ export class ReviewPanel extends LitElement {
             s.notes = e.target.value;
           }}
         ></textarea>
-        ${s.chosen
-          ? html`<button class="btn" @click=${() => act(this, "edit", { sid: p.sid, name: s.chosen.name, f: s.frameOf(s.chosen) })}>
+        ${
+          s.chosen
+            ? html`<button class="btn" @click=${() => act(this, "edit", { sid: p.sid, name: s.chosen.name, f: s.frameOf(s.chosen) })}>
               <n-icon name="pencil"></n-icon>Edit pixels on this frame
             </button>`
-          : nothing}
+            : nothing
+        }
       </section>
       <section class="verdict">
         <button class="btn block" ?disabled=${s.saving} @click=${() => s.verdict("changes")}>
@@ -132,25 +135,29 @@ export class ReviewPanel extends LitElement {
       </section>
       <section>
         <span class="saved">
-          ${r
-            ? `You ${r.verdict === "approve" ? `approved ${r.choice}` : "asked for changes"} on ${r.reviewed.slice(0, 16).replace("T", " ")}${
-                r.mtime < p.info.mtime ? "; the agent has revised it since." : "."
-              }`
-            : "Not reviewed yet."}
+          ${
+            r
+              ? `You ${r.verdict === "approve" ? `approved ${r.choice}` : "asked for changes"} on ${r.reviewed.slice(0, 16).replace("T", " ")}${
+                  r.mtime < p.info.mtime ? "; the agent has revised it since." : "."
+                }`
+              : "Not reviewed yet."
+          }
         </span>
       </section>
       <section>
-        ${this.removing
-          ? html`<div class="confirm">
-              Remove this proposal with its review and pixel edits? The code stays as it is${p.state === "approved"
-                ? ", and this approved design is not built yet, so it would be lost"
-                : ""}.
+        ${
+          this.removing
+            ? html`<div class="confirm">
+              Remove this proposal with its review and pixel edits? The code stays as it is${
+                p.state === "approved" ? ", and this approved design is not built yet, so it would be lost" : ""
+              }.
               <div class="verdict">
                 <button class="btn primary" @click=${this.removeProposal}><n-icon name="trash-2"></n-icon>Remove</button>
                 <button class="btn" @click=${() => (this.removing = false)}>Keep it</button>
               </div>
             </div>`
-          : html`<button class="btn ghost" @click=${() => (this.removing = true)}><n-icon name="trash-2"></n-icon>Remove proposal</button>`}
+            : html`<button class="btn ghost" @click=${() => (this.removing = true)}><n-icon name="trash-2"></n-icon>Remove proposal</button>`
+        }
       </section>
     `;
   }

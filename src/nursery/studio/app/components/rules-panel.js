@@ -2,8 +2,9 @@
 // landmark, a timed event, density, sizes against the mascot, families, an ambient layer. Rules
 // that only show in motion (flyby speeds, the food chain, idle poses) are marked for your eye
 // with what to look at, instead of a guess.
-import { running } from "../services/live-scene.js";
+
 import { timers } from "../services/events.js";
+import { running } from "../services/live-scene.js";
 import { css, html, LitElement } from "../ui/lit.js";
 import { shared } from "../ui/shared.js";
 

@@ -5,7 +5,7 @@
 // plain; by day a roller and a flamingo fly over. At night it is an indigo savanna under a moon.
 // When a cub strays to an edge of the page, the lion roars from his ledge and calls it home.
 import { elephantAt, flamingoAt, flyerAt, groundBirdAt, raptorAt } from "../kit/animals.js";
-import { enter, enterBehind, flyBy, follow, isNight, narrow, soarAt, soarer, wander, walker } from "../kit/critters.js";
+import { enter, enterBehind, flyBy, follow, isNight, narrow, soarAt, soarer, walker, wander } from "../kit/critters.js";
 import { mistAt, mistBand } from "../kit/effects.js";
 import {
   blob,
@@ -147,7 +147,7 @@ function acacia(g, p, s, base) {
   const shade = foliage({ cx, top, w: half * 2, h: H * 3 }, pal.acacia, p.seed);
   for (let r = 0; r < H; r += 1) {
     const u = (H - r) / H;
-    const w = Math.round(half * Math.pow(Math.max(0, 1 - u ** 3), 1 / 3));
+    const w = Math.round(half * Math.max(0, 1 - u ** 3) ** (1 / 3));
     for (let x = cx - w; x <= cx + w; x += 1) {
       const edge = x - (cx - w) < 2 || cx + w - x < 2 || r === 0;
       if (edge && hash(x, r, p.seed) < 0.35) continue;
@@ -177,7 +177,7 @@ function kopje(g, p, s, base) {
   }
 }
 
-function prideRows(p, s) {
+function prideRows(_p, s) {
   return Math.max(8, Math.round(PRIDE_ROWS * s));
 }
 
@@ -286,11 +286,9 @@ function mound(g, p, s, base) {
   const h = Math.max(3, Math.round(14 * p.scale * s));
   const w = Math.round(h * 1.1) + 2;
   for (let r = 0; r < h; r += 1) {
-    const half = Math.round((w / 2) * Math.pow(1 - r / h, 0.7) + (hash(r, p.seed, 4) - 0.5));
+    const half = Math.round((w / 2) * (1 - r / h) ** 0.7 + (hash(r, p.seed, 4) - 0.5));
     if (half < 1) break;
-    row(g, base - 1 - r, p.x - half, p.x + half, (x) =>
-      pal.mound[x < p.x ? 0 : x < p.x + half / 2 ? 1 : 2],
-    );
+    row(g, base - 1 - r, p.x - half, p.x + half, (x) => pal.mound[x < p.x ? 0 : x < p.x + half / 2 ? 1 : 2]);
   }
 }
 
@@ -310,7 +308,12 @@ function deadTree(g, p, s, base) {
 function grass(g, p, s, base) {
   const { pal } = g;
   const length = Math.max(2, Math.round((6 + (p.seed % 4)) * p.scale * s));
-  const blades = [[-0.6, -1, 0.5], [-0.2, -1, 0.3], [0.2, -1, 0.35], [0.6, -1, 0.5]];
+  const blades = [
+    [-0.6, -1, 0.5],
+    [-0.2, -1, 0.3],
+    [0.2, -1, 0.35],
+    [0.6, -1, 0.5],
+  ];
   for (const [dx, dy, droop] of blades) {
     stroke(g, p.x, base - 1, dx, dy, length, droop, 1, [pal.grass[1], pal.grass[0]]);
   }
@@ -336,12 +339,36 @@ function generate(ctx) {
   const prideX = Math.round(cols * (rand() < 0.5 ? 0.2 : 0.8));
   scatter(plants, ctx, { kind: "hills", count: Math.round(cols / 50), born: [1, 2], scale: [1.1, 1.6], layer: -1 });
   scatter(plants, ctx, { kind: "kopje", count: Math.round(cols / 45), born: [1, 3], scale: [0.8, 1.2], layer: 0 });
-  scatter(plants, ctx, { kind: "acacia", count: Math.round(cols / 22), born: [1, 4], scale: [0.55, 1.3], depth: [2, 12] });
-  scatter(plants, ctx, { kind: "scrub", count: Math.round(cols / 14), born: [2, 5], scale: [0.8, 1.3], depth: [1, 13] });
-  scatter(plants, ctx, { kind: "mound", count: Math.round(cols / 40), born: [2, 6], scale: [0.8, 1.2], depth: [3, 13] });
+  scatter(plants, ctx, {
+    kind: "acacia",
+    count: Math.round(cols / 22),
+    born: [1, 4],
+    scale: [0.55, 1.3],
+    depth: [2, 12],
+  });
+  scatter(plants, ctx, {
+    kind: "scrub",
+    count: Math.round(cols / 14),
+    born: [2, 5],
+    scale: [0.8, 1.3],
+    depth: [1, 13],
+  });
+  scatter(plants, ctx, {
+    kind: "mound",
+    count: Math.round(cols / 40),
+    born: [2, 6],
+    scale: [0.8, 1.2],
+    depth: [3, 13],
+  });
   scatter(plants, ctx, { kind: "dead", count: Math.round(cols / 50), born: [3, 6], scale: [0.9, 1.3], depth: [4, 13] });
   scatter(plants, ctx, { kind: "grass", count: Math.round(cols / 4), born: [0, 3], scale: [0.8, 1.3], depth: [0, 15] });
-  scatter(plants, ctx, { kind: "flower", count: Math.round(cols / 9), born: [1, 5], scale: [0.8, 1.3], depth: [0, 14] });
+  scatter(plants, ctx, {
+    kind: "flower",
+    count: Math.round(cols / 9),
+    born: [1, 5],
+    scale: [0.8, 1.3],
+    depth: [0, 14],
+  });
   plants.push(makePlant(rand, "pride", prideX, { born: 1, depth: 1 }));
   plants.push(makePlant(rand, "migration", 0, { layer: 0, born: 3, herd: Math.round(cols / 18) }));
   for (const p of plants) {
@@ -355,9 +382,7 @@ function generate(ctx) {
   const out = prideDir(prideX, cols);
   const lo = prideX - (out > 0 ? PRIDE_BACK : PRIDE_TIP);
   const hi = prideX + (out > 0 ? PRIDE_TIP : PRIDE_BACK);
-  const kept = plants.filter(
-    (p) => !clear.includes(p.kind) || p.x <= lo - crown(p) || p.x >= hi + crown(p),
-  );
+  const kept = plants.filter((p) => !clear.includes(p.kind) || p.x <= lo - crown(p) || p.x >= hi + crown(p));
   sortPlants(kept);
   return kept;
 }
@@ -557,25 +582,11 @@ function ringAt(g, mx, my, dir, radius, alpha) {
 // A lion cub, facing right as written, in the lion's palette: T tawny, S tawny shade, P pale, D dark,
 // e eye. A big round head with big ears held above a short body. Rows 0 to 5 stand on legs that
 // CUB_LEGS gives as each leg's column and width.
-const CUB_WALK = [
-  ".....SS.SS.",
-  ".....STTTT.",
-  ".....TTTeTT",
-  "TTTTTTTTTPD",
-  "TTTTTTTTPPP",
-  ".SSSSSPPP..",
-];
+const CUB_WALK = [".....SS.SS.", ".....STTTT.", ".....TTTeTT", "TTTTTTTTTPD", "TTTTTTTTPPP", ".SSSSSPPP.."];
 const CUB_LEGS = { hindNear: [1, 2], hindFar: [3, 1], foreFar: [6, 1], foreNear: [7, 2] };
 const CUB_SWING = [-1, 0, 1, 0];
 // Standing and looking up, as the lion roars: the muzzle tilts up and the ears lie back.
-const CUB_STAND_UP = [
-  "........TPD",
-  "....STTTTPP",
-  "....SSTeTT.",
-  "TTTTTTTTTT.",
-  "TTTTTTTTPP.",
-  ".SSSSSPPP..",
-];
+const CUB_STAND_UP = ["........TPD", "....STTTTPP", "....SSTeTT.", "TTTTTTTTTT.", "TTTTTTTTPP.", ".SSSSSPPP.."];
 // Sitting on its haunches, forepaws together in front; and sitting, looking up.
 const CUB_SIT = [
   "..SS.SS..",
@@ -724,7 +735,7 @@ const ZEBRA_FOAL = [
   ".SSSSSSS....",
 ];
 // Its palette is zebra: [white, black, belly].
-function zebraAt(g, z, time) {
+function zebraAt(g, z, _time) {
   const [white, black, belly] = g.pal.zebra;
   const foal = z.scale < 1;
   const grid = foal ? ZEBRA_FOAL : ZEBRA;
@@ -766,7 +777,7 @@ function migration(g, p, s, base) {
 
 // A secretary bird, long-legged and crested, walking. Its palette is secretary: [grey, black,
 // face, white].
-function secretaryAt(g, b, time) {
+function secretaryAt(g, b, _time) {
   groundBirdAt(g, b, "secretary");
 }
 
@@ -786,7 +797,10 @@ function sunAt(g, f) {
   const [disc, halo] = g.pal.sun;
   const cx = Math.round(f.cols * 0.72);
   const cy = f.groundY - 28;
-  for (const [r, alpha] of [[14, 0.12], [9, 0.22]]) {
+  for (const [r, alpha] of [
+    [14, 0.12],
+    [9, 0.22],
+  ]) {
     g.ctx.globalAlpha = alpha;
     blob(g, cx, cy - r, r * 2, r * 2, () => halo);
   }
@@ -1025,7 +1039,16 @@ export default {
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.62], dark: [0.45, 0.66] },
   mature: {
-    hills: 2, kopje: 2.5, pride: 2.5, acacia: 3.5, scrub: 2, mound: 2, dead: 1.5, grass: 1.5, flower: 1.5, migration: 1,
+    hills: 2,
+    kopje: 2.5,
+    pride: 2.5,
+    acacia: 3.5,
+    scrub: 2,
+    mound: 2,
+    dead: 1.5,
+    grass: 1.5,
+    flower: 1.5,
+    migration: 1,
   },
   paint: { hills, kopje, pride: prideRock, acacia, scrub, mound, dead: deadTree, grass, flower: wildflower, migration },
   generate,

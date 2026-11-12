@@ -7,11 +7,9 @@
 // butterflies fly over.
 import { bearAt, canidAt, cervidAt, flyerAt, hareAt, kingfisherAt, raptorAt } from "../kit/animals.js";
 import { enter, enterBehind, flyBy, follow, isNight, soarAt, soarer, stroll, walker, wander } from "../kit/critters.js";
-import { broadleafTree, clump, coniferTree } from "../kit/trees.js";
 import {
-  CLEARING,
-  NARROW_COLS,
   blob,
+  CLEARING,
   clamp,
   clearing,
   foliage,
@@ -19,6 +17,7 @@ import {
   hash,
   line,
   makePlant,
+  NARROW_COLS,
   placeLandmarks,
   rect,
   row,
@@ -27,6 +26,7 @@ import {
   sortPlants,
   wind,
 } from "../kit/pixel.js";
+import { broadleafTree, clump, coniferTree } from "../kit/trees.js";
 
 const TREE_ROWS = 34; // a full-grown tree at scale 1
 const BUTTERFLY_MAX = 4;
@@ -65,7 +65,19 @@ const LIGHT = {
   red: ["#e8742a", "#2b2420", "#fdf6ea", "#2b2420", "#fdf6ea"],
   elk: ["#a07048", "#6b4a2e", "#e8d6b4", "#d9c29a", "#4a3220", "#7f5836"],
   bear: ["#322a27", "#4e4039", "#bc9d7c", "#141010", "#262020"],
-  jay: { C: "#1f2a40", H: "#2a3a5a", E: "#f2f2f2", K: "#1a1a1a", T: "#3a6bb0", b: "#3a6bb0", B: "#3a6bb0", l: "#2d4f8c", t: "#3a6bb0", p: "#7aa6dc", d: "#1f3560" },
+  jay: {
+    C: "#1f2a40",
+    H: "#2a3a5a",
+    E: "#f2f2f2",
+    K: "#1a1a1a",
+    T: "#3a6bb0",
+    b: "#3a6bb0",
+    B: "#3a6bb0",
+    l: "#2d4f8c",
+    t: "#3a6bb0",
+    p: "#7aa6dc",
+    d: "#1f3560",
+  },
   kingfisher: ["#5b82a8", "#c8653a", "#2c2c34", "#f6f2ea"],
   eagle: ["#4a3426", "#e0a93a", "#4a3426", "#f3eadb", "#7a5a44"],
   granite: ["#a99f8e", "#958c7d", "#7d766b", "#615c55"],
@@ -102,7 +114,19 @@ const DARK = {
   red: ["#ee7c30", "#2b2420", "#f0e8da", "#2b2420", "#f0e8da"],
   elk: ["#b07c50", "#7a5636", "#e0cdaa", "#d9c29a", "#543924", "#8c6240"],
   bear: ["#5a4c46", "#76645a", "#bc9d7c", "#1a1414", "#3a302c"],
-  jay: { C: "#171e2d", H: "#1d283c", E: "#959698", K: "#141416", T: "#274570", b: "#274570", B: "#274570", l: "#1f345a", t: "#274570", p: "#4d688a", d: "#172540" },
+  jay: {
+    C: "#171e2d",
+    H: "#1d283c",
+    E: "#959698",
+    K: "#141416",
+    T: "#274570",
+    b: "#274570",
+    B: "#274570",
+    l: "#1f345a",
+    t: "#274570",
+    p: "#4d688a",
+    d: "#172540",
+  },
   kingfisher: ["#6a90b8", "#c8653a", "#52525e", "#f0ece4"],
   eagle: ["#7a5638", "#f2c25a", "#7a5638", "#f5efe4", "#5a4432"],
   granite: ["#77726b", "#68635d", "#4a4642", "#3a3734"],
@@ -231,7 +255,15 @@ function sequoia(g, p, s, base) {
     const trunkX = p.x + side * (widthAt(r) >> 1);
     const cx = trunkX + side * Math.round(total * reach) + sway;
     const cy = base - 1 - r - Math.round(total * reach * 0.5);
-    return { trunkX, y: base - 1 - r, cx, cy, w: Math.round(total * cw), h: Math.max(3, Math.round(total * ch * 1.35)), i };
+    return {
+      trunkX,
+      y: base - 1 - r,
+      cx,
+      cy,
+      w: Math.round(total * cw),
+      h: Math.max(3, Math.round(total * ch * 1.35)),
+      i,
+    };
   });
   for (const b of boughs) {
     const thick = total >= 50 ? 2 : 1;
@@ -240,7 +272,15 @@ function sequoia(g, p, s, base) {
     }
   }
   // The crown closes over the tip, a little off centre, as an old tree's does.
-  clump(g, p.x + sway + 1, base - total + Math.round(total * 0.06), Math.round(total * 0.22), Math.round(total * 0.12), pal.sequoia, p.seed + 99);
+  clump(
+    g,
+    p.x + sway + 1,
+    base - total + Math.round(total * 0.06),
+    Math.round(total * 0.22),
+    Math.round(total * 0.12),
+    pal.sequoia,
+    p.seed + 99,
+  );
   for (const b of boughs) clump(g, b.cx, b.cy, b.w, b.h, pal.sequoia, p.seed + b.i * 7);
 }
 
@@ -262,7 +302,7 @@ function hill(g, p, s, base) {
   const width = Math.round(100 * p.scale);
   for (let r = 0; r < height; r += 1) {
     const f = r / height;
-    const half = Math.round((width / 2) * Math.pow(1 - f, 0.55) + (hash(r, p.seed, 1) - 0.5) * 2);
+    const half = Math.round((width / 2) * (1 - f) ** 0.55 + (hash(r, p.seed, 1) - 0.5) * 2);
     if (half < 1) break;
     row(g, base - 1 - r, p.x - half, p.x + half, (x) => {
       if (f > 0.85 && hash(x, r, p.seed) < 0.5) return pal.hill[0];
@@ -398,16 +438,55 @@ function generate(ctx) {
   plants.push(makePlant(rand, "elcap", capX, { layer: -1, depth: 2, born: 1, scale: capScale }));
   // Sequoia groves stand at both ends of the cliff, so it does not rise bare out of the meadow.
   const sequoias = { kind: "sequoia", gap: 5, born: [2, 4], layer: 0 };
-  grove(plants, ctx, { ...sequoias, x: Math.max(capLeft + 2, 4), count: narrowPage ? 2 : 4, scale: [1.3 * capScale, 1.8 * capScale] });
-  grove(plants, ctx, { ...sequoias, x: capX + capHalf - 4, count: narrowPage ? 2 : 3, scale: [1.1 * capScale, 1.6 * capScale] });
-  scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 13), born: [1, 4], scale: [0.55, 0.85], layer: 0, species: TREES, keep: open });
+  grove(plants, ctx, {
+    ...sequoias,
+    x: Math.max(capLeft + 2, 4),
+    count: narrowPage ? 2 : 4,
+    scale: [1.3 * capScale, 1.8 * capScale],
+  });
+  grove(plants, ctx, {
+    ...sequoias,
+    x: capX + capHalf - 4,
+    count: narrowPage ? 2 : 3,
+    scale: [1.1 * capScale, 1.6 * capScale],
+  });
+  scatter(plants, ctx, {
+    kind: "tree",
+    count: Math.round(cols / 13),
+    born: [1, 4],
+    scale: [0.55, 0.85],
+    layer: 0,
+    species: TREES,
+    keep: open,
+  });
   scatter(plants, ctx, { kind: "bush", count: Math.round(cols / 22), born: [2, 5], scale: [0.6, 0.9], layer: 0 });
   scatter(plants, ctx, { kind: "flower", count: Math.round(cols / 18), born: [0, 4], scale: [0.8, 1.2], layer: 0 });
   scatter(plants, ctx, { kind: "tuft", count: Math.round(cols / 8), born: [0, 3], scale: [0.8, 1.2], layer: 0 });
-  scatter(plants, ctx, { kind: "sequoia", count: Math.round(cols / 22), born: [2, 4], scale: [1.5, 1.9], layer: 0, keep: (x) => middle(x) && open(x) });
-  scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 22), born: [1, 4], scale: [0.85, 1.35], depth: [3, 12], species: TREES, keep: open });
+  scatter(plants, ctx, {
+    kind: "sequoia",
+    count: Math.round(cols / 22),
+    born: [2, 4],
+    scale: [1.5, 1.9],
+    layer: 0,
+    keep: (x) => middle(x) && open(x),
+  });
+  scatter(plants, ctx, {
+    kind: "tree",
+    count: Math.round(cols / 22),
+    born: [1, 4],
+    scale: [0.85, 1.35],
+    depth: [3, 12],
+    species: TREES,
+    keep: open,
+  });
   scatter(plants, ctx, { kind: "bush", count: Math.round(cols / 18), born: [2, 5], scale: [0.8, 1.2], depth: [2, 13] });
-  scatter(plants, ctx, { kind: "flower", count: Math.round(cols / 8), born: [0, 4], scale: [0.8, 1.3], depth: [0, 14] });
+  scatter(plants, ctx, {
+    kind: "flower",
+    count: Math.round(cols / 8),
+    born: [0, 4],
+    scale: [0.8, 1.3],
+    depth: [0, 14],
+  });
   scatter(plants, ctx, { kind: "tuft", count: Math.round(cols / 4), born: [0, 3], scale: [0.8, 1.2], depth: [0, 15] });
   scatter(plants, ctx, { kind: "mushroom", count: Math.round(cols / 45), born: [5, 7], depth: [4, 13] });
   for (const p of plants) {
@@ -504,7 +583,20 @@ const extras = {
   busy: (f) => f.stage >= 2 || f.extra.petals.length > 0,
 
   update(f, dt) {
-    const { petals, rabbit, fox, pounce, elk, bears, kingfisher, eagle, jay, soarer: circler, cliff, firefall } = f.extra;
+    const {
+      petals,
+      rabbit,
+      fox,
+      pounce,
+      elk,
+      bears,
+      kingfisher,
+      eagle,
+      jay,
+      soarer: circler,
+      cliff,
+      firefall,
+    } = f.extra;
     // The firefall: the sun catches Horsetail Fall for a few seconds, then slips away. It shows
     // only at night, when the fall glows.
     if (f.time >= firefall.next) {
@@ -544,10 +636,13 @@ const extras = {
     follow(cub, bear, dt, 16);
     cub.phase = bear.phase + 1;
     const day = !isNight(f);
-    if (f.stage >= 2 && day) flyBy(f, kingfisher, dt, { every: [4, 5], speed: 62, spawn: () => ({ y: f.groundY - 14 - f.rand() * 34 }) });
-    if (f.stage >= 4 && day) flyBy(f, jay, dt, { every: [7, 5], speed: 24, spawn: () => ({ y: f.groundY - 50 - f.rand() * 30 }) });
+    if (f.stage >= 2 && day)
+      flyBy(f, kingfisher, dt, { every: [4, 5], speed: 62, spawn: () => ({ y: f.groundY - 14 - f.rand() * 34 }) });
+    if (f.stage >= 4 && day)
+      flyBy(f, jay, dt, { every: [7, 5], speed: 24, spawn: () => ({ y: f.groundY - 50 - f.rand() * 30 }) });
     // The golden eagle crosses slowly; a second one circles over the meadow.
-    if (f.stage >= 6 && day) flyBy(f, eagle, dt, { every: [8, 4], speed: 13, spawn: () => ({ y: 20 + f.rand() * 28 }) });
+    if (f.stage >= 6 && day)
+      flyBy(f, eagle, dt, { every: [8, 4], speed: 13, spawn: () => ({ y: 20 + f.rand() * 28 }) });
     circler.active = f.stage >= 7 && day;
     if (f.stage >= 7) {
       for (const p of f.plants) {

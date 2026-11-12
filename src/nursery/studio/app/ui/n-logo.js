@@ -2,8 +2,9 @@
 // studio's Lucide sprout planted in the trunk. Its outline follows the text colour and the sprout
 // the studio's green, in either theme. brand/mark.js and brand/favicon.svg (the same drawing for
 // the browser tab) are built from the mascot's grid by `nursery brand`; never edit them here.
-import { css, html, LitElement, unsafeSVG } from "../ui/lit.js";
+
 import { MARK, VIEWBOX } from "../brand/mark.js";
+import { css, html, LitElement, unsafeSVG } from "../ui/lit.js";
 
 export class NLogo extends LitElement {
   static properties = { size: { type: Number } };

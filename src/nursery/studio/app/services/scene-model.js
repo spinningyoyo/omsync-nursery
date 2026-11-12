@@ -5,8 +5,9 @@
 //
 // The rendering, frames, edit states and proposal loading must keep producing what saved edits,
 // baselines and `nursery check` expect, so changing them changes those files' meaning.
-import { SCENES as ENGINE_SCENES } from "/js/nursery.js";
+
 import { FAMILIES, hasFamily, roleIn } from "/families.js";
+import { SCENES as ENGINE_SCENES } from "/js/nursery.js";
 import * as poses from "/sprites.js";
 import { api } from "./api.js";
 import { bounds, decode, encode, same, union } from "./pixels.js";
@@ -97,7 +98,9 @@ export function renderJob(job, kit = poses, M = job.M) {
       const seen = job.frames.some((k) => THEMES.every((t, i) => same(job.renders.get(`${t}|${k}`), imgs[i])));
       if (seen && !job.proposal) continue;
       job.frames.push(f);
-      THEMES.forEach((t, i) => job.renders.set(`${t}|${f}`, imgs[i]));
+      THEMES.forEach((t, i) => {
+        job.renders.set(`${t}|${f}`, imgs[i]);
+      });
     }
   } catch (error) {
     job.error = String(error?.message ?? error);
@@ -443,7 +446,11 @@ export class SceneModel {
             state: "bad",
             detail: wide.map((i) => `${i.label} ${Math.max(...i.jobs.map((j) => j.size[0]))} px`).join(", "),
           }
-        : { rule: `No animal wider than the mascot (${MASCOT_WIDTH} px)`, state: "ok", detail: `${creatures.length} checked` },
+        : {
+            rule: `No animal wider than the mascot (${MASCOT_WIDTH} px)`,
+            state: "ok",
+            detail: `${creatures.length} checked`,
+          },
     );
     const orphans = creatures.flatMap((i) => i.jobs).filter((j) => !hasFamily(this.sid, j.name));
     out.push(
@@ -496,7 +503,8 @@ export function mascotKinds(text) {
     exterior.add(y * w + x);
     queue.push([x, y]);
   };
-  for (let y = 0; y < h; y += 1) for (let x = 0; x < w; x += 1) if (x === 0 || y === 0 || x === w - 1 || y === h - 1) reach(x, y);
+  for (let y = 0; y < h; y += 1)
+    for (let x = 0; x < w; x += 1) if (x === 0 || y === 0 || x === w - 1 || y === h - 1) reach(x, y);
   while (queue.length) {
     const [x, y] = queue.pop();
     reach(x + 1, y);
@@ -531,13 +539,13 @@ export class BrandModel extends SceneModel {
       brand: true,
       item: { label: "Mascot", where: { path: BRAND_GRID, line: null } },
       paint: (ctx, pal) => {
-        kinds.forEach((row, y) =>
+        kinds.forEach((row, y) => {
           row.forEach((kind, x) => {
             if (!kind) return;
             ctx.fillStyle = pal[kind];
             ctx.fillRect(x, y, 1, 1);
-          }),
-        );
+          });
+        });
       },
     };
     renderJob(job);
@@ -564,7 +572,11 @@ export function proposalState(p) {
   if (!r || r.mtime < p.info.mtime) return "waiting";
   if (r.verdict !== "approve") return "changes";
   const chosen = p.variants.find((v) => v.title === r.choice);
-  if (p.now && chosen?.renders && THEMES.every((t) => same(p.now.renders?.get(`${t}|0`), chosen.renders.get(`${t}|0`)))) {
+  if (
+    p.now &&
+    chosen?.renders &&
+    THEMES.every((t) => same(p.now.renders?.get(`${t}|0`), chosen.renders.get(`${t}|0`)))
+  ) {
     return "built";
   }
   return "approved";

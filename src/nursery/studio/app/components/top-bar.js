@@ -97,14 +97,16 @@ export class TopBar extends LitElement {
       </div>
       <span class="where">${this.heading}</span>
       <div class="grow"></div>
-      ${this.stale
-        ? html`<span class="fresh stale">
+      ${
+        this.stale
+          ? html`<span class="fresh stale">
             <span class="dot"></span>The code changed. Save your edits, then
             <button class="btn" @click=${() => act(this, "reload")}><n-icon name="refresh-cw"></n-icon>Reload</button>
           </span>`
-        : html`<span class="fresh" title="The studio reloads itself when the code on disk changes">
+          : html`<span class="fresh" title="The studio reloads itself when the code on disk changes">
             <span class="dot"></span>Up to date
-          </span>`}
+          </span>`
+      }
       <button class="btn ghost inbox" @click=${() => act(this, "tab", { tab: "inbox" })}>
         <n-icon name="inbox"></n-icon>Inbox
         ${this.inbox ? html`<span class="badge count">${this.inbox}</span>` : nothing}

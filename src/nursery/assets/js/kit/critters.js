@@ -35,7 +35,7 @@ export function enter(f, w) {
 
 // Brings a walker in already trailing a leader that is on the page, facing the way it goes, so it
 // does not cross the page to catch up.
-export function enterBehind(f, w, lead, gap) {
+export function enterBehind(_f, w, lead, gap) {
   if (w.active) return;
   w.active = true;
   w.dir = lead.dir;

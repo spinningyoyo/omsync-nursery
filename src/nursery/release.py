@@ -42,7 +42,7 @@ class ReleaseError(SystemExit):
 
 
 def run(cmd: list[str], cwd: Path, capture: bool = True) -> str:
-    done = subprocess.run(cmd, cwd=cwd, capture_output=capture, text=True)
+    done = subprocess.run(cmd, cwd=cwd, capture_output=capture, text=True, check=False)
     if done.returncode:
         out = (done.stdout or "") + (done.stderr or "")
         raise ReleaseError(f"`{' '.join(cmd)}` failed in {cwd.name}:\n{out.strip()[-2000:]}")
@@ -67,29 +67,32 @@ def readiness() -> list[str]:
     from nursery.paths import BRAND_ID
     from nursery.studio import server
 
-    for path in brand.stale():
-        problems.append(
-            f"{path.relative_to(ROOT)} is not what the mascot's grid builds; run `nursery brand`"
-        )
+    problems += [
+        f"{path.relative_to(ROOT)} is not what the mascot's grid builds; run `nursery brand`"
+        for path in brand.stale()
+    ]
     result = server.headless(f"check={','.join([*catalog.SCENE_IDS, BRAND_ID])}")
     for sid, scene in result["scenes"].items():
-        for edit in scene["edits"]:
-            if edit["status"] != "in code":
-                problems.append(
-                    f"{sid}: the pixel edit {edit['key']} is {edit['status']}; apply it to the "
-                    "code, or discard it in the studio's Changes tab"
-                )
-        for p in scene.get("proposals", []):
-            if p["state"] == "approved":
-                problems.append(f"{sid}: proposal {p['name']} is approved but not built")
-            elif p["state"] in ("waiting", "changes"):
-                print(f"  note: {sid}: proposal {p['name']} is {p['state']}; it is not released")
-        for error in scene["errors"]:
-            problems.append(f"{sid}: {error}")
-        if scene["ripples"]:
-            print(
-                f"  note: {sid}: {len(scene['ripples'])} render(s) changed since the edit baseline"
-            )
+        problems += scene_problems(sid, scene)
+    return problems
+
+
+def scene_problems(sid: str, scene: dict) -> list[str]:
+    """What stops a release in one scene's check result. Notes worth knowing are printed."""
+    problems = [
+        f"{sid}: the pixel edit {edit['key']} is {edit['status']}; apply it to the "
+        "code, or discard it in the studio's Changes tab"
+        for edit in scene["edits"]
+        if edit["status"] != "in code"
+    ]
+    for p in scene.get("proposals", []):
+        if p["state"] == "approved":
+            problems.append(f"{sid}: proposal {p['name']} is approved but not built")
+        elif p["state"] in ("waiting", "changes"):
+            print(f"  note: {sid}: proposal {p['name']} is {p['state']}; it is not released")
+    problems += [f"{sid}: {error}" for error in scene["errors"]]
+    if scene["ripples"]:
+        print(f"  note: {sid}: {len(scene['ripples'])} render(s) changed since the edit baseline")
     return problems
 
 
@@ -171,8 +174,12 @@ def commit_version(plan: Plan) -> None:
         git("add", "pyproject.toml", "uv.lock")
         git("commit", "-q", "-m", f"chore: release {plan.tag}", "--", "pyproject.toml", "uv.lock")
     except BaseException:
-        subprocess.run(["git", "reset", "-q", "--", "pyproject.toml", "uv.lock"], cwd=ROOT)
-        subprocess.run(["git", "checkout", "--", "pyproject.toml", "uv.lock"], cwd=ROOT)
+        subprocess.run(
+            ["git", "reset", "-q", "--", "pyproject.toml", "uv.lock"], cwd=ROOT, check=False
+        )
+        subprocess.run(
+            ["git", "checkout", "--", "pyproject.toml", "uv.lock"], cwd=ROOT, check=False
+        )
         raise
 
 
@@ -188,13 +195,15 @@ def branch_state() -> str:
     is ahead of it) or "diverged" (it holds work this commit does not)."""
     ref = f"refs/heads/{BRANCH}"
     found = subprocess.run(
-        ["git", "rev-parse", "-q", "--verify", ref], cwd=ROOT, capture_output=True
+        ["git", "rev-parse", "-q", "--verify", ref], cwd=ROOT, capture_output=True, check=False
     )
     if found.returncode:
         return "missing"
     if git("rev-parse", ref) == git("rev-parse", "HEAD"):
         return "same"
-    ancestor = subprocess.run(["git", "merge-base", "--is-ancestor", ref, "HEAD"], cwd=ROOT)
+    ancestor = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", ref, "HEAD"], cwd=ROOT, check=False
+    )
     return "diverged" if ancestor.returncode else "behind"
 
 
@@ -218,6 +227,44 @@ def push_remote() -> str | None:
     return "origin" if "origin" in remotes else remotes[0]
 
 
+def describe(plan: Plan, state: str, remote: str | None) -> None:
+    """Print what steps 2 to 4 would do, without doing any of it."""
+    tag = plan.tag
+    if plan.tagged:
+        print(f"2. Would reuse the tag {tag} on this commit")
+    elif plan.bump:
+        old = project_version()
+        print(
+            f"2. Would change the version from {old} to {plan.version} in pyproject.toml and "
+            f"uv.lock, commit them as 'chore: release {tag}', and tag that commit {tag}"
+        )
+    else:
+        print(f"2. Would tag this commit {tag} (the version in pyproject.toml, no bump)")
+    if state == "same":
+        print(f"3. The {BRANCH} branch is already at this commit; would do nothing")
+    elif state == "missing":
+        print(f"3. Would create the {BRANCH} branch at the tagged commit")
+    else:
+        print(f"3. Would move the {BRANCH} branch forward to the tagged commit")
+    if remote:
+        print(f"4. Would push {tag} and {BRANCH} to {remote}")
+    else:
+        print("4. This repository has no remote; nothing would be pushed")
+
+
+def tag_commit(plan: Plan) -> None:
+    """Step 2: commit the new version when there is one, and tag the result."""
+    if plan.bump:
+        commit_version(plan)
+    try:
+        create_tag(plan.tag)
+    except ReleaseError:
+        if plan.bump:  # the tree was clean, so taking the version commit back loses nothing
+            git("reset", "-q", "--hard", "HEAD~1")
+        raise
+    print(f"2. {'Committed the version and tagged' if plan.bump else 'Tagged'} {plan.tag}")
+
+
 def release(bump: str | None, dry_run: bool) -> int:
     print("1. Checking the nursery is ready")
     problems = readiness()
@@ -235,39 +282,12 @@ def release(bump: str | None, dry_run: bool) -> int:
     remote = push_remote()
     tag = plan.tag
     if dry_run:
-        if plan.tagged:
-            print(f"2. Would reuse the tag {tag} on this commit")
-        elif plan.bump:
-            old = project_version()
-            print(
-                f"2. Would change the version from {old} to {plan.version} in pyproject.toml and "
-                f"uv.lock, commit them as 'chore: release {tag}', and tag that commit {tag}"
-            )
-        else:
-            print(f"2. Would tag this commit {tag} (the version in pyproject.toml, no bump)")
-        if state == "same":
-            print(f"3. The {BRANCH} branch is already at this commit; would do nothing")
-        elif state == "missing":
-            print(f"3. Would create the {BRANCH} branch at the tagged commit")
-        else:
-            print(f"3. Would move the {BRANCH} branch forward to the tagged commit")
-        if remote:
-            print(f"4. Would push {tag} and {BRANCH} to {remote}")
-        else:
-            print("4. This repository has no remote; nothing would be pushed")
+        describe(plan, state, remote)
         return 0
     if plan.tagged:
         print(f"2. Reusing tag {tag}")
     else:
-        if plan.bump:
-            commit_version(plan)
-        try:
-            create_tag(tag)
-        except ReleaseError:
-            if plan.bump:  # the tree was clean, so taking the version commit back loses nothing
-                git("reset", "-q", "--hard", "HEAD~1")
-            raise
-        print(f"2. {'Committed the version and tagged' if plan.bump else 'Tagged'} {tag}")
+        tag_commit(plan)
         state = branch_state() if plan.bump else state
     if state == "same":
         print(f"3. The {BRANCH} branch is already at this commit; nothing to move")

@@ -91,7 +91,10 @@ export class ChangesPanel extends LitElement {
 
   // Before and after of one render, cropped to both, at one zoom.
   pair(before, after) {
-    const crop = grow(union(bounds(before), bounds(after)) ?? { x: 0, y: 0, w: 1, h: 1 }, 1, { w: before.width, h: before.height });
+    const crop = grow(union(bounds(before), bounds(after)) ?? { x: 0, y: 0, w: 1, h: 1 }, 1, {
+      w: before.width,
+      h: before.height,
+    });
     return html`<span class="ba">
       ${before ? html`<n-sprite .image=${before} .crop=${crop} fit="64"></n-sprite>` : nothing}
       <n-icon name="chevron-right"></n-icon>
@@ -110,12 +113,13 @@ export class ChangesPanel extends LitElement {
     };
     return html`
       <span class="eyebrow">Your pixel edits</span>
-      ${edits.length
-        ? edits.map((edit) => {
-            const state = m.editState(edit);
-            const [tone, icon] = TONE[state];
-            const [name, theme, f] = edit.key.split("|");
-            return html`<div class="item">
+      ${
+        edits.length
+          ? edits.map((edit) => {
+              const state = m.editState(edit);
+              const [tone, icon] = TONE[state];
+              const [name, theme, f] = edit.key.split("|");
+              return html`<div class="item">
               <div class="line">
                 <span class="name">${title(edit.key)}</span>
                 <span class="badge ${tone}"><n-icon name=${icon} size="12"></n-icon>${state}</span>
@@ -123,18 +127,22 @@ export class ChangesPanel extends LitElement {
               ${this.pair(edit.originalImg, edit.targetImg)}
               <span class="muted">${edit.pixels.length} px · saved ${edit.saved.slice(0, 16).replace("T", " ")}</span>
               <div class="actions">
-                ${m.jobs.has(name)
-                  ? html`<button class="btn" @click=${() => act(this, "edit", { sid: m.sid, name, theme, f: Number(f) })}>
+                ${
+                  m.jobs.has(name)
+                    ? html`<button class="btn" @click=${() => act(this, "edit", { sid: m.sid, name, theme, f: Number(f) })}>
                       <n-icon name="pencil"></n-icon>Open
                     </button>`
-                  : nothing}
+                    : nothing
+                }
                 <button class="btn ghost" @click=${() => this.discard(edit.key)}><n-icon name="trash-2"></n-icon>Discard</button>
               </div>
             </div>`;
-          })
-        : html`<p class="empty">No saved edits in this scene.</p>`}
-      ${ripples.length
-        ? html`<h3 class="eyebrow">Moved without an edit</h3>
+            })
+          : html`<p class="empty">No saved edits in this scene.</p>`
+      }
+      ${
+        ripples.length
+          ? html`<h3 class="eyebrow">Moved without an edit</h3>
             <p class="muted">These changed since your first edit here was saved. Check each one is wanted.</p>
             ${ripples.map(
               (r) => html`<div class="item">
@@ -145,34 +153,39 @@ export class ChangesPanel extends LitElement {
                 ${this.pair(r.before, r.now)}
               </div>`,
             )}`
-        : nothing}
+          : nothing
+      }
       <h3 class="eyebrow">Changed in code since the last commit</h3>
-      ${this.head == null
-        ? html`<p class="muted">Comparing with the last commit…</p>`
-        : this.head.length
-          ? this.head.map(
-              (c) => html`<div class="item">
+      ${
+        this.head == null
+          ? html`<p class="muted">Comparing with the last commit…</p>`
+          : this.head.length
+            ? this.head.map(
+                (c) => html`<div class="item">
                 <div class="line">
                   <span class="name">${c.job.title} · ${c.theme === "light" ? "day" : "night"} · frame ${c.f}</span>
                   <span class="badge bad">${differences(c.before, c.now).length} px</span>
                 </div>
                 ${this.pair(c.before, c.now)}
               </div>`,
-            )
-          : html`<p class="empty">The code draws this scene as the last commit does.</p>`}
-      ${m.baseline || edits.length
-        ? this.asking
-          ? html`<div class="confirm">
+              )
+            : html`<p class="empty">The code draws this scene as the last commit does.</p>`
+      }
+      ${
+        m.baseline || edits.length
+          ? this.asking
+            ? html`<div class="confirm">
               Forget this scene's edits and baseline? The code stays as it is, and proposals and reviews are kept.
               <div class="actions">
                 <button class="btn primary" @click=${this.accept}><n-icon name="check"></n-icon>Accept and clear</button>
                 <button class="btn" @click=${() => (this.asking = false)}>Keep them</button>
               </div>
             </div>`
-          : html`<div class="actions" style="margin-top:12px">
+            : html`<div class="actions" style="margin-top:12px">
               <button class="btn primary" @click=${() => (this.asking = true)}><n-icon name="check"></n-icon>Accept and clear</button>
             </div>`
-        : nothing}
+          : nothing
+      }
     `;
   }
 

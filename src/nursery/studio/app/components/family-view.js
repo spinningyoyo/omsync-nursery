@@ -2,7 +2,7 @@
 // family refresh is judged as a whole (the dogs differ only in size, colour and tail). Storybook
 // members stand apart: compared, but keeping their book's look. "No family yet" lists every
 // animal and bird that no family names.
-import { FAMILIES, hasFamily, roleIn, SceneModel, SCENES } from "../services/scene-model.js";
+import { FAMILIES, hasFamily, roleIn, SCENES, SceneModel } from "../services/scene-model.js";
 import { act } from "../ui/action.js";
 import { css, html, LitElement, nothing } from "../ui/lit.js";
 import { shared } from "../ui/shared.js";
@@ -113,7 +113,9 @@ export class FamilyView extends LitElement {
   render() {
     const id = this.family ?? FAMILIES[0].id;
     const label = (sid) => SCENES.find((s) => s.id === sid)?.label ?? sid;
-    const member = (m) => html`<button class="member" title="Edit pixels" @click=${() => act(this, "edit", { sid: m.sid, name: m.job.name })}>
+    const member = (
+      m,
+    ) => html`<button class="member" title="Edit pixels" @click=${() => act(this, "edit", { sid: m.sid, name: m.job.name })}>
       <span class="pair">
         <n-sprite .job=${m.job} zoom="4" theme="light"></n-sprite>
         ${m.job.themes?.includes("dark") ? html`<n-sprite .job=${m.job} zoom="4" theme="dark"></n-sprite>` : nothing}
@@ -124,30 +126,37 @@ export class FamilyView extends LitElement {
     return html`
       <div class="pick">
         ${FAMILIES.map(
-          (f) => html`<button class="chip" aria-pressed=${f.id === id} @click=${() => act(this, "family", { family: f.id })}>${f.title}</button>`,
+          (f) =>
+            html`<button class="chip" aria-pressed=${f.id === id} @click=${() => act(this, "family", { family: f.id })}>${f.title}</button>`,
         )}
         <button class="chip none" aria-pressed=${id === NONE} @click=${() => act(this, "family", { family: NONE })}>
           No family yet
         </button>
       </div>
       <div class="body">
-        ${!l
-          ? html`<p class="muted">Drawing every member…</p>`
-          : html`
+        ${
+          !l
+            ? html`<p class="muted">Drawing every member…</p>`
+            : html`
               <h2>${l.family?.title ?? "No family yet"}</h2>
               <p class="differ">
-                ${l.family
-                  ? `Members may differ in ${l.family.differ}. Every member at 4×, day and night.`
-                  : l.member.length
-                    ? "Animals and birds no family names. Add each to one in studio/shared/families.js."
-                    : "Every animal and bird has a family."}
+                ${
+                  l.family
+                    ? `Members may differ in ${l.family.differ}. Every member at 4×, day and night.`
+                    : l.member.length
+                      ? "Animals and birds no family names. Add each to one in studio/shared/families.js."
+                      : "Every animal and bird has a family."
+                }
               </p>
               <div class="lineup">${l.member.map(member)}</div>
-              ${l.storybook.length
-                ? html`<h3 class="eyebrow">Storybook, keeping their book's look</h3>
+              ${
+                l.storybook.length
+                  ? html`<h3 class="eyebrow">Storybook, keeping their book's look</h3>
                     <div class="lineup">${l.storybook.map(member)}</div>`
-                : nothing}
-            `}
+                  : nothing
+              }
+            `
+        }
       </div>
     `;
   }

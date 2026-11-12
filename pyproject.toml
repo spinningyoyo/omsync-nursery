@@ -29,4 +29,42 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP"]
+select = [
+    "E", "F", "I", "B", "UP",  # the base: pycodestyle, pyflakes, import order, bugbear, modern syntax
+    "SIM",   # simpler control flow (nested ifs, try/except/pass, needless bools)
+    "C4",    # comprehensions over list()/dict() calls
+    "RUF",   # ruff's own checks: ambiguous characters, mutable class defaults, unused noqa
+    "PIE",   # needless pass, duplicate class members
+    "PERF",  # loops that should be comprehensions or extend()
+    "PTH",   # pathlib instead of os.path, so paths work the same everywhere
+    "N",     # PEP 8 names
+    "C90",   # McCabe complexity, limit set below
+    "S",     # bandit: subprocess, urlopen, assert, hard-coded secrets
+    "T20",   # no print() in library code; the command modules allow it below
+    "A",     # no shadowing of builtins
+    "RET",   # consistent returns
+    "BLE",   # no bare "except Exception" that hides bugs
+    "ERA",   # no commented-out code
+    "DTZ",   # no naive datetimes
+    "PLE",   # pylint errors
+    "PLW",   # pylint warnings: global, subprocess without check, open() without encoding
+    "FURB",  # modern idioms (re flag names, pathlib helpers)
+    "LOG", "G",  # logging calls that work as written
+]
+# The Hawaiian okina in the catalogue's prose is a real letter, not a look-alike of a quote.
+allowed-confusables = ["ʻ"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10  # ruff's default; split a function that grows past it, do not raise this
+
+[tool.ruff.lint.per-file-ignores]
+# The command modules print to the user's terminal on purpose (T201).
+# Some start git, uv, Chrome or a local web server with a fixed argument list and no shell. The
+# program name comes from PATH on purpose, and no argument is user input (S404, S603, S607).
+"src/nursery/brand.py" = ["T201"]
+"src/nursery/catalog.py" = ["T201", "S404", "S603", "S310"]  # S310: urlopen of its own localhost server
+"src/nursery/launcher.py" = ["S404", "S603"]
+"src/nursery/release.py" = ["T201", "S404", "S603", "S607"]
+"src/nursery/preview/render.py" = ["T201"]
+"src/nursery/studio/server.py" = ["T201", "S404", "S603", "S607"]
+"scripts/check_js_imports.py" = ["T201"]

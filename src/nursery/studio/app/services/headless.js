@@ -35,7 +35,18 @@ function finding(model, key, wantLabel, want, got) {
     key,
     count: indexes.length,
     pixels: pixelList(job, theme, want, got, indexes),
-    pictures: [sheet([[wantLabel, want], ["code now", got], ["differs", got, true]], crop, bg, indexes)],
+    pictures: [
+      sheet(
+        [
+          [wantLabel, want],
+          ["code now", got],
+          ["differs", got, true],
+        ],
+        crop,
+        bg,
+        indexes,
+      ),
+    ],
   };
 }
 

@@ -68,7 +68,8 @@ def read_grid(path: Path) -> list[str]:
     return rows
 
 
-def classify(rows: list[str]) -> list[list[Kind]]:
+def exterior_cells(rows: list[str]) -> set[tuple[int, int]]:
+    """The empty cells that connect to the grid's edge, so the mascot's inside is not among them."""
     exterior: set[tuple[int, int]] = set()
     queue: deque[tuple[int, int]] = deque()
     for y in range(ROWS):
@@ -84,7 +85,11 @@ def classify(rows: list[str]) -> list[list[Kind]]:
             if inside and rows[ny][nx] == "." and (nx, ny) not in exterior:
                 exterior.add((nx, ny))
                 queue.append((nx, ny))
+    return exterior
 
+
+def classify(rows: list[str]) -> list[list[Kind]]:
+    exterior = exterior_cells(rows)
     kinds: list[list[Kind]] = []
     for y in range(ROWS):
         line: list[Kind] = []

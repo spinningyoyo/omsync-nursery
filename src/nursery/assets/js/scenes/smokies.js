@@ -24,19 +24,10 @@ import {
   walker,
   wander,
 } from "../kit/critters.js";
+import { bandPath, milkyWayCanvas, mistAt, mistBand, onBand, starAt, starField, starFieldAt } from "../kit/effects.js";
 import {
-  bandPath,
-  milkyWayCanvas,
-  mistAt,
-  mistBand,
-  onBand,
-  starAt,
-  starField,
-  starFieldAt,
-} from "../kit/effects.js";
-import {
-  CLEARING,
   blob,
+  CLEARING,
   clamp,
   clearing,
   foliage,
@@ -125,8 +116,32 @@ const LIGHT = {
   groundhog: ["#8a6a4c", "#43321f", "#c4a882"],
   turkey: ["#72502f", "#a97d4d", "#c93c3c", "#3c70ab", "#2e2218"],
   eagle: ["#4a3426", "#e0a93a", "#4a3426", "#f3eadb", "#7a5a44"],
-  cardinal: { C: "#c8321f", H: "#b02a1a", E: "#14100a", K: "#f0a030", T: "#a02818", b: "#a02818", B: "#c8321f", l: "#d8503a", t: "#c8321f", p: "#e0705a", d: "#8a1f14" },
-  swift: { C: "#2e2e36", H: "#2e2e36", E: "#9a9aa4", K: "#1a1a1a", T: "#2a2a30", b: "#2a2a30", B: "#3a3a44", l: "#5a5a64", t: "#3a3a44", p: "#5a5a64", d: "#22222a" },
+  cardinal: {
+    C: "#c8321f",
+    H: "#b02a1a",
+    E: "#14100a",
+    K: "#f0a030",
+    T: "#a02818",
+    b: "#a02818",
+    B: "#c8321f",
+    l: "#d8503a",
+    t: "#c8321f",
+    p: "#e0705a",
+    d: "#8a1f14",
+  },
+  swift: {
+    C: "#2e2e36",
+    H: "#2e2e36",
+    E: "#9a9aa4",
+    K: "#1a1a1a",
+    T: "#2a2a30",
+    b: "#2a2a30",
+    B: "#3a3a44",
+    l: "#5a5a64",
+    t: "#3a3a44",
+    p: "#5a5a64",
+    d: "#22222a",
+  },
   star: ["#ffffff", "#ffe9a8"],
   line: "rgba(255, 255, 255, 0.38)",
   wet: "#4f3320",
@@ -162,8 +177,32 @@ const DARK = {
   groundhog: ["#9c7a58", "#2a1f15", "#d2b898"],
   turkey: ["#8a6440", "#b88a58", "#d84a4a", "#5a90cc", "#3a2c20"],
   eagle: ["#7a5638", "#f2c25a", "#7a5638", "#f5efe4", "#5a4432"],
-  cardinal: { C: "#7c2319", H: "#6e1e16", E: "#100e0c", K: "#946523", T: "#641d15", b: "#641d15", B: "#7c2319", l: "#863529", t: "#7c2319", p: "#8a483c", d: "#571712" },
-  swift: { C: "#202027", H: "#202027", E: "#606169", K: "#141416", T: "#1d1e23", b: "#1d1e23", B: "#27282f", l: "#3a3b42", t: "#27282f", p: "#3a3b42", d: "#181920" },
+  cardinal: {
+    C: "#7c2319",
+    H: "#6e1e16",
+    E: "#100e0c",
+    K: "#946523",
+    T: "#641d15",
+    b: "#641d15",
+    B: "#7c2319",
+    l: "#863529",
+    t: "#7c2319",
+    p: "#8a483c",
+    d: "#571712",
+  },
+  swift: {
+    C: "#202027",
+    H: "#202027",
+    E: "#606169",
+    K: "#141416",
+    T: "#1d1e23",
+    b: "#1d1e23",
+    B: "#27282f",
+    l: "#3a3b42",
+    t: "#27282f",
+    p: "#3a3b42",
+    d: "#181920",
+  },
   star: ["#ffffff", "#ffe9a8"],
   line: "rgba(255, 255, 255, 0.1)",
   wet: "#140c06",
@@ -235,7 +274,15 @@ function rhododendron(g, p, s, base) {
 function fern(g, p, s, base) {
   const { pal } = g;
   const length = Math.max(2, Math.round((4 + (p.seed % 4)) * p.scale * s) + 1);
-  for (const [dx, dy, droop] of [[-1, -0.3, 0.8], [-0.8, -0.7, 0.6], [-0.4, -1, 0.5], [0, -1, 0.25], [0.4, -1, 0.5], [0.8, -0.7, 0.6], [1, -0.3, 0.8]]) {
+  for (const [dx, dy, droop] of [
+    [-1, -0.3, 0.8],
+    [-0.8, -0.7, 0.6],
+    [-0.4, -1, 0.5],
+    [0, -1, 0.25],
+    [0.4, -1, 0.5],
+    [0.8, -0.7, 0.6],
+    [1, -0.3, 0.8],
+  ]) {
     stroke(g, p.x, base - 1, dx, dy, length, droop, 1, [pal.fern[1], pal.fern[0]]);
   }
 }
@@ -286,7 +333,7 @@ function ridge(g, p, s, base) {
   const tops = [];
   for (let r = 0; r < height; r += 1) {
     const f = r / height;
-    const half = Math.round((width / 2) * Math.pow(1 - f, 0.6) + (hash(r, p.seed, 1) - 0.5) * 2);
+    const half = Math.round((width / 2) * (1 - f) ** 0.6 + (hash(r, p.seed, 1) - 0.5) * 2);
     if (half < 1) break;
     tops.push(half);
     row(g, base - 1 - r, p.x - half, p.x + half, (x) => {
@@ -301,7 +348,8 @@ function ridge(g, p, s, base) {
     const r = tops.findIndex((half) => half < Math.abs(x - p.x)) - 1;
     if (r < height * 0.55) continue;
     const tall = 3 + Math.round(hash(x, 2, p.seed) * 3);
-    for (let k = 0; k < tall; k += 1) rect(g, pal.ridge[2], x - (k < tall - 2 ? 1 : 0), base - 1 - r - k, k < tall - 2 ? 3 : 1, 1);
+    for (let k = 0; k < tall; k += 1)
+      rect(g, pal.ridge[2], x - (k < tall - 2 ? 1 : 0), base - 1 - r - k, k < tall - 2 ? 3 : 1, 1);
   }
 }
 
@@ -311,14 +359,46 @@ function generate(ctx) {
   scatter(plants, ctx, { kind: "ridge", count: Math.round(cols / 70), born: [1, 2], scale: [1.4, 1.9], layer: -1 });
   scatter(plants, ctx, { kind: "ridge", count: Math.round(cols / 90), born: [1, 2], scale: [1.1, 1.6], layer: -1 });
   scatter(plants, ctx, { kind: "ridge", count: Math.round(cols / 64), born: [2, 3], scale: [0.6, 0.95], layer: 0 });
-  scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 13), born: [1, 4], scale: [0.55, 0.85], layer: 0, species: SPECIES });
+  scatter(plants, ctx, {
+    kind: "tree",
+    count: Math.round(cols / 13),
+    born: [1, 4],
+    scale: [0.55, 0.85],
+    layer: 0,
+    species: SPECIES,
+  });
   scatter(plants, ctx, { kind: "fern", count: Math.round(cols / 10), born: [0, 3], scale: [0.8, 1.2], layer: 0 });
-  scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 21), born: [1, 4], scale: [0.85, 1.35], depth: [3, 12], species: SPECIES });
-  scatter(plants, ctx, { kind: "rhodo", count: Math.round(cols / 22), born: [2, 5], scale: [0.8, 1.2], depth: [2, 13] });
-  scatter(plants, ctx, { kind: "boulder", count: Math.round(cols / 30), born: [0, 3], scale: [0.8, 1.4], depth: [3, 14] });
+  scatter(plants, ctx, {
+    kind: "tree",
+    count: Math.round(cols / 21),
+    born: [1, 4],
+    scale: [0.85, 1.35],
+    depth: [3, 12],
+    species: SPECIES,
+  });
+  scatter(plants, ctx, {
+    kind: "rhodo",
+    count: Math.round(cols / 22),
+    born: [2, 5],
+    scale: [0.8, 1.2],
+    depth: [2, 13],
+  });
+  scatter(plants, ctx, {
+    kind: "boulder",
+    count: Math.round(cols / 30),
+    born: [0, 3],
+    scale: [0.8, 1.4],
+    depth: [3, 14],
+  });
   scatter(plants, ctx, { kind: "log", count: Math.round(cols / 56), born: [3, 6], scale: [0.9, 1.3], depth: [5, 13] });
   scatter(plants, ctx, { kind: "fern", count: Math.round(cols / 7), born: [0, 3], scale: [0.8, 1.3], depth: [0, 15] });
-  scatter(plants, ctx, { kind: "flower", count: Math.round(cols / 12), born: [1, 5], scale: [0.8, 1.3], depth: [0, 14] });
+  scatter(plants, ctx, {
+    kind: "flower",
+    count: Math.round(cols / 12),
+    born: [1, 5],
+    scale: [0.8, 1.3],
+    depth: [0, 14],
+  });
   for (const p of plants) {
     if (p.kind === "ridge" && p.layer === 0) p.depth = 0;
     if (p.kind === "ridge" && p.layer < 0 && p.scale > 1.35) p.spruce = true;
@@ -342,7 +422,7 @@ function soil(pal, x, y, depth, turf) {
 
 // A groundhog, grizzled brown with a darker tail, ears and feet: upright on its hind legs when it
 // sits, and low on all fours when it walks. Its palette is groundhog: [fur, dark, grizzle].
-function groundhogAt(g, h, time) {
+function groundhogAt(g, h, _time) {
   const [fur, dark, grizzle] = g.pal.groundhog;
   const x = Math.round(h.x);
   const y = g.groundY + 6;
@@ -360,7 +440,7 @@ function groundhogAt(g, h, time) {
   }
 }
 
-function turkeyAt(g, t, time) {
+function turkeyAt(g, t, _time) {
   groundBirdAt(g, t, "turkey");
 }
 
@@ -385,8 +465,16 @@ function milkyWay(f) {
   const ground = f.groundY;
   return {
     points: narrow(f)
-      ? bandPath({ x: 0, y: ground * 0.75 }, { x: f.cols * 1.3, y: ground * 0.4 }, { x: f.cols * 0.55, y: -ground * 0.25 })
-      : bandPath({ x: f.cols * 0.04, y: ground * 0.72 }, { x: f.cols * 0.99, y: ground * 0.72 }, { x: f.cols * 0.5, y: -ground * 0.45 }),
+      ? bandPath(
+          { x: 0, y: ground * 0.75 },
+          { x: f.cols * 1.3, y: ground * 0.4 },
+          { x: f.cols * 0.55, y: -ground * 0.25 },
+        )
+      : bandPath(
+          { x: f.cols * 0.04, y: ground * 0.72 },
+          { x: f.cols * 0.99, y: ground * 0.72 },
+          { x: f.cols * 0.5, y: -ground * 0.45 },
+        ),
     width: (along) => w * (1 - 0.25 * along) + 8 * Math.exp(-((along / 0.12) ** 2)),
     glow: (along) => 0.62 + 0.4 * Math.exp(-(((along - 0.5) / 0.14) ** 2)) - 0.25 * along,
     core: (along) => 0.9 * Math.exp(-((along / 0.1) ** 2)),
@@ -519,13 +607,21 @@ const extras = {
     }
     // The day flyers: a golden eagle crossing slowly, another circling, a cardinal and a chimney swift.
     const day = !isNight(f);
-    if (f.stage >= 2 && day) flyBy(f, x.eagle, dt, { every: [6, 5], speed: 13, spawn: () => ({ y: 22 + f.rand() * 30 }) });
-    if (f.stage >= 3 && day) flyBy(f, x.cardinal, dt, { every: [7, 6], speed: 24, spawn: () => ({ y: f.groundY - 56 - f.rand() * 24 }) });
-    if (f.stage >= 4 && day) flyBy(f, x.swift, dt, { every: [6, 8], speed: 46, spawn: () => ({ y: f.groundY - 80 - f.rand() * 24 }) });
+    if (f.stage >= 2 && day)
+      flyBy(f, x.eagle, dt, { every: [6, 5], speed: 13, spawn: () => ({ y: 22 + f.rand() * 30 }) });
+    if (f.stage >= 3 && day)
+      flyBy(f, x.cardinal, dt, { every: [7, 6], speed: 24, spawn: () => ({ y: f.groundY - 56 - f.rand() * 24 }) });
+    if (f.stage >= 4 && day)
+      flyBy(f, x.swift, dt, { every: [6, 8], speed: 46, spawn: () => ({ y: f.groundY - 80 - f.rand() * 24 }) });
     x.soarer.active = f.stage >= 5 && day;
     if (!x.owl) {
       const trees = f.plants.filter(
-        (p) => p.kind === "tree" && p.layer === 1 && p.crown && p.species !== "hemlock" && Math.abs(p.x - f.cols / 2) > CLEARING,
+        (p) =>
+          p.kind === "tree" &&
+          p.layer === 1 &&
+          p.crown &&
+          p.species !== "hemlock" &&
+          Math.abs(p.x - f.cols / 2) > CLEARING,
       );
       if (trees.length) {
         const tree = trees[0];

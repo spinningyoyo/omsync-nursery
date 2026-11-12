@@ -8,12 +8,13 @@ agent work together, and what omsync uses from this repository.
 
 ```sh
 uv sync
-git config core.hooksPath .githooks   # do this one time for each clone: it checks commit messages
+git config core.hooksPath .githooks   # do this one time for each clone: it runs the checks and checks commit messages
 ```
 
 ## Commands
 
 ```sh
+sh scripts/check.sh               # lint, format and check everything (the pre-commit hook runs it)
 uv run nursery                    # open the studio in its own window
 uv run nursery check [SCENE]      # compare your saved pixel edits with the code
 uv run nursery render SCENE NAME  # draw a proposal into its sheet

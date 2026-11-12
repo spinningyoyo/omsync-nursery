@@ -7,8 +7,23 @@
 // fall in two patterns, with quiet spells between.
 import { canidAt, hareAt, owlAt, raptorAt, sheepAt, tortoiseAt } from "../kit/animals.js";
 import {
-  CLEARING,
+  doing,
+  enter,
+  enterBehind,
+  fidget,
+  flock,
+  flyBy,
+  follow,
+  isNight,
+  narrow,
+  percher,
+  walker,
+  wander,
+} from "../kit/critters.js";
+import { bandPath, dithered, milkyWayCanvas, onBand, starAt, starField, starFieldAt } from "../kit/effects.js";
+import {
   blob,
+  CLEARING,
   clamp,
   clearing,
   foliage,
@@ -24,21 +39,6 @@ import {
   stroke,
   wind,
 } from "../kit/pixel.js";
-import {
-  doing,
-  enter,
-  enterBehind,
-  fidget,
-  flock,
-  flyBy,
-  follow,
-  isNight,
-  narrow,
-  percher,
-  wander,
-  walker,
-} from "../kit/critters.js";
-import { bandPath, dithered, milkyWayCanvas, onBand, starAt, starField, starFieldAt } from "../kit/effects.js";
 import { trunk } from "../kit/trees.js";
 
 const TREE_ROWS = 36;
@@ -142,7 +142,16 @@ const DARK = {
 // A burst of stiff leaves, like a starburst, round a dark heart.
 function spikyTuft(g, cx, cy, r, tones) {
   const length = r + 2;
-  for (const [dx, dy] of [[-1, -0.3], [-0.7, -0.8], [-0.2, -1], [0.2, -1], [0.7, -0.8], [1, -0.3], [-1, 0.3], [1, 0.3]]) {
+  for (const [dx, dy] of [
+    [-1, -0.3],
+    [-0.7, -0.8],
+    [-0.2, -1],
+    [0.2, -1],
+    [0.7, -0.8],
+    [1, -0.3],
+    [-1, 0.3],
+    [1, 0.3],
+  ]) {
     stroke(g, cx, cy, dx, dy, length, 0, 1, [tones[1], tones[0]]);
   }
   rect(g, tones[2], cx - 1, cy - 1, 3, 2);
@@ -181,7 +190,15 @@ function yucca(g, p, s, base) {
   const { pal } = g;
   const length = Math.max(2, Math.round((5 + (p.seed % 4)) * p.scale * s));
   rect(g, pal.trunk[0], p.x, base - 2, 1, 2);
-  for (const [dx, dy] of [[-1, -0.2], [-0.7, -0.7], [-0.3, -1], [0, -1], [0.3, -1], [0.7, -0.7], [1, -0.2]]) {
+  for (const [dx, dy] of [
+    [-1, -0.2],
+    [-0.7, -0.7],
+    [-0.3, -1],
+    [0, -1],
+    [0.3, -1],
+    [0.7, -0.7],
+    [1, -0.2],
+  ]) {
     stroke(g, p.x, base - 2, dx, dy, length, 0.15, 1, [pal.yucca[1], pal.yucca[0]]);
   }
   if (p.seed % 3 === 0 && s >= 0.9) {
@@ -225,7 +242,8 @@ function ocotillo(g, p, s, base) {
     stroke(g, p.x + (i - 3) * 0.5, base - 1, dx, -1, len, 0, 1, pal.ocotillo);
     const tipX = Math.round(p.x + (i - 3) * 0.5 + dx * len + sway);
     if (s >= 0.8 && (i + p.seed) % 3 === 0) rect(g, pal.tip, tipX, base - 1 - len, 1, 2);
-    for (let y = 3; y < len - 2; y += 4) rect(g, pal.joshua[2], Math.round(p.x + (i - 3) * 0.5 + dx * y) + 1, base - 1 - y, 1, 1);
+    for (let y = 3; y < len - 2; y += 4)
+      rect(g, pal.joshua[2], Math.round(p.x + (i - 3) * 0.5 + dx * y) + 1, base - 1 - y, 1, 1);
   }
 }
 
@@ -234,7 +252,13 @@ function ocotillo(g, p, s, base) {
 function pad(g, p, s, base) {
   const { pal } = g;
   const count = Math.max(1, Math.round((3 + (p.seed % 2)) * s));
-  const pads = [[0, 0], [3, -5], [-3, -6], [1, -10], [5, -10]].slice(0, count);
+  const pads = [
+    [0, 0],
+    [3, -5],
+    [-3, -6],
+    [1, -10],
+    [5, -10],
+  ].slice(0, count);
   for (const [i, [dx, dy]] of pads.entries()) {
     const cx = p.x + dx;
     const top = base - 7 + dy;
@@ -319,24 +343,105 @@ function generate(ctx) {
     { key: "big", half: 22, away: CLEARING + 18, inside: true },
     { key: "small", half: 16, away: CLEARING + 10 },
   ]);
-  scatter(plants, ctx, { kind: "rockpile", count: Math.round(cols / 55), born: [1, 3], scale: [0.8, 1.25], layer: -1, keep: middle });
+  scatter(plants, ctx, {
+    kind: "rockpile",
+    count: Math.round(cols / 55),
+    born: [1, 3],
+    scale: [0.8, 1.25],
+    layer: -1,
+    keep: middle,
+  });
   scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 20), born: [1, 4], scale: [0.55, 0.85], layer: 0 });
-  scatter(plants, ctx, { kind: "yucca", count: Math.round((cols / 16) * SMALL_PLANTS), born: [0, 3], scale: [0.8, 1.2], layer: 0 });
-  scatter(plants, ctx, { kind: "sage", count: Math.round((cols / 14) * SMALL_PLANTS), born: [0, 3], scale: [0.8, 1.2], layer: 0 });
-  scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 30), born: [1, 4], scale: [0.85, 1.3], depth: [3, 12] });
-  scatter(plants, ctx, { kind: "boulders", count: Math.round(cols / 36), born: [0, 3], scale: [0.8, 1.4], depth: [2, 13] });
-  scatter(plants, ctx, { kind: "cholla", count: Math.round((cols / 34) * SMALL_PLANTS), born: [1, 4], scale: [1, 1], depth: [3, 13] });
-  scatter(plants, ctx, { kind: "ocotillo", count: Math.round((cols / 36) * SMALL_PLANTS), born: [1, 4], scale: [0.8, 1.2], depth: [3, 13] });
-  scatter(plants, ctx, { kind: "pad", count: Math.round((cols / 36) * SMALL_PLANTS), born: [1, 4], scale: [1, 1], depth: [3, 13] });
-  scatter(plants, ctx, { kind: "yucca", count: Math.round((cols / 22) * SMALL_PLANTS), born: [0, 3], scale: [0.9, 1.3], depth: [1, 14] });
-  scatter(plants, ctx, { kind: "sage", count: Math.round((cols / 18) * SMALL_PLANTS), born: [0, 3], scale: [0.9, 1.3], depth: [1, 14] });
-  scatter(plants, ctx, { kind: "wildflower", count: Math.round((cols / 10) * SMALL_PLANTS * BLOOMS), born: [2, 4], scale: [1, 1], depth: [0, 15] });
-  scatter(plants, ctx, { kind: "wildflower", count: Math.round((cols / 6) * SMALL_PLANTS * BLOOMS), born: [4, 7], scale: [1, 1], depth: [0, 15] });
-  scatter(plants, ctx, { kind: "wildflower", count: Math.round((cols / 8) * SMALL_PLANTS * BLOOMS), born: [3, 6], scale: [1, 1], layer: 0 });
+  scatter(plants, ctx, {
+    kind: "yucca",
+    count: Math.round((cols / 16) * SMALL_PLANTS),
+    born: [0, 3],
+    scale: [0.8, 1.2],
+    layer: 0,
+  });
+  scatter(plants, ctx, {
+    kind: "sage",
+    count: Math.round((cols / 14) * SMALL_PLANTS),
+    born: [0, 3],
+    scale: [0.8, 1.2],
+    layer: 0,
+  });
+  scatter(plants, ctx, {
+    kind: "tree",
+    count: Math.round(cols / 30),
+    born: [1, 4],
+    scale: [0.85, 1.3],
+    depth: [3, 12],
+  });
+  scatter(plants, ctx, {
+    kind: "boulders",
+    count: Math.round(cols / 36),
+    born: [0, 3],
+    scale: [0.8, 1.4],
+    depth: [2, 13],
+  });
+  scatter(plants, ctx, {
+    kind: "cholla",
+    count: Math.round((cols / 34) * SMALL_PLANTS),
+    born: [1, 4],
+    scale: [1, 1],
+    depth: [3, 13],
+  });
+  scatter(plants, ctx, {
+    kind: "ocotillo",
+    count: Math.round((cols / 36) * SMALL_PLANTS),
+    born: [1, 4],
+    scale: [0.8, 1.2],
+    depth: [3, 13],
+  });
+  scatter(plants, ctx, {
+    kind: "pad",
+    count: Math.round((cols / 36) * SMALL_PLANTS),
+    born: [1, 4],
+    scale: [1, 1],
+    depth: [3, 13],
+  });
+  scatter(plants, ctx, {
+    kind: "yucca",
+    count: Math.round((cols / 22) * SMALL_PLANTS),
+    born: [0, 3],
+    scale: [0.9, 1.3],
+    depth: [1, 14],
+  });
+  scatter(plants, ctx, {
+    kind: "sage",
+    count: Math.round((cols / 18) * SMALL_PLANTS),
+    born: [0, 3],
+    scale: [0.9, 1.3],
+    depth: [1, 14],
+  });
+  scatter(plants, ctx, {
+    kind: "wildflower",
+    count: Math.round((cols / 10) * SMALL_PLANTS * BLOOMS),
+    born: [2, 4],
+    scale: [1, 1],
+    depth: [0, 15],
+  });
+  scatter(plants, ctx, {
+    kind: "wildflower",
+    count: Math.round((cols / 6) * SMALL_PLANTS * BLOOMS),
+    born: [4, 7],
+    scale: [1, 1],
+    depth: [0, 15],
+  });
+  scatter(plants, ctx, {
+    kind: "wildflower",
+    count: Math.round((cols / 8) * SMALL_PLANTS * BLOOMS),
+    born: [3, 6],
+    scale: [1, 1],
+    layer: 0,
+  });
   for (const p of plants) {
     if (["tree", "boulders", "cholla", "ocotillo", "pad"].includes(p.kind)) p.scale *= clearing(p.x, cols);
   }
-  plants.push(makePlant(rand, "granite", piles.big, { depth: 1, born: 1, scale: 1.1 * clearing(piles.big, cols), home: true }));
+  plants.push(
+    makePlant(rand, "granite", piles.big, { depth: 1, born: 1, scale: 1.1 * clearing(piles.big, cols), home: true }),
+  );
   plants.push(makePlant(rand, "granite", piles.small, { depth: 1, born: 2, scale: 0.8 * clearing(piles.small, cols) }));
   sortPlants(plants);
   return plants;
@@ -424,7 +529,11 @@ function vulturesAt(g, bird, time) {
   for (const m of bird.members) {
     const tilt = Math.floor(time / 0.8 + m.phase) % 2 === 1;
     const drift = Math.round(Math.sin(time * 0.9 + m.phase) * 2);
-    raptorAt(g, { kind: "vulture", x: bird.x - bird.dir * m.back, y: bird.y + m.up + drift, dir: bird.dir }, { bank: tilt });
+    raptorAt(
+      g,
+      { kind: "vulture", x: bird.x - bird.dir * m.back, y: bird.y + m.up + drift, dir: bird.dir },
+      { bank: tilt },
+    );
   }
 }
 
@@ -451,9 +560,30 @@ const RUNNER_RUN = [
   "....CCCCC.....",
 ];
 const RUNNER_LEGS = [
-  [[6, -3], [5, -2], [4, -1], [8, -3], [9, -2], [10, -1]],
-  [[6, -3], [6, -2], [6, -1], [8, -3], [8, -2], [8, -1]],
-  [[6, -3], [7, -2], [8, -1], [8, -3], [7, -2], [6, -1]],
+  [
+    [6, -3],
+    [5, -2],
+    [4, -1],
+    [8, -3],
+    [9, -2],
+    [10, -1],
+  ],
+  [
+    [6, -3],
+    [6, -2],
+    [6, -1],
+    [8, -3],
+    [8, -2],
+    [8, -1],
+  ],
+  [
+    [6, -3],
+    [7, -2],
+    [8, -1],
+    [8, -3],
+    [7, -2],
+    [6, -1],
+  ],
 ];
 
 function roadrunnerAt(g, r) {
@@ -507,10 +637,7 @@ function milkyWay(f) {
   const thin = narrow(f);
   const w = clamp(f.cols * 0.05, 9, 15);
   return {
-    points: bandPath(
-      { x: f.cols * (thin ? 0.74 : 0.8), y: f.groundY + 1 },
-      { x: f.cols * (thin ? 0 : 0.06), y: -14 },
-    ),
+    points: bandPath({ x: f.cols * (thin ? 0.74 : 0.8), y: f.groundY + 1 }, { x: f.cols * (thin ? 0 : 0.06), y: -14 }),
     width: (along) => w * (1 - 0.45 * along) + 12 * Math.exp(-((along / 0.14) ** 2)),
     glow: (along) => 0.42 + 0.58 * Math.exp(-along * 2.6),
     core: (along) => 0.75 * Math.exp(-((along / 0.09) ** 2)),
@@ -658,7 +785,10 @@ const extras = {
       tortoise: walker(f),
       snake: walker(f),
       snakeShows: f.rand() < 0.4,
-      coyotes: [{ ...walker(f), kind: "coyote" }, { ...walker(f, 0.6), kind: "coyote" }],
+      coyotes: [
+        { ...walker(f), kind: "coyote" },
+        { ...walker(f, 0.6), kind: "coyote" },
+      ],
       howl: { next: 8 + f.rand() * 10, until: -1 },
       tumble: { next: 5, bird: null },
       vultures: { next: 0, bird: null },
@@ -731,7 +861,9 @@ const extras = {
     }
     if (x.sheep) fidget(f, x.sheep);
     if (!x.owl) {
-      const trees = f.plants.filter((p) => p.kind === "tree" && p.layer === 1 && p.top && Math.abs(p.x - f.cols / 2) > CLEARING);
+      const trees = f.plants.filter(
+        (p) => p.kind === "tree" && p.layer === 1 && p.top && Math.abs(p.x - f.cols / 2) > CLEARING,
+      );
       if (trees.length) {
         const tree = trees.reduce((tall, p) => (p.top.y < tall.top.y ? p : tall));
         x.owl = percher(f, tree.top.x, tree.top.y, 1, {
@@ -783,7 +915,18 @@ export default {
   id: "desert",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.6], dark: [0.5, 0.7] },
-  mature: { tree: 3, rockpile: 3, granite: 3, boulders: 1.5, yucca: 2, sage: 2, cholla: 2.5, ocotillo: 2.5, pad: 2, wildflower: 1.2 },
+  mature: {
+    tree: 3,
+    rockpile: 3,
+    granite: 3,
+    boulders: 1.5,
+    yucca: 2,
+    sage: 2,
+    cholla: 2.5,
+    ocotillo: 2.5,
+    pad: 2,
+    wildflower: 1.2,
+  },
   paint: { tree: joshua, rockpile, granite, boulders, yucca, sage, cholla, ocotillo, pad, wildflower },
   generate,
   soil,

@@ -10,7 +10,7 @@
 import { api } from "../services/api.js";
 import { EditorSession } from "../services/editor-session.js";
 import { ReviewSession } from "../services/review-session.js";
-import { SceneModel, SCENES, sceneById } from "../services/scene-model.js";
+import { SCENES, SceneModel, sceneById } from "../services/scene-model.js";
 import { watch } from "../services/watch.js";
 import { css, html, LitElement } from "../ui/lit.js";
 import { shared } from "../ui/shared.js";
@@ -86,7 +86,11 @@ export class NurseryApp extends LitElement {
     // Where you were before a reload: kept for this tab only.
     const was = recall(sessionStorage, "where", {});
     const known = (sid) => SCENES.some((s) => s.id === sid);
-    this.sid = known(location.hash.slice(1)) ? location.hash.slice(1) : known(was.sid) ? was.sid : recall(localStorage, "scene", SCENES[0].id);
+    this.sid = known(location.hash.slice(1))
+      ? location.hash.slice(1)
+      : known(was.sid)
+        ? was.sid
+        : recall(localStorage, "scene", SCENES[0].id);
     if (!known(this.sid)) this.sid = SCENES[0].id;
     this.view = ["scene", "board", "family", "icons"].includes(was.view) ? was.view : "scene";
     this.tab = was.tab ?? "elements";
@@ -187,7 +191,8 @@ export class NurseryApp extends LitElement {
       tab: this.tab,
       selected: this.selected,
       family: this.family,
-      edit: this.view === "editor" ? { sid: this.editor.model.sid, name: this.editor.job.name, f: this.editor.f } : null,
+      edit:
+        this.view === "editor" ? { sid: this.editor.model.sid, name: this.editor.job.name, f: this.editor.f } : null,
       review: this.view === "review" ? { sid: this.review.model.sid, proposal: this.review.proposal.name } : null,
     });
     location.reload();

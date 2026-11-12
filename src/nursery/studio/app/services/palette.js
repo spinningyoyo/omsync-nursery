@@ -7,8 +7,11 @@ const isHex = (c) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c);
 export function paletteEntries(pal) {
   const out = [];
   for (const [key, value] of Object.entries(pal)) {
-    if (Array.isArray(value)) value.forEach((c, i) => isHex(c) && out.push([`${key}[${i}]`, c]));
-    else if (isHex(value)) out.push([key, value]);
+    if (Array.isArray(value)) {
+      value.forEach((c, i) => {
+        if (isHex(c)) out.push([`${key}[${i}]`, c]);
+      });
+    } else if (isHex(value)) out.push([key, value]);
   }
   return out;
 }
@@ -24,7 +27,7 @@ function valueAt(pal, path) {
 // The palette keys a colour can come from in a theme, then from the other theme marked with it
 // (night-only sprites draw the dark palette in both). pals is { light, dark }.
 export function keysFor(pals, theme, colour) {
-  if (!colour || colour.length !== 7) return [];
+  if (colour?.length !== 7) return [];
   const own = paletteEntries(pals[theme])
     .filter(([, c]) => c.toLowerCase() === colour)
     .map(([k]) => k);

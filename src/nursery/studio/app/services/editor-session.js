@@ -220,7 +220,13 @@ export class EditorSession extends EventTarget {
       const from = this.state.target[t];
       for (const f of list) {
         const to = this.frameState(f).target[t];
-        for (const i of indexes) setColour(to, i % from.width, Math.floor(i / from.width), colourAt(from, i % from.width, Math.floor(i / from.width)));
+        for (const i of indexes)
+          setColour(
+            to,
+            i % from.width,
+            Math.floor(i / from.width),
+            colourAt(from, i % from.width, Math.floor(i / from.width)),
+          );
       }
     }
     this.changed();
@@ -266,7 +272,8 @@ export class EditorSession extends EventTarget {
     const themes = this.link ? this.job.themes : [theme];
     for (const f of this.targets()) {
       const target = this.frameState(f).target;
-      for (const t of themes) setColour(target[t], x, y, this.tool === "eraser" ? null : this.brush[t] ?? this.brush.light);
+      for (const t of themes)
+        setColour(target[t], x, y, this.tool === "eraser" ? null : (this.brush[t] ?? this.brush.light));
     }
   }
 

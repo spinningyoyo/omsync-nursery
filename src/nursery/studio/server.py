@@ -294,33 +294,47 @@ class Studio(http.server.BaseHTTPRequestHandler):
     def route(self) -> list[str]:
         return [part for part in urlparse(self.path).path.split("/") if part]
 
+    def send_static(self, parts: list[str]) -> bool:
+        """Answer a request for one of the studio's own files; False when the path is not one."""
+        if not parts:
+            self.send_file(APP / "index.html", APP)
+        elif parts[0] == "js":
+            self.send_file(JS_DIR.joinpath(*parts[1:]), JS_DIR)
+        elif parts[0] == "css":
+            self.send_file(CSS_DIR.joinpath(*parts[1:]), CSS_DIR)
+        elif parts[0] == "app":
+            self.send_file(APP.joinpath(*parts[1:]) if parts[1:] else APP / "index.html", APP)
+        elif len(parts) == 2 and parts[0] == "brand":
+            self.send_file(BRAND_DIR / parts[1], BRAND_DIR)
+        elif parts == ["scenes.json"]:
+            self.send_file(SCENES_JSON, ROOT)
+        else:
+            return False
+        return True
+
+    def send_api(self, parts: list[str]) -> bool:
+        """Answer a request for the studio's data; False when the path is not one."""
+        if parts == ["api", "version"]:
+            self.send_json({"version": version()})
+        elif parts == ["api", "meta"]:
+            self.send_json(meta())
+        elif len(parts) == 3 and parts[:2] == ["api", "scene"]:
+            self.send_json(saved(parts[2]))
+        elif parts == ["api", "proposals"]:
+            self.send_json({sid: proposals(sid, False) for sid in catalog.SCENE_IDS})
+        else:
+            return False
+        return True
+
     def do_GET(self):
         parts = self.route()
         try:
-            if not parts:
-                self.send_file(APP / "index.html", APP)
-            elif parts[0] == "js":
-                self.send_file(JS_DIR.joinpath(*parts[1:]), JS_DIR)
-            elif parts[0] == "css":
-                self.send_file(CSS_DIR.joinpath(*parts[1:]), CSS_DIR)
-            elif parts[0] == "app":
-                self.send_file(APP.joinpath(*parts[1:]) if parts[1:] else APP / "index.html", APP)
-            elif len(parts) == 2 and parts[0] == "brand":
-                self.send_file(BRAND_DIR / parts[1], BRAND_DIR)
-            elif parts == ["scenes.json"]:
-                self.send_file(SCENES_JSON, ROOT)
-            elif parts == ["api", "version"]:
-                self.send_json({"version": version()})
-            elif parts[0] == "head":
+            if self.send_static(parts) or self.send_api(parts):
+                return
+            if parts[0] == "head":
                 self.send_head(parts[1:])
             elif parts[0] == "copies" and len(parts) == 2 and parts[1].endswith(".js"):
                 self.send(200, scene_module(parts[1][:-3]).encode(), TYPES[".js"])
-            elif parts == ["api", "meta"]:
-                self.send_json(meta())
-            elif len(parts) == 3 and parts[:2] == ["api", "scene"]:
-                self.send_json(saved(parts[2]))
-            elif parts == ["api", "proposals"]:
-                self.send_json({sid: proposals(sid, False) for sid in catalog.SCENE_IDS})
             elif len(parts) == 3 and parts[0] == "proposals" and parts[2].endswith(".js"):
                 folder = scene_dir(parts[1]) / "proposals"
                 self.send_file(folder / parts[2], folder)

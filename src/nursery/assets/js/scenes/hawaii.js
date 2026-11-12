@@ -4,7 +4,9 @@
 // chicken) pecks, a Hawaiian monk seal and her pup haul out and shuffle along, a honu swims with its
 // hatchling, a pua'a (feral pig) roots about, and a humpback whale spouts offshore. Where the waves
 // break on the sand, spray flies up.
-import { enter, enterBehind, flyBy, follow, isNight, wander, walker } from "../kit/critters.js";
+
+import { crabAt, flyerAt, groundBirdAt, honuShellAt } from "../kit/animals.js";
+import { enter, enterBehind, flyBy, follow, isNight, walker, wander } from "../kit/critters.js";
 import {
   blob,
   clamp,
@@ -21,7 +23,6 @@ import {
   stroke,
   wind,
 } from "../kit/pixel.js";
-import { crabAt, flyerAt, groundBirdAt, honuShellAt } from "../kit/animals.js";
 import { broadleafTree } from "../kit/trees.js";
 
 const PALM_ROWS = 40;
@@ -45,7 +46,19 @@ const LIGHT = {
   ridge: ["#6cb888", "#4a9570", "#347658"],
   sea: ["#8fe0e6", "#4cb8d8", "#2f8fc0", "#ffffff"],
   tropicbird: ["#ffffff", "#2a2a30", "#f2a52a", "#aab4be"],
-  iiwi: { C: "#d8321e", H: "#d8321e", E: "#14100a", K: "#e8907a", T: "#1c1c20", b: "#1c1c20", B: "#d8321e", l: "#e8503a", t: "#1c1c20", p: "#3a3a44", d: "#101014" },
+  iiwi: {
+    C: "#d8321e",
+    H: "#d8321e",
+    E: "#14100a",
+    K: "#e8907a",
+    T: "#1c1c20",
+    b: "#1c1c20",
+    B: "#d8321e",
+    l: "#e8503a",
+    t: "#1c1c20",
+    p: "#3a3a44",
+    d: "#101014",
+  },
   crab: ["#ece0c4", "#bcae8e"],
   turtle: ["#9a6632", "#6b4423", "#d6c28a"],
   whale: ["#4a6d8c", "#8fb0c8"],
@@ -70,7 +83,19 @@ const DARK = {
   ridge: ["#4a8f6a", "#367556", "#265a43"],
   sea: ["#2f9cb0", "#1f78a0", "#155a86", "#d8f0f4"],
   tropicbird: ["#e8eef2", "#1a1a20", "#f2a52a", "#8a96a2"],
-  iiwi: { C: "#862318", H: "#862318", E: "#100e0c", K: "#8f5b50", T: "#15161a", b: "#15161a", B: "#862318", l: "#8f3529", t: "#15161a", p: "#27282f", d: "#0e0e12" },
+  iiwi: {
+    C: "#862318",
+    H: "#862318",
+    E: "#100e0c",
+    K: "#8f5b50",
+    T: "#15161a",
+    b: "#15161a",
+    B: "#862318",
+    l: "#8f3529",
+    t: "#15161a",
+    p: "#27282f",
+    d: "#0e0e12",
+  },
   crab: ["#d8ccb0", "#a89a7c"],
   turtle: ["#a8743a", "#7a4f28", "#dac790"],
   whale: ["#5a7d9c", "#9fc0d8"],
@@ -92,14 +117,19 @@ function coconut(g, p, s, base) {
   const sway = wind(g.time, p.x);
   const width = total >= 22 ? 2 : 1;
   for (let i = 0; i < total; i += 1) {
-    const bend = Math.round(reach * Math.pow(i / total, 1.7) + sway * Math.pow(i / total, 2));
+    const bend = Math.round(reach * (i / total) ** 1.7 + sway * (i / total) ** 2);
     rect(g, pal.trunk[i % 3 === 0 ? 1 : 0], p.x + bend - (width >> 1), base - 1 - i, width, 1);
   }
   const tx = p.x + reach + sway;
   const ty = base - total;
   const length = Math.max(3, Math.round(total * 0.42));
   const wide = total >= 22 ? 3 : total >= 12 ? 2 : 1;
-  for (const [dx, dy, droop] of [[1, -0.9, 0.45], [1, -0.4, 0.7], [1, 0.05, 0.9], [1, 0.4, 1]]) {
+  for (const [dx, dy, droop] of [
+    [1, -0.9, 0.45],
+    [1, -0.4, 0.7],
+    [1, 0.05, 0.9],
+    [1, 0.4, 1],
+  ]) {
     stroke(g, tx, ty, dx, dy, length, droop, wide, [pal.leaf[2], pal.leaf[0]]);
     stroke(g, tx, ty, -dx, dy, length, droop, wide, [pal.leaf[2], pal.leaf[0]]);
   }
@@ -140,17 +170,33 @@ function taro(g, p, s, base) {
   const h = Math.max(3, Math.round(9 * p.scale * s));
   const sway = wind(g.time, p.x);
   rect(g, pal.leaf[3], p.x, base - h, 1, h);
-  for (const [dx, lift] of [[-4, 0], [4, 1], [0, 3]]) {
+  for (const [dx, lift] of [
+    [-4, 0],
+    [4, 1],
+    [0, 3],
+  ]) {
     const lw = Math.max(3, Math.round(7 * s));
     const lh = Math.max(2, Math.round(5 * s));
-    blob(g, p.x + dx + sway, base - h - lift - lh + 1, lw, lh, foliage({ cx: p.x + dx, top: base - h - lift - lh, w: lw, h: lh }, pal.leaf, p.seed + dx));
+    blob(
+      g,
+      p.x + dx + sway,
+      base - h - lift - lh + 1,
+      lw,
+      lh,
+      foliage({ cx: p.x + dx, top: base - h - lift - lh, w: lw, h: lh }, pal.leaf, p.seed + dx),
+    );
   }
 }
 
 function dune(g, p, s, base) {
   const { pal } = g;
   const length = Math.max(2, Math.round((5 + (p.seed % 4)) * p.scale * s));
-  for (const [dx, dy, droop] of [[-0.8, -1, 0.5], [-0.3, -1, 0.35], [0.2, -1, 0.4], [0.7, -1, 0.55]]) {
+  for (const [dx, dy, droop] of [
+    [-0.8, -1, 0.5],
+    [-0.3, -1, 0.35],
+    [0.2, -1, 0.4],
+    [0.7, -1, 0.55],
+  ]) {
     stroke(g, p.x, base - 1, dx, dy, length, droop, 1, [pal.grass[1], pal.grass[0]]);
   }
 }
@@ -170,7 +216,7 @@ function birdOfParadise(g, p, s, base) {
   rect(g, "#3a7fd0", p.x + 1, y - 1, 2, 1);
 }
 
-function shell(g, p, s, base) {
+function shell(g, p, _s, base) {
   const { pal } = g;
   if (p.species === "starfish") {
     rect(g, pal.shell[2], p.x - 1, base - 1, 3, 1);
@@ -203,7 +249,7 @@ function ridge(g, p, s, base) {
   const width = Math.round(height * 0.7) + 6;
   for (let r = 0; r < height; r += 1) {
     const f = r / height;
-    const half = Math.round((width / 2) * Math.pow(1 - f, 0.8) + (hash(r, p.seed, 1) - 0.5) * 1.2);
+    const half = Math.round((width / 2) * (1 - f) ** 0.8 + (hash(r, p.seed, 1) - 0.5) * 1.2);
     if (half < 1) break;
     row(g, base - 1 - r, p.x - half, p.x + half, (x) => {
       const flute = hash(x, 0, p.seed) < 0.3 ? 1 : 0;
@@ -224,16 +270,78 @@ function generate(ctx) {
   const plants = [];
   const middle = (x) => Math.abs(x - cols / 2) > Math.min(70, cols / 2 - 24);
   const palms = ["coconut", "coconut", "coconut", "plumeria"];
-  scatter(plants, ctx, { kind: "ridge", count: Math.round(cols / 58), born: [1, 3], scale: [0.8, 1.2], layer: -1, keep: middle });
-  scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 18), born: [1, 4], scale: [0.55, 0.85], layer: 0, species: palms });
-  scatter(plants, ctx, { kind: "dune", count: Math.round((cols / 9) * SMALL_PLANTS), born: [0, 3], scale: [0.8, 1.2], layer: 0 });
-  scatter(plants, ctx, { kind: "tree", count: Math.round(cols / 28), born: [1, 4], scale: [0.85, 1.3], depth: [3, 12], species: palms });
-  scatter(plants, ctx, { kind: "hibiscus", count: Math.round((cols / 26) * SMALL_PLANTS), born: [2, 5], scale: [0.8, 1.2], depth: [2, 13] });
-  scatter(plants, ctx, { kind: "taro", count: Math.round((cols / 34) * SMALL_PLANTS), born: [1, 4], scale: [0.8, 1.2], depth: [2, 13] });
-  scatter(plants, ctx, { kind: "dune", count: Math.round((cols / 6) * SMALL_PLANTS), born: [0, 3], scale: [0.8, 1.3], depth: [0, 15] });
-  scatter(plants, ctx, { kind: "paradise", count: Math.round((cols / 30) * SMALL_PLANTS), born: [2, 5], scale: [0.9, 1.3], depth: [1, 13] });
-  scatter(plants, ctx, { kind: "shell", count: Math.round(cols / 16), born: [1, 5], depth: [3, 14], species: ["starfish", "conch", "conch", "dollar"] });
-  scatter(plants, ctx, { kind: "surfboard", count: Math.max(1, Math.round((cols / 90) * 0.4)), born: [4, 6], depth: [6, 12] });
+  scatter(plants, ctx, {
+    kind: "ridge",
+    count: Math.round(cols / 58),
+    born: [1, 3],
+    scale: [0.8, 1.2],
+    layer: -1,
+    keep: middle,
+  });
+  scatter(plants, ctx, {
+    kind: "tree",
+    count: Math.round(cols / 18),
+    born: [1, 4],
+    scale: [0.55, 0.85],
+    layer: 0,
+    species: palms,
+  });
+  scatter(plants, ctx, {
+    kind: "dune",
+    count: Math.round((cols / 9) * SMALL_PLANTS),
+    born: [0, 3],
+    scale: [0.8, 1.2],
+    layer: 0,
+  });
+  scatter(plants, ctx, {
+    kind: "tree",
+    count: Math.round(cols / 28),
+    born: [1, 4],
+    scale: [0.85, 1.3],
+    depth: [3, 12],
+    species: palms,
+  });
+  scatter(plants, ctx, {
+    kind: "hibiscus",
+    count: Math.round((cols / 26) * SMALL_PLANTS),
+    born: [2, 5],
+    scale: [0.8, 1.2],
+    depth: [2, 13],
+  });
+  scatter(plants, ctx, {
+    kind: "taro",
+    count: Math.round((cols / 34) * SMALL_PLANTS),
+    born: [1, 4],
+    scale: [0.8, 1.2],
+    depth: [2, 13],
+  });
+  scatter(plants, ctx, {
+    kind: "dune",
+    count: Math.round((cols / 6) * SMALL_PLANTS),
+    born: [0, 3],
+    scale: [0.8, 1.3],
+    depth: [0, 15],
+  });
+  scatter(plants, ctx, {
+    kind: "paradise",
+    count: Math.round((cols / 30) * SMALL_PLANTS),
+    born: [2, 5],
+    scale: [0.9, 1.3],
+    depth: [1, 13],
+  });
+  scatter(plants, ctx, {
+    kind: "shell",
+    count: Math.round(cols / 16),
+    born: [1, 5],
+    depth: [3, 14],
+    species: ["starfish", "conch", "conch", "dollar"],
+  });
+  scatter(plants, ctx, {
+    kind: "surfboard",
+    count: Math.max(1, Math.round((cols / 90) * 0.4)),
+    born: [4, 6],
+    depth: [6, 12],
+  });
   for (const p of plants) {
     if (["tree", "hibiscus", "taro", "paradise"].includes(p.kind)) p.scale *= clearing(p.x, cols);
   }
@@ -273,7 +381,9 @@ function tropicbirdAt(g, b, time) {
 
 // A sea turtle, or its hatchling when its scale is below 1.
 function honuAt(g, t, time, seaTop, seaBottom) {
-  const y = Math.round(clamp(seaTop + (seaBottom - seaTop) * 0.55, seaTop + 3, seaBottom - 3) + Math.sin(time * 1.2) * 1.5);
+  const y = Math.round(
+    clamp(seaTop + (seaBottom - seaTop) * 0.55, seaTop + 3, seaBottom - 3) + Math.sin(time * 1.2) * 1.5,
+  );
   honuShellAt(g, t, y + 1, time, t.scale);
 }
 
@@ -314,7 +424,7 @@ function sealAt(g, s, time) {
 
 // A moa, a feral red junglefowl rooster. It struts while it walks and pecks at the sand while it
 // sits. Its palette is moa: [body, tail, comb, legs].
-function moaAt(g, m, time) {
+function moaAt(g, m, _time) {
   groundBirdAt(g, m, "moa");
 }
 
@@ -344,7 +454,7 @@ const PUAA = {
   ],
 };
 
-function puaaAt(g, p, time) {
+function puaaAt(g, p, _time) {
   const [body, dark, snout] = g.pal.pig;
   const x = Math.round(p.x);
   const y = g.groundY + 7;
@@ -398,7 +508,10 @@ const extras = {
   init(f) {
     return {
       sea: 0,
-      tropicbirds: [{ next: 3, bird: null }, { next: 9, bird: null }],
+      tropicbirds: [
+        { next: 3, bird: null },
+        { next: 9, bird: null },
+      ],
       iiwi: { next: 5, bird: null },
       crabs: Array.from({ length: CRABS }, (_, i) => ({ ...walker(f), lane: i * 3 })),
       moa: walker(f),
@@ -435,9 +548,12 @@ const extras = {
   update(f, dt) {
     const x = f.extra;
     x.sea += (tide(f) - x.sea) * Math.min(1, dt * 0.8);
-    if (f.stage >= 2 && !isNight(f)) flyBy(f, x.tropicbirds[0], dt, { every: [4, 6], speed: 12, spawn: () => ({ y: 20 + f.rand() * 40 }) });
-    if (f.stage >= 4 && !isNight(f)) flyBy(f, x.iiwi, dt, { every: [6, 6], speed: 22, spawn: () => ({ y: f.groundY - 56 - f.rand() * 24 }) });
-    if (f.stage >= 6 && !isNight(f)) flyBy(f, x.tropicbirds[1], dt, { every: [5, 7], speed: 38, spawn: () => ({ y: 40 + f.rand() * 40 }) });
+    if (f.stage >= 2 && !isNight(f))
+      flyBy(f, x.tropicbirds[0], dt, { every: [4, 6], speed: 12, spawn: () => ({ y: 20 + f.rand() * 40 }) });
+    if (f.stage >= 4 && !isNight(f))
+      flyBy(f, x.iiwi, dt, { every: [6, 6], speed: 22, spawn: () => ({ y: f.groundY - 56 - f.rand() * 24 }) });
+    if (f.stage >= 6 && !isNight(f))
+      flyBy(f, x.tropicbirds[1], dt, { every: [5, 7], speed: 38, spawn: () => ({ y: 40 + f.rand() * 40 }) });
     for (const c of x.crabs) wander(f, c, dt, { speed: 9, sit: [1, 3], walk: [1, 3] });
     wander(f, x.moa, dt, { speed: 11, stride: 9, sit: [1.5, 3.5], walk: [1.5, 3] });
     wander(f, x.puaa, dt, { speed: 6, stride: 5, sit: [3, 6], walk: [3, 6] });
@@ -463,7 +579,11 @@ const extras = {
     if (rows < 1) return;
     const [shallow, mid, deep, foam] = g.pal.sea;
     const top = f.groundY - rows;
-    const bands = [[deep, 0.35], [mid, 0.4], [shallow, 0.25]];
+    const bands = [
+      [deep, 0.35],
+      [mid, 0.4],
+      [shallow, 0.25],
+    ];
     let y = top;
     bands.forEach(([colour, share], i) => {
       const h = i === bands.length - 1 ? f.groundY - y : Math.max(1, Math.round(rows * share));
@@ -491,11 +611,12 @@ const extras = {
     if (age >= 0 && age < 3 && !f.reduced) {
       const [back, light] = g.pal.whale;
       const y0 = top + 2;
-      blob(g, Math.round(w.x), y0 - 2, 9, 5, (px, py) => (py < y0 ? back : light));
+      blob(g, Math.round(w.x), y0 - 2, 9, 5, (_px, py) => (py < y0 ? back : light));
       const rise = Math.min(1, age / 0.6);
       const fadeOut = clamp(2.8 - age, 0, 1);
       g.ctx.globalAlpha = fadeOut;
-      for (let i = 0; i < Math.round(12 * rise); i += 1) rect(g, foam, Math.round(w.x) + 1 + (i > 8 ? (i % 2 ? -1 : 2) : 0), y0 - 3 - i, 1, 1);
+      for (let i = 0; i < Math.round(12 * rise); i += 1)
+        rect(g, foam, Math.round(w.x) + 1 + (i > 8 ? (i % 2 ? -1 : 2) : 0), y0 - 3 - i, 1, 1);
       g.ctx.globalAlpha = 1;
     }
   },

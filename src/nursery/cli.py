@@ -60,6 +60,21 @@ def parser() -> argparse.ArgumentParser:
     return root
 
 
+def run_studio_command(args: argparse.Namespace) -> None:
+    """The commands that need the studio's module, and so Selenium."""
+    from nursery.studio import server
+
+    if args.command in (None, "studio"):
+        port = getattr(args, "port", DEFAULT_PORT)
+        server.serve(port, window=not getattr(args, "no_window", False))
+    elif args.command == "check":
+        sys.exit(server.check(args.scene))
+    elif args.command == "render":
+        sys.exit(server.render(args.scene, args.proposal))
+    elif args.command == "proposals":
+        server.list_proposals(args.scene)
+
+
 def main(argv: list[str] | None = None) -> None:
     argv = sys.argv[1:] if argv is None else argv
     try:
@@ -80,21 +95,11 @@ def main(argv: list[str] | None = None) -> None:
             from nursery import brand
 
             sys.exit(brand.main(["--check"] if args.check else []))
-        from nursery.studio import server
-
-        if args.command in (None, "studio"):
-            port = getattr(args, "port", DEFAULT_PORT)
-            server.serve(port, window=not getattr(args, "no_window", False))
-        elif args.command == "check":
-            sys.exit(server.check(args.scene))
-        elif args.command == "render":
-            sys.exit(server.render(args.scene, args.proposal))
-        elif args.command == "proposals":
-            server.list_proposals(args.scene)
-        elif args.command == "release":
+        if args.command == "release":
             from nursery.release import release
 
             sys.exit(release(args.bump, args.dry_run))
+        run_studio_command(args)
     except ModuleNotFoundError as error:
         if error.name == "selenium" or (error.name or "").startswith("selenium."):
             raise SystemExit(

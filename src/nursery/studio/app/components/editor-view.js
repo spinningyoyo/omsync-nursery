@@ -315,7 +315,9 @@ export class EditorView extends LitElement {
     return html`
       <div class="toolbar" role="toolbar" aria-label="Tools">
         ${TOOLS.map(
-          (t) => html`<button class="icon-btn tipped" aria-label=${t.name} aria-pressed=${s.tool === t.id} @click=${() => s.setTool(t.id)}>
+          (
+            t,
+          ) => html`<button class="icon-btn tipped" aria-label=${t.name} aria-pressed=${s.tool === t.id} @click=${() => s.setTool(t.id)}>
             <n-icon name=${t.icon}></n-icon>${this.tip(t.name, t.keys, t.hint)}
           </button>`,
         )}
@@ -353,11 +355,13 @@ export class EditorView extends LitElement {
         <button class="icon-btn tipped" aria-label="Pixel grid" aria-pressed=${s.grid} @click=${toggle("grid")}>
           <n-icon name="grid-3x3"></n-icon>${this.tip("Pixel grid", "G", "Lines between the pixels")}
         </button>
-        ${job.frames.length > 1
-          ? html`<button class="icon-btn tipped" aria-label="Onion skin" aria-pressed=${s.onion} @click=${toggle("onion")}>
+        ${
+          job.frames.length > 1
+            ? html`<button class="icon-btn tipped" aria-label="Onion skin" aria-pressed=${s.onion} @click=${toggle("onion")}>
               <n-icon name="layers"></n-icon>${this.tip("Onion skin", null, "Shows the next frame faintly underneath, to line up a walk or a flap")}
             </button>`
-          : nothing}
+            : nothing
+        }
       </div>
       <div class="work">
         <div>
@@ -374,15 +378,17 @@ export class EditorView extends LitElement {
             <span class="muted">${s.changedCount()} px changed</span>
             <button class="btn ghost" @click=${() => act(this, "close-editor")}><n-icon name="x"></n-icon>Close</button>
           </div>
-          ${this.leaving
-            ? html`<div class="unsaved">
+          ${
+            this.leaving
+              ? html`<div class="unsaved">
                 <n-icon name="triangle-alert"></n-icon>
                 <span class="grow">You have unsaved edits.</span>
                 <button class="btn primary" @click=${this.saveAndClose}><n-icon name="save"></n-icon>Save and close</button>
                 <button class="btn" @click=${() => act(this, "leave-editor", { choice: "go" })}>Discard</button>
                 <button class="btn ghost" @click=${() => act(this, "leave-editor", { choice: "keep" })}>Keep editing</button>
               </div>`
-            : nothing}
+              : nothing
+          }
         </div>
         <div class="canvases-wrap">
           <div class="canvases" ${ref(this.viewport)}>
@@ -410,12 +416,14 @@ export class EditorView extends LitElement {
         </div>
         <div class="strip">
           <frame-strip .session=${s}></frame-strip>
-          ${job.brand
-            ? nothing
-            : html`<div class="context">
+          ${
+            job.brand
+              ? nothing
+              : html`<div class="context">
                 <div class="section-label"><n-icon name="ruler" size="12"></n-icon>On its soil, real scale</div>
                 <canvas class="pixels soil" ${ref(this.soil)}></canvas>
-              </div>`}
+              </div>`
+          }
         </div>
       </div>
     `;
@@ -582,7 +590,11 @@ export class EditorView extends LitElement {
       // Fill the gap between two samples, so a fast stroke has no holes.
       const steps = Math.max(Math.abs(at.x - d.last.x), Math.abs(at.y - d.last.y));
       for (let i = 1; i <= steps; i += 1) {
-        s.paint(d.theme, Math.round(d.last.x + ((at.x - d.last.x) * i) / steps), Math.round(d.last.y + ((at.y - d.last.y) * i) / steps));
+        s.paint(
+          d.theme,
+          Math.round(d.last.x + ((at.x - d.last.x) * i) / steps),
+          Math.round(d.last.y + ((at.y - d.last.y) * i) / steps),
+        );
       }
       d.last = at;
     } else if (d?.mode === "box") {
@@ -611,7 +623,9 @@ export class EditorView extends LitElement {
 
   key(e) {
     const s = this.session;
-    const typing = e.composedPath().some((n) => n instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName));
+    const typing = e
+      .composedPath()
+      .some((n) => n instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName));
     if (typing || !s) return;
     const mod = e.metaKey || e.ctrlKey;
     const k = e.key.toLowerCase();

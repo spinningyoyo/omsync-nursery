@@ -156,9 +156,10 @@ export class FrameStrip extends LitElement {
           return html`<button class="frame ${onShow ? "on-show" : isLinked ? "linked" : ""}" @click=${() => s.setFrame(f)}>
             <n-sprite .image=${s.composed("light", f)} .crop=${s.crop} .rev=${s.rev} fit="56"></n-sprite>
             <span>Frame ${f}${s.frameEdited(f) ? html` <span class="edited">•</span>` : nothing}</span>
-            ${onShow
-              ? nothing
-              : html`<span
+            ${
+              onShow
+                ? nothing
+                : html`<span
                   class="icon-btn link"
                   role="button"
                   aria-pressed=${isLinked}
@@ -168,7 +169,8 @@ export class FrameStrip extends LitElement {
                     s.toggleLinked(f);
                   }}
                   ><n-icon name="link" size="12"></n-icon
-                ></span>`}
+                ></span>`
+            }
           </button>`;
         })}
       </div>

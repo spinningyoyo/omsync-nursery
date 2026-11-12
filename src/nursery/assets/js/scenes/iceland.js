@@ -16,8 +16,8 @@ import {
   follow,
   isNight,
   percher,
-  wander,
   walker,
+  wander,
 } from "../kit/critters.js";
 import { mistAt, mistBand } from "../kit/effects.js";
 import {

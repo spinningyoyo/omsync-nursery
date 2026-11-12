@@ -247,8 +247,7 @@ export const FAMILIES = [
   },
 ];
 
-const listed = (names, stem) =>
-  (names ?? []).some((name) => stem === name || stem.startsWith(`${name}-`));
+const listed = (names, stem) => (names ?? []).some((name) => stem === name || stem.startsWith(`${name}-`));
 
 // Whether a scene's sprite belongs to the family, as "member", "storybook", or null.
 export function roleIn(family, sid, name) {

@@ -9,7 +9,7 @@ contract; `docs/adr/` holds the reasons behind the layout and the stack.
 - Scene, sprite, palette, saved-edit or studio work: use the `nursery-scene` skill. Before you
   change a scene, read its module and its `docs/scenes/<scene>.md`.
 - The modules in `src/nursery/assets/js/` import only each other, so the package stays
-  self-contained.
+  self-contained. A scene imports only `kit/`. `sh scripts/check.sh` enforces both.
 - What omsync reads is the contract in `docs/overview.md`; change it only together with omsync's
   host code.
 - The mascot's master is `src/nursery/assets/brand/mascot-grid.txt`. Change the grid, run
@@ -23,7 +23,8 @@ contract; `docs/adr/` holds the reasons behind the layout and the stack.
 
 ```sh
 uv sync
-uv run ruff check . && uv run ruff format --check .
+git config core.hooksPath .githooks   # once per clone: pre-commit and commit-msg checks
+sh scripts/check.sh               # ruff, Biome, import boundaries, brand and catalogue freshness
 uv run nursery --help
 uv run nursery release --patch --dry-run   # or --minor, --major
 uv run nursery catalog            # rebuilds docs/scenes/<scene>.md

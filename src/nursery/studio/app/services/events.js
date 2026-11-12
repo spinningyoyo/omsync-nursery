@@ -11,7 +11,11 @@ export function timers(engine) {
   };
   for (const [key, value] of Object.entries(engine?.extra ?? {})) {
     if (!Array.isArray(value)) visit(key, value);
-    else value.forEach((item, i) => visit(value.length > 1 ? `${key} ${i + 1}` : key, item));
+    else {
+      value.forEach((item, i) => {
+        visit(value.length > 1 ? `${key} ${i + 1}` : key, item);
+      });
+    }
   }
   return out;
 }

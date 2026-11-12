@@ -10,10 +10,9 @@
 import { flyerAt } from "../kit/animals.js";
 import { enter, enterBehind, flyBy, follow, isNight, soarAt, soarer, stroll, walker, wander } from "../kit/critters.js";
 import { starField } from "../kit/effects.js";
-import meadow from "./meadow.js";
 import {
-  CLEARING,
   blob,
+  CLEARING,
   clamp,
   clearing,
   foliage,
@@ -28,6 +27,7 @@ import {
   sortPlants,
   sprite,
 } from "../kit/pixel.js";
+import meadow from "./meadow.js";
 
 const STARS = 40;
 const CLOUDS = 3;
@@ -81,16 +81,97 @@ const LIGHT = {
   hole: ["#4a3466", "#2a1d3d"],
   rim: "#c2b0e6",
   shadow: "#2a1d3d",
-  rabbit: { w: "#fbf8f2", W: "#d4cce2", p: "#f2a6b4", e: "#d23a5a", n: "#f2a6b4", j: "#b8473c", J: "#8e3530", v: "#f2cf5a", y: "#d9a441" },
-  dodo: { b: "#9d8e7d", B: "#7a6d60", g: "#7a6d60", k: "#e0b85a", K: "#b08a3a", w: "#efe8dc", e: "#2b2433", c: "#7a5634", l: "#d9a441" },
-  hare: { f: "#b08060", F: "#8c6248", l: "#f2e6d2", s: "#e9c56a", e: "#2b2433", n: "#d88a8a", c: "#fbf8f2", C: "#f2a6b4" },
+  rabbit: {
+    w: "#fbf8f2",
+    W: "#d4cce2",
+    p: "#f2a6b4",
+    e: "#d23a5a",
+    n: "#f2a6b4",
+    j: "#b8473c",
+    J: "#8e3530",
+    v: "#f2cf5a",
+    y: "#d9a441",
+  },
+  dodo: {
+    b: "#9d8e7d",
+    B: "#7a6d60",
+    g: "#7a6d60",
+    k: "#e0b85a",
+    K: "#b08a3a",
+    w: "#efe8dc",
+    e: "#2b2433",
+    c: "#7a5634",
+    l: "#d9a441",
+  },
+  hare: {
+    f: "#b08060",
+    F: "#8c6248",
+    l: "#f2e6d2",
+    s: "#e9c56a",
+    e: "#2b2433",
+    n: "#d88a8a",
+    c: "#fbf8f2",
+    C: "#f2a6b4",
+  },
   caterpillar: { b: "#5fa8d9", B: "#3f7fb0", e: "#2b2433", y: "#e0b04a", Y: "#b08a3a", c: "#c9a46a" },
-  cat: { t: "#a3967f", k: "#6e6354", T: "#857965", G: "#fbf8f2", m: "#4a3446", e: "#e8d24a", n: "#3a3026", p: "#e8a0a8" },
+  cat: {
+    t: "#a3967f",
+    k: "#6e6354",
+    T: "#857965",
+    G: "#fbf8f2",
+    m: "#4a3446",
+    e: "#e8d24a",
+    n: "#3a3026",
+    p: "#e8a0a8",
+  },
   hat: { H: "#3e3848", h: "#5e566c", R: "#d8343f", t: "#fbf8f2", T: "#3e3848", b: "#2a2532" },
-  soldier: { W: "#fffdf6", c: "#cfc8dc", h: "#5a3e30", s: "#f2d2b5", e: "#2d2b3d", l: "#4d4658", y: "#a07a4a", Y: "#c9c4d4" },
-  pigeon: { C: "#8f97a8", H: "#8f97a8", E: "#f0c040", K: "#d09a9a", T: "#6a7080", b: "#6a7080", B: "#8f97a8", l: "#c78a9a", t: "#8f97a8", p: "#e8eaf0", d: "#4a5060" },
-  lory: { C: "#2f5fb0", H: "#d83a2f", E: "#14100a", K: "#f0a030", T: "#d83a2f", b: "#d83a2f", B: "#d83a2f", l: "#e85a4a", t: "#3a9a4a", p: "#7acc88", d: "#1f5a2a" },
-  vulture: { K: "#2a2630", k: "#4d4658", i: "#3a2f48", H: "#f2c230", P: "#f28aa8", p: "#d8668c", e: "#2a2630", b: "#e9dcc4", w: "#d6cfe0" },
+  soldier: {
+    W: "#fffdf6",
+    c: "#cfc8dc",
+    h: "#5a3e30",
+    s: "#f2d2b5",
+    e: "#2d2b3d",
+    l: "#4d4658",
+    y: "#a07a4a",
+    Y: "#c9c4d4",
+  },
+  pigeon: {
+    C: "#8f97a8",
+    H: "#8f97a8",
+    E: "#f0c040",
+    K: "#d09a9a",
+    T: "#6a7080",
+    b: "#6a7080",
+    B: "#8f97a8",
+    l: "#c78a9a",
+    t: "#8f97a8",
+    p: "#e8eaf0",
+    d: "#4a5060",
+  },
+  lory: {
+    C: "#2f5fb0",
+    H: "#d83a2f",
+    E: "#14100a",
+    K: "#f0a030",
+    T: "#d83a2f",
+    b: "#d83a2f",
+    B: "#d83a2f",
+    l: "#e85a4a",
+    t: "#3a9a4a",
+    p: "#7acc88",
+    d: "#1f5a2a",
+  },
+  vulture: {
+    K: "#2a2630",
+    k: "#4d4658",
+    i: "#3a2f48",
+    H: "#f2c230",
+    P: "#f28aa8",
+    p: "#d8668c",
+    e: "#2a2630",
+    b: "#e9dcc4",
+    w: "#d6cfe0",
+  },
   smoke: "#b9a4dc",
   bubble: "#8fd0ea",
 };
@@ -131,16 +212,97 @@ const DARK = {
   hole: ["#1f1530", "#0c0715"],
   rim: "#4b3d68",
   shadow: "#000000",
-  rabbit: { w: "#d9d3e6", W: "#a59cb8", p: "#c07a90", e: "#ff7aa0", n: "#c07a90", j: "#8a3a3a", J: "#682a2a", v: "#c8a84a", y: "#d9a441" },
-  dodo: { b: "#6d6470", B: "#4f4854", g: "#4a4450", k: "#c9a85a", K: "#8a7238", w: "#c8c2cc", e: "#0c0912", c: "#5a4030", l: "#b08a3a" },
-  hare: { f: "#8a6a58", F: "#6a4e40", l: "#d8cdb8", s: "#c4a050", e: "#0c0912", n: "#a86a6a", c: "#d9d6e6", C: "#c07a90" },
+  rabbit: {
+    w: "#d9d3e6",
+    W: "#a59cb8",
+    p: "#c07a90",
+    e: "#ff7aa0",
+    n: "#c07a90",
+    j: "#8a3a3a",
+    J: "#682a2a",
+    v: "#c8a84a",
+    y: "#d9a441",
+  },
+  dodo: {
+    b: "#6d6470",
+    B: "#4f4854",
+    g: "#4a4450",
+    k: "#c9a85a",
+    K: "#8a7238",
+    w: "#c8c2cc",
+    e: "#0c0912",
+    c: "#5a4030",
+    l: "#b08a3a",
+  },
+  hare: {
+    f: "#8a6a58",
+    F: "#6a4e40",
+    l: "#d8cdb8",
+    s: "#c4a050",
+    e: "#0c0912",
+    n: "#a86a6a",
+    c: "#d9d6e6",
+    C: "#c07a90",
+  },
   caterpillar: { b: "#3f86b8", B: "#2a5f8a", e: "#0c0912", y: "#c9a040", Y: "#8a7238", c: "#9a7e52" },
-  cat: { t: "#7e7568", k: "#4c463e", T: "#615a50", G: "#e8e6f2", m: "#241a2a", e: "#f0dc5a", n: "#1a1520", p: "#b07888" },
+  cat: {
+    t: "#7e7568",
+    k: "#4c463e",
+    T: "#615a50",
+    G: "#e8e6f2",
+    m: "#241a2a",
+    e: "#f0dc5a",
+    n: "#1a1520",
+    p: "#b07888",
+  },
   hat: { H: "#433b55", h: "#615778", R: "#c8304a", t: "#d9d5e6", T: "#433b55", b: "#2e2840" },
-  soldier: { W: "#e8e6f2", c: "#9a94b0", h: "#3e2a22", s: "#e9c3a6", e: "#17151f", l: "#3a3348", y: "#7a5e3a", Y: "#a7a2b8" },
-  pigeon: { C: "#5a5f6b", H: "#5a5f6b", E: "#94782d", K: "#816163", T: "#444853", b: "#444853", B: "#5a5f6b", l: "#7b5863", t: "#5a5f6b", p: "#8f9196", d: "#303540" },
-  lory: { C: "#203e70", H: "#862823", E: "#100e0c", K: "#946523", T: "#862823", b: "#862823", B: "#862823", l: "#8f3b33", t: "#276133", p: "#4d7f58", d: "#173b20" },
-  vulture: { K: "#3a3350", k: "#544a6e", i: "#2a2440", H: "#e0b028", P: "#e77aa0", p: "#b85078", e: "#100c18", b: "#cfc2aa", w: "#a59cb8" },
+  soldier: {
+    W: "#e8e6f2",
+    c: "#9a94b0",
+    h: "#3e2a22",
+    s: "#e9c3a6",
+    e: "#17151f",
+    l: "#3a3348",
+    y: "#7a5e3a",
+    Y: "#a7a2b8",
+  },
+  pigeon: {
+    C: "#5a5f6b",
+    H: "#5a5f6b",
+    E: "#94782d",
+    K: "#816163",
+    T: "#444853",
+    b: "#444853",
+    B: "#5a5f6b",
+    l: "#7b5863",
+    t: "#5a5f6b",
+    p: "#8f9196",
+    d: "#303540",
+  },
+  lory: {
+    C: "#203e70",
+    H: "#862823",
+    E: "#100e0c",
+    K: "#946523",
+    T: "#862823",
+    b: "#862823",
+    B: "#862823",
+    l: "#8f3b33",
+    t: "#276133",
+    p: "#4d7f58",
+    d: "#173b20",
+  },
+  vulture: {
+    K: "#3a3350",
+    k: "#544a6e",
+    i: "#2a2440",
+    H: "#e0b028",
+    P: "#e77aa0",
+    p: "#b85078",
+    e: "#100c18",
+    b: "#cfc2aa",
+    w: "#a59cb8",
+  },
   smoke: "#c9bff0",
   bubble: "#9fe6ff",
   star: ["#cfd6ff", "#ffffff"],
@@ -341,7 +503,15 @@ function witchTree(g, p, s, base) {
   }
   const holeX = p.x + lean(Math.round(trunkH * 0.45)) - 2;
   const holeY = base - Math.round(trunkH * 0.45);
-  if (s >= 0.4) blob(g, holeX, holeY - Math.round(5 * p.scale), Math.round(7 * p.scale), Math.round(10 * p.scale), () => pal.hollow);
+  if (s >= 0.4)
+    blob(
+      g,
+      holeX,
+      holeY - Math.round(5 * p.scale),
+      Math.round(7 * p.scale),
+      Math.round(10 * p.scale),
+      () => pal.hollow,
+    );
   const fx = p.x + lean(trunkH);
   const fy = base - trunkH;
   if (p.home) {
@@ -414,7 +584,7 @@ function rabbitHole(g, p, s, base) {
   const w = Math.max(3, Math.round(12 * s));
   const h = Math.max(2, Math.round(5 * s));
   blob(g, p.x, base - h - 1, w + 4, h + 2, () => pal.rim);
-  blob(g, p.x, base - h, w, h, (x, y) => (y < base - h / 2 ? pal.hole[1] : pal.hole[0]));
+  blob(g, p.x, base - h, w, h, (_x, y) => (y < base - h / 2 ? pal.hole[1] : pal.hole[0]));
 }
 
 // Creatures. Each is a character grid facing right, drawn by sprite() in flat colour with a darker
@@ -552,15 +722,7 @@ const HARE_SIP = [
 
 // The Hatter's hat, on its own: tall, a little flared at the crown, a red band with the "10/6"
 // ticket tucked in it.
-const HAT = [
-  ".hHHHHH.",
-  "..HHHHtt",
-  "..HHHHtT",
-  "..RRRR..",
-  "..hHHH..",
-  "hHHHHHHh",
-  ".bbbbbb.",
-];
+const HAT = [".hHHHHH.", "..HHHHtt", "..HHHHtT", "..RRRR..", "..hHHH..", "hHHHHHHh", ".bbbbbb."];
 
 // The Cheshire Cat, sitting in the fork of his tree, facing out: a tabby with his wide grin.
 const CAT = [
@@ -601,13 +763,7 @@ const CATERPILLAR = [
 
 // The Umbrella Vulture's head: bald and pink, a hooked beak, a pale ruff where it meets the
 // umbrella.
-const VULTURE_HEAD = [
-  ".pPP..",
-  "pPPPP.",
-  "PPePbb",
-  "wPPP.b",
-  "ww....",
-];
+const VULTURE_HEAD = [".pPP..", "pPPPP.", "PPePbb", "wPPP.b", "ww...."];
 
 function rabbitAt(g, r) {
   const grid = r.state === "walk" && Math.floor(r.phase) % 2 ? RABBIT_STEP : RABBIT;
@@ -848,10 +1004,7 @@ function generate(ctx) {
   ]);
   const { perch, table, tree, hole } = spots;
   const clear = (x) =>
-    Math.abs(x - perch) > 12 &&
-    Math.abs(x - table) > 14 &&
-    Math.abs(x - tree) > 16 &&
-    Math.abs(x - hole) > 6;
+    Math.abs(x - perch) > 12 && Math.abs(x - table) > 14 && Math.abs(x - tree) > 16 && Math.abs(x - hole) > 6;
   scatter(plants, ctx, {
     kind: "hill",
     count: Math.round(cols / 70),
@@ -1073,7 +1226,7 @@ const extras = {
       fadedAt(g, x.caterpillar.alpha, () => caterpillarAt(g, perch));
     }
     if (x.hat.alpha > 0) fadedAt(g, x.hat.alpha, () => hatAt(g, tea, f.time));
-    const sipping = (f.time % SIP_EVERY) < SIP_FOR;
+    const sipping = f.time % SIP_EVERY < SIP_FOR;
     if (x.hare.alpha > 0) fadedAt(g, x.hare.alpha, () => hareAt(g, tea, sipping));
     if (x.dodo.active) dodoAt(g, x.dodo);
     for (const s of x.soldiers) if (s.active) soldierAt(g, s);

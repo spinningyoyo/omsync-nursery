@@ -12,7 +12,7 @@
 import { part, scaledPart, sprite } from "./pixel.js";
 
 // The row an animal's feet stand on: the soil line, or a perch's top when it has a `y`.
-const feet = (g, a) => (a.y ?? g.groundY + 7);
+const feet = (g, a) => a.y ?? g.groundY + 7;
 
 // Walking legs: the diagonal pairs lift in turn. Returns whether the leg at index i is lifted.
 const lifted = (a, i) => a.state === "walk" && (Math.floor(a.phase) % 2 === 0) === (i === 0 || i === 3);
@@ -57,13 +57,7 @@ const BEARS = {
 // A cub, drawn on its own rather than shrunk from its mother: a smaller, rounder head with one
 // small ear showing side on, a rounded back that runs over to the front legs and into the head,
 // and short legs.
-const BEAR_CUB = [
-  "..BBBBB..B..",
-  ".BBBBBBBBBB.",
-  "BBBBBBBBBBBM",
-  "BBBBBBBBBBMN",
-  ".BBBBBBBB...",
-];
+const BEAR_CUB = ["..BBBBB..B..", ".BBBBBBBBBB.", "BBBBBBBBBBBM", "BBBBBBBBBBMN", ".BBBBBBBB..."];
 const CUB_LEGS = [1, 2, 6, 7];
 
 // Reared up on its hind legs to sniff the air.
@@ -101,13 +95,17 @@ export function bearAt(g, b) {
     return;
   }
   if (b.cub) {
-    CUB_LEGS.forEach((dx, i) => part(g, legs, x, y, b.dir, dx, -2, 1, lifted(b, i) ? 1 : 2));
+    CUB_LEGS.forEach((dx, i) => {
+      part(g, legs, x, y, b.dir, dx, -2, 1, lifted(b, i) ? 1 : 2);
+    });
     sprite(g, BEAR_CUB, colours, x, y, b.dir, 0, BEAR_CUB.length + 2);
     return;
   }
   const kind = BEARS[b.kind ?? "black"];
   const px = scaledPart(g, x, y, b.dir, k);
-  kind.legs.forEach((dx, i) => px(legs, dx, -kind.leg, 2, lifted(b, i) ? kind.leg - 1 : kind.leg));
+  kind.legs.forEach((dx, i) => {
+    px(legs, dx, -kind.leg, 2, lifted(b, i) ? kind.leg - 1 : kind.leg);
+  });
   sprite(g, kind.body, colours, x, y, b.dir, 0, kind.body.length + kind.leg, k);
 }
 
@@ -143,30 +141,30 @@ const CANID_PUPS = {
     walk: PUP_WALK,
     sit: {
       grid: [
-      ".....C.C..",
-      ".....CCC..",
-      ".....CCCCE",
-      "....CCCLL.",
-      "....CCL...",
-      "..CCCCL...",
-      "..CCCDC...",
-      "TCCCCDC...",
-    ],
+        ".....C.C..",
+        ".....CCC..",
+        ".....CCCCE",
+        "....CCCLL.",
+        "....CCL...",
+        "..CCCCL...",
+        "..CCCDC...",
+        "TCCCCDC...",
+      ],
       cx: 2,
       cy: 8,
     },
     howl: {
       grid: [
-      ".......E.",
-      ".......CL",
-      "....CCCCL",
-      ".....CCL.",
-      "....CCL..",
-      "....CCL..",
-      "..CCCCL..",
-      "..CCCDC..",
-      "TCCCCDC..",
-    ],
+        ".......E.",
+        ".......CL",
+        "....CCCCL",
+        ".....CCL.",
+        "....CCL..",
+        "....CCL..",
+        "..CCCCL..",
+        "..CCCDC..",
+        "TCCCCDC..",
+      ],
       cx: 2,
       cy: 9,
     },
@@ -174,14 +172,7 @@ const CANID_PUPS = {
   arctic: {
     walk: PUP_WALK,
     sit: {
-      grid: [
-      "...C.C.",
-      "...CCCE",
-      "..CCCL.",
-      ".CCLL..",
-      ".CCLL..",
-      "CCCDC..",
-    ],
+      grid: ["...C.C.", "...CCCE", "..CCCL.", ".CCLL..", ".CCLL..", "CCCDC.."],
       cx: 1,
       cy: 6,
     },
@@ -192,12 +183,43 @@ const CANID_PUPS = {
 // from the neck to the back, an ear and a tail. Keyed by kind and scale, then walking or sitting.
 const CANID_PATCHES = {
   "wolf-1": {
-    walk: [[7, -12], [5, -11], [1, -10], [2, -10], [3, -10], [-1, -8]],
-    sit: [[7, -13], [6, -12], [7, -12], [5, -11], [4, -10], [3, -9], [2, -8], [3, -8], [2, -7], [3, -7]],
+    walk: [
+      [7, -12],
+      [5, -11],
+      [1, -10],
+      [2, -10],
+      [3, -10],
+      [-1, -8],
+    ],
+    sit: [
+      [7, -13],
+      [6, -12],
+      [7, -12],
+      [5, -11],
+      [4, -10],
+      [3, -9],
+      [2, -8],
+      [3, -8],
+      [2, -7],
+      [3, -7],
+    ],
   },
   "wolf-0.9": {
-    walk: [[6, -11], [2, -9], [3, -9], [-1, -7]],
-    sit: [[6, -11], [4, -9], [3, -8], [2, -7], [3, -7], [2, -6], [3, -6]],
+    walk: [
+      [6, -11],
+      [2, -9],
+      [3, -9],
+      [-1, -7],
+    ],
+    sit: [
+      [6, -11],
+      [4, -9],
+      [3, -8],
+      [2, -7],
+      [3, -7],
+      [2, -6],
+      [3, -6],
+    ],
   },
 };
 
@@ -336,11 +358,33 @@ const BUGLE_RACK = [4, 4];
 // pose x and the feet row, as part() takes them.
 const ELK_BREATH = [
   [[21, -21, 2, 1]],
-  [[21, -21, 2, 2], [23, -22, 1, 1]],
-  [[21, -21, 2, 1], [22, -22, 3, 1], [24, -23, 2, 2], [23, -21, 1, 1]],
-  [[22, -22, 2, 1], [23, -23, 3, 1], [25, -24, 3, 2], [24, -21, 1, 1]],
-  [[24, -23, 2, 1], [25, -24, 2, 1], [26, -25, 2, 2], [23, -22, 1, 1]],
-  [[25, -24, 2, 1], [27, -25, 1, 1], [26, -26, 1, 1]],
+  [
+    [21, -21, 2, 2],
+    [23, -22, 1, 1],
+  ],
+  [
+    [21, -21, 2, 1],
+    [22, -22, 3, 1],
+    [24, -23, 2, 2],
+    [23, -21, 1, 1],
+  ],
+  [
+    [22, -22, 2, 1],
+    [23, -23, 3, 1],
+    [25, -24, 3, 2],
+    [24, -21, 1, 1],
+  ],
+  [
+    [24, -23, 2, 1],
+    [25, -24, 2, 1],
+    [26, -25, 2, 2],
+    [23, -22, 1, 1],
+  ],
+  [
+    [25, -24, 2, 1],
+    [27, -25, 1, 1],
+    [26, -26, 1, 1],
+  ],
   [[27, -26, 1, 1]],
   [],
 ];
@@ -357,10 +401,7 @@ const ELK_BODY = [
 ];
 
 // The elk's trunk while it grazes: the rump's top-right cell is removed, as the studio edit left it.
-const ELK_SIT_TRUNK = [
-  ELK_BODY[3].slice(0, 17) + "." + ELK_BODY[3].slice(18),
-  ...ELK_BODY.slice(4),
-];
+const ELK_SIT_TRUNK = [`${ELK_BODY[3].slice(0, 17)}.${ELK_BODY[3].slice(18)}`, ...ELK_BODY.slice(4)];
 
 // `trunk` is the row the back starts on, `front` the shoulder's last column, `legs` the columns of
 // the near hind, far hind, far fore and near fore legs, and `racks` what each sex wears: the set of
@@ -506,15 +547,7 @@ export function cervidAt(g, d) {
 // A mature ram's horn, curled in a full circle from the crown, back and round under the jaw. H is
 // the horn and R its shade on the inner edge and underside. The side view is drawn from (8, -19);
 // the front view shows one horn either side of the face, so FRONT is drawn once and mirrored.
-const HORN_SIDE = [
-  "..HHHH.",
-  ".HHRRHH",
-  "HHR....",
-  "HR.....",
-  "HR...H.",
-  "HHR.RH.",
-  ".HHRR..",
-];
+const HORN_SIDE = ["..HHHH.", ".HHRRHH", "HHR....", "HR.....", "HR...H.", "HHR.RH.", ".HHRR.."];
 const HORN_FRONT = [".HHH", "HHRH", "HRR.", "HRR.", "HHR.", ".HH."];
 const HORN_FRONT_FAR = HORN_FRONT.map((row) => [...row].reverse().join(""));
 
@@ -618,28 +651,70 @@ const ELEPHANTS = {
   african: {
     grid: AFRICAN_ELEPHANT,
     leg: 10,
-    legs: [[3, true], [5, false], [17, false], [15, true]],
-    trunk: [[27, -10, 2, 6], [27, -4, 3, 1], [28, -3, 2, 1]],
-    curl: [[28, -10, 2, 2], [29, -12, 2, 2], [30, -13, 1, 1]],
+    legs: [
+      [3, true],
+      [5, false],
+      [17, false],
+      [15, true],
+    ],
+    trunk: [
+      [27, -10, 2, 6],
+      [27, -4, 3, 1],
+      [28, -3, 2, 1],
+    ],
+    curl: [
+      [28, -10, 2, 2],
+      [29, -12, 2, 2],
+      [30, -13, 1, 1],
+    ],
   },
   asian: {
     grid: ASIAN_ELEPHANT,
     leg: 8,
-    legs: [[2, true], [4, false], [15, false], [13, true]],
-    trunk: [[22, -8, 2, 4], [22, -4, 3, 1], [23, -3, 2, 1]],
-    curl: [[23, -8, 2, 2], [24, -10, 2, 2], [25, -11, 1, 1]],
+    legs: [
+      [2, true],
+      [4, false],
+      [15, false],
+      [13, true],
+    ],
+    trunk: [
+      [22, -8, 2, 4],
+      [22, -4, 3, 1],
+      [23, -3, 2, 1],
+    ],
+    curl: [
+      [23, -8, 2, 2],
+      [24, -10, 2, 2],
+      [25, -11, 1, 1],
+    ],
   },
   africanCalf: {
     grid: AFRICAN_CALF,
     leg: 4,
-    legs: [[2, true], [4, false], [10, false], [8, true]],
-    trunk: [[15, -4, 1, 2], [15, -2, 2, 1]],
+    legs: [
+      [2, true],
+      [4, false],
+      [10, false],
+      [8, true],
+    ],
+    trunk: [
+      [15, -4, 1, 2],
+      [15, -2, 2, 1],
+    ],
   },
   asianCalf: {
     grid: ASIAN_CALF,
     leg: 4,
-    legs: [[2, true], [4, false], [10, false], [8, true]],
-    trunk: [[15, -4, 1, 2], [15, -2, 2, 1]],
+    legs: [
+      [2, true],
+      [4, false],
+      [10, false],
+      [8, true],
+    ],
+    trunk: [
+      [15, -4, 1, 2],
+      [15, -2, 2, 1],
+    ],
   },
 };
 
@@ -784,24 +859,8 @@ const GROUND_BIRDS = {
   },
   // A feral rooster, the moa: a red comb and a dark sickle tail. Standing, it pecks.
   moa: {
-    walk: [
-      "......cc..",
-      ".....BBBY.",
-      "T....BeB..",
-      "TT..BBBc..",
-      "TTTBBBBB..",
-      ".TBBBBBB..",
-      "..TBBBB...",
-    ],
-    sit: [
-      "...........",
-      "...........",
-      "T..........",
-      "TT.........",
-      "TTTBBBBBBcc",
-      ".TBBBBBBBe.",
-      "..TBBBB.cY.",
-    ],
+    walk: ["......cc..", ".....BBBY.", "T....BeB..", "TT..BBBc..", "TTTBBBBB..", ".TBBBBBB..", "..TBBBB..."],
+    sit: ["...........", "...........", "T..........", "TT.........", "TTTBBBBBBcc", ".TBBBBBBBe.", "..TBBBB.cY."],
     legs: [4, 6],
     tall: 2,
     colours: ([body, tail, comb, legs]) => [{ B: body, T: tail, c: comb, e: tail, Y: legs }, legs, legs],
@@ -1059,20 +1118,8 @@ const RAPTORS = {
   // A turkey vulture: wings held in a shallow V, black linings and silver flight feathers, a small
   // red head. It never flaps; it teeters from side to side.
   vulture: {
-    glide: [
-      "BB.............BB",
-      "SSBB.........BBSS",
-      "..SSBBB.K.BBBSS..",
-      "....SSSBBBSSS....",
-      ".......BBB.......",
-    ],
-    tilt: [
-      "...............BB",
-      "BB...........BBSS",
-      "SSBBB...K.BBBSS..",
-      "..SSSSSBBBSSS....",
-      ".......BBB.......",
-    ],
+    glide: ["BB.............BB", "SSBB.........BBSS", "..SSBBB.K.BBBSS..", "....SSSBBBSSS....", ".......BBB......."],
+    tilt: ["...............BB", "BB...........BBSS", "SSBBB...K.BBBSS..", "..SSSSSBBBSSS....", ".......BBB......."],
     centre: [8, 2],
   },
   // A crested serpent eagle soaring: dark, with a broad white band along the trailing edge of the

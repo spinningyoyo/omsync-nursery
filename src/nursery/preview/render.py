@@ -40,6 +40,25 @@ def collect(driver):
     raise SystemExit("the page never finished (a syntax error in a module?)")
 
 
+def load_sheet(driver, base: str) -> list:
+    driver.get(f"{base}/sheet.html?spec=spec.js")
+    return [collect(driver)]
+
+
+def load_scenes(driver, base: str, argv: list[str]) -> list:
+    """Size the window so the page's viewport is exactly the asked size, then draw each scene."""
+    w, h = (int(argv[3]), int(argv[4])) if len(argv) > 4 else (960, 480)
+    query = argv[5] if len(argv) > 5 else ""
+    driver.set_window_size(w, h)
+    inner = driver.execute_script("return [innerWidth, innerHeight]")
+    driver.set_window_size(2 * w - inner[0], 2 * h - inner[1])
+    pages = []
+    for scene in argv[2].split(","):
+        driver.get(f"{base}/scene.html?scene={scene}&{query}")
+        pages.append(collect(driver))
+    return pages
+
+
 def main(argv: list[str]) -> None:
     if len(argv) < 3 or argv[0] not in ("scene", "sheet"):
         raise SystemExit(__doc__)
@@ -61,19 +80,7 @@ def main(argv: list[str]) -> None:
     driver = webdriver.Chrome(options=options)
     base = f"http://127.0.0.1:{server.server_port}"
     try:
-        if mode == "sheet":
-            driver.get(f"{base}/sheet.html?spec=spec.js")
-            pages = [collect(driver)]
-        else:
-            w, h = (int(argv[3]), int(argv[4])) if len(argv) > 4 else (960, 480)
-            query = argv[5] if len(argv) > 5 else ""
-            driver.set_window_size(w, h)
-            inner = driver.execute_script("return [innerWidth, innerHeight]")
-            driver.set_window_size(2 * w - inner[0], 2 * h - inner[1])
-            pages = []
-            for scene in argv[2].split(","):
-                driver.get(f"{base}/scene.html?scene={scene}&{query}")
-                pages.append(collect(driver))
+        pages = load_sheet(driver, base) if mode == "sheet" else load_scenes(driver, base, argv)
         for result in pages:
             if isinstance(result, dict):
                 raise SystemExit(result["error"])

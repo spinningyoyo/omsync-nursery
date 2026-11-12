@@ -170,23 +170,27 @@ export class SceneView extends LitElement {
         </div>
         <div class="row">
           <span class="label"><n-icon name="zap"></n-icon>Trigger</span>
-          ${this.triggers.length
-            ? this.triggers.map(
-                (t) => html`<button
+          ${
+            this.triggers.length
+              ? this.triggers.map(
+                  (t) => html`<button
                   class="chip"
                   title="Fire now (it still waits for its stage, night, or its animal)"
                   @click=${() => fire(this.live.engine, t.label)}
                 >
                   ${t.label} · ${t.when}
                 </button>`,
-              )
-            : html`<span class="muted">no timed events</span>`}
+                )
+              : html`<span class="muted">no timed events</span>`
+          }
         </div>
         <div class="row">
           <span class="label"><n-icon name="eye"></n-icon>On the page</span>
-          ${this.onPage.length
-            ? this.onPage.map((name) => html`<span class="chip">${name}</span>`)
-            : html`<span class="muted">nothing yet</span>`}
+          ${
+            this.onPage.length
+              ? this.onPage.map((name) => html`<span class="chip">${name}</span>`)
+              : html`<span class="muted">nothing yet</span>`
+          }
         </div>
       </div>
     `;

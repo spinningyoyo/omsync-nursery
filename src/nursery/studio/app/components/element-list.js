@@ -189,12 +189,14 @@ export class ElementList extends LitElement {
           <input placeholder="Filter elements" .value=${this.filter} @input=${(e) => (this.filter = e.target.value)} />
         </label>
       </div>
-      ${errors.length
-        ? html`<div class="notice bad">
+      ${
+        errors.length
+          ? html`<div class="notice bad">
             <n-icon name="circle-alert"></n-icon>
             <div>${errors.length} pose${errors.length > 1 ? "s" : ""} failed to draw: ${errors.join("; ")}</div>
           </div>`
-        : nothing}
+          : nothing
+      }
       ${this.model.groups.map((group) => {
         const items = group.items.filter(match);
         if (!items.length) return nothing;
@@ -206,7 +208,15 @@ export class ElementList extends LitElement {
             <n-icon name=${group.icon} size="14"></n-icon>
             ${group.title}<span class="count">${count}</span>
           </button>
-          ${open ? repeat(items, (item) => item.id, (item) => this.renderItem(item)) : nothing}
+          ${
+            open
+              ? repeat(
+                  items,
+                  (item) => item.id,
+                  (item) => this.renderItem(item),
+                )
+              : nothing
+          }
         `;
       })}
     `;
@@ -239,28 +249,32 @@ export class ElementList extends LitElement {
               ${job.themes?.includes("dark") ? html`<n-sprite .job=${job} fit="72" theme="dark"></n-sprite>` : nothing}
             </span>
             <span class="caption">
-              ${job.title}${job.size ? ` · ${job.size[0]}×${job.size[1]}` : ""}${job.frames?.length > 1
-                ? ` · ${job.frames.length} frames`
-                : ""}${job.same ? " · same by day and night" : ""}
+              ${job.title}${job.size ? ` · ${job.size[0]}×${job.size[1]}` : ""}${
+                job.frames?.length > 1 ? ` · ${job.frames.length} frames` : ""
+              }${job.same ? " · same by day and night" : ""}
             </span>
           </button>`,
         )}
       </div>
       <div class="facts">${item.facts.join(" · ")}</div>
-      ${item.where
-        ? html`<span class="source mono"
-            ><n-icon name="code"></n-icon>${item.where.fn ? `${item.where.fn} · ` : ""}${item.where.path}${item.where.line
-              ? `:${item.where.line}`
-              : ""}</span
+      ${
+        item.where
+          ? html`<span class="source mono"
+            ><n-icon name="code"></n-icon>${item.where.fn ? `${item.where.fn} · ` : ""}${item.where.path}${
+              item.where.line ? `:${item.where.line}` : ""
+            }</span
           >`
-        : nothing}
+          : nothing
+      }
       <div class="actions">
         <button class="btn primary" @click=${() => edit(item.jobs[0])}><n-icon name="pencil"></n-icon>Edit pixels</button>
-        ${item.family
-          ? html`<button class="btn" @click=${() => act(this, "family", { family: item.family.id })}>
+        ${
+          item.family
+            ? html`<button class="btn" @click=${() => act(this, "family", { family: item.family.id })}>
               <n-icon name="users"></n-icon>${item.family.title} in every scene
             </button>`
-          : nothing}
+            : nothing
+        }
       </div>
     </div>`;
   }

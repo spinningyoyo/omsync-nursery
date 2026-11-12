@@ -156,7 +156,10 @@ export class ReviewView extends LitElement {
   // Which frame each column shows now, as one string, so a redraw happens only on a new frame.
   frames() {
     const s = this.session;
-    return [s.proposal.now, ...s.variants].filter(Boolean).map((j) => s.frameOf(j)).join();
+    return [s.proposal.now, ...s.variants]
+      .filter(Boolean)
+      .map((j) => s.frameOf(j))
+      .join();
   }
 
   render() {
@@ -174,7 +177,11 @@ export class ReviewView extends LitElement {
     const zoom = Math.max(2, Math.min(10, Math.floor(160 / Math.max(crop.w, crop.h))));
     const column = (job, label, choosable) => {
       const [w, h] = job.size ?? [0, 0];
-      const length = job.proposal ? (job.count > 1 ? `${job.count} frames, ${job.seconds} s` : "still") : `${job.frames.length} frame${job.frames.length > 1 ? "s" : ""}`;
+      const length = job.proposal
+        ? job.count > 1
+          ? `${job.count} frames, ${job.seconds} s`
+          : "still"
+        : `${job.frames.length} frame${job.frames.length > 1 ? "s" : ""}`;
       const chosen = choosable && s.choice === job.title;
       const body = html`
         <div class="name">${label}${chosen ? html`<span class="badge ok">Your choice</span>` : nothing}</div>
@@ -210,7 +217,9 @@ export class ReviewView extends LitElement {
         <div class="variants">
           ${p.now ? column(p.now, `Now · ${p.now.title}`, false) : nothing}
           ${p.variants.map((job) =>
-            job.error ? html`<div class="variant"><div class="name">Variant ${job.title}</div><div class="error">${job.error}</div></div>` : column(job, `Variant ${job.title}`, true),
+            job.error
+              ? html`<div class="variant"><div class="name">Variant ${job.title}</div><div class="error">${job.error}</div></div>`
+              : column(job, `Variant ${job.title}`, true),
           )}
         </div>
         <div class="transport">

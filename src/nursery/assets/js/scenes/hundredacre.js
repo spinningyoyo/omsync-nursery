@@ -21,8 +21,8 @@ import { flyerAt, owlAt } from "../kit/animals.js";
 import { drift, enter, flyBy, isNight, walker, wander } from "../kit/critters.js";
 import { starField } from "../kit/effects.js";
 import {
-  CLEARING,
   blob,
+  CLEARING,
   clamp,
   clearing,
   foliage,
@@ -118,7 +118,19 @@ const LIGHT = {
   rabbit: ["#bf9c72", "#9a7a54", "#f8f1e4", "#3b2f26"],
   roo: ["#c9a67c", "#a8835a", "#5b8fd0", "#3b2f26"],
   owl: ["#a5774b", "#7d5634", "#ecdcbc", "#3b2f26", "#e0a83a"],
-  kessie: { C: "#3a6fc0", H: "#3a6fc0", E: "#14100a", K: "#e8a030", T: "#2f5fa8", b: "#2f5fa8", B: "#3a6fc0", l: "#f6f4ee", t: "#3a6fc0", p: "#9cc0ec", d: "#24478a" },
+  kessie: {
+    C: "#3a6fc0",
+    H: "#3a6fc0",
+    E: "#14100a",
+    K: "#e8a030",
+    T: "#2f5fa8",
+    b: "#2f5fa8",
+    B: "#3a6fc0",
+    l: "#f6f4ee",
+    t: "#3a6fc0",
+    p: "#9cc0ec",
+    d: "#24478a",
+  },
 };
 
 const DARK = {
@@ -164,7 +176,19 @@ const DARK = {
   rabbit: ["#8c704e", "#6a5238", "#c8c0b2", "#0e0b09"],
   roo: ["#8e7350", "#6e5638", "#3f6aa8", "#0e0b09"],
   owl: ["#7a5838", "#5a3e26", "#b8a888", "#0e0b09", "#b88a30"],
-  kessie: { C: "#27477a", H: "#27477a", E: "#100e0c", K: "#8f6523", T: "#203e6b", b: "#203e6b", B: "#27477a", l: "#989795", t: "#27477a", p: "#627894", d: "#1a2f59" },
+  kessie: {
+    C: "#27477a",
+    H: "#27477a",
+    E: "#100e0c",
+    K: "#8f6523",
+    T: "#203e6b",
+    b: "#203e6b",
+    B: "#27477a",
+    l: "#989795",
+    t: "#27477a",
+    p: "#627894",
+    d: "#1a2f59",
+  },
 };
 
 // Painters. Land forms (the hills) stand at full size and fade in; trees and plants grow. Like the
@@ -258,7 +282,13 @@ function fir(g, p, s, base) {
 }
 
 // The Bee Tree's branches, each [height along the trunk, side, reach, rise] as shares of the tree.
-const BEE_BRANCHES = [[0.42, 1, 14, -0.25], [0.55, -1, 12, -0.5], [0.68, 1, 11, -0.6], [0.8, -1, 9, -0.7], [0.92, 1, 6, -0.8]];
+const BEE_BRANCHES = [
+  [0.42, 1, 14, -0.25],
+  [0.55, -1, 12, -0.5],
+  [0.68, 1, 11, -0.6],
+  [0.8, -1, 9, -0.7],
+  [0.92, 1, 6, -0.8],
+];
 
 // Where a branch of the Bee Tree starts and ends, grown to s, on a trunk standing on `base`.
 function branchEnds(p, s, base, [at, dir, reach, rise]) {
@@ -507,7 +537,13 @@ function bracken(g, p, s, base) {
   const { pal } = g;
   const length = Math.max(2, Math.round((4 + (p.seed % 4)) * p.scale * s) + 1);
   const colours = [pal.bracken[1], pal.bracken[0]];
-  const fronds = [[-1, -0.3, 0.8], [-0.6, -0.8, 0.6], [-0.2, -1, 0.4], [0.3, -1, 0.5], [0.8, -0.6, 0.7]];
+  const fronds = [
+    [-1, -0.3, 0.8],
+    [-0.6, -0.8, 0.6],
+    [-0.2, -1, 0.4],
+    [0.3, -1, 0.5],
+    [0.8, -0.6, 0.7],
+  ];
   for (const [dx, dy, droop] of fronds) stroke(g, p.x, base - 1, dx, dy, length, droop, 1, colours);
 }
 
@@ -540,7 +576,7 @@ function pit(g, p, s, base) {
   const { pal } = g;
   const w = Math.max(3, Math.round(9 * s));
   blob(g, p.x, base - 1, w + 2, 1, () => pal.rim);
-  blob(g, p.x, base, w, 2, (x, y) => (y === base ? pal.hole[1] : pal.hole[0]));
+  blob(g, p.x, base, w, 2, (_x, y) => (y === base ? pal.hole[1] : pal.hole[0]));
 }
 
 // The Forest: its landmarks placed anew on each visit, apart from one another, the tall ones (the
@@ -576,26 +612,70 @@ function generate(ctx) {
     plants.push(makePlant(rand, "pine", x, { born: 1 + (i % 2), depth: 1 + (i % 3), scale }));
   }
   scatter(plants, ctx, {
-    kind: "fir", count: Math.round(cols / 40), born: [1, 3], scale: [0.6, 0.9], layer: 0,
+    kind: "fir",
+    count: Math.round(cols / 40),
+    born: [1, 3],
+    scale: [0.6, 0.9],
+    layer: 0,
     keep: (x) => (x < cols * 0.3 || x > cols * 0.7) && Math.abs(x - owlX) > 14,
   });
   scatter(plants, ctx, {
-    kind: "tree", count: Math.round(cols / 50), born: [2, 4], scale: [0.6, 0.85], layer: 0,
-    species: ["beech", "oak"], keep: (x) => (x > cols * 0.75 || x < cols * 0.12) && Math.abs(x - owlX) > 14,
+    kind: "tree",
+    count: Math.round(cols / 50),
+    born: [2, 4],
+    scale: [0.6, 0.85],
+    layer: 0,
+    species: ["beech", "oak"],
+    keep: (x) => (x > cols * 0.75 || x < cols * 0.12) && Math.abs(x - owlX) > 14,
   });
   scatter(plants, ctx, {
-    kind: "tree", count: Math.round(cols / 45), born: [2, 5], scale: [0.7, 1], depth: [3, 8],
-    species: ["beech", "oak", "beech"], keep: away,
+    kind: "tree",
+    count: Math.round(cols / 45),
+    born: [2, 5],
+    scale: [0.7, 1],
+    depth: [3, 8],
+    species: ["beech", "oak", "beech"],
+    keep: away,
   });
   scatter(plants, ctx, {
-    kind: "slim", count: Math.round(cols / 40), born: [2, 5], scale: [0.7, 1], depth: [1, 6],
-    species: ["beech", "oak"], keep: away,
+    kind: "slim",
+    count: Math.round(cols / 40),
+    born: [2, 5],
+    scale: [0.7, 1],
+    depth: [1, 6],
+    species: ["beech", "oak"],
+    keep: away,
   });
-  scatter(plants, ctx, { kind: "gorse", count: Math.round(cols / 22), born: [2, 5], scale: [0.8, 1.2], depth: [2, 12], keep: away });
-  scatter(plants, ctx, { kind: "heather", count: Math.round(cols / 9), born: [0, 3], scale: [0.8, 1.3], depth: [0, 14], keep: away });
-  scatter(plants, ctx, { kind: "bracken", count: Math.round(cols / 9), born: [0, 3], scale: [0.8, 1.3], depth: [0, 14], keep: away });
   scatter(plants, ctx, {
-    kind: "thistle", count: Math.round(cols / 18), born: [3, 6], scale: [0.9, 1.3], depth: [6, 12],
+    kind: "gorse",
+    count: Math.round(cols / 22),
+    born: [2, 5],
+    scale: [0.8, 1.2],
+    depth: [2, 12],
+    keep: away,
+  });
+  scatter(plants, ctx, {
+    kind: "heather",
+    count: Math.round(cols / 9),
+    born: [0, 3],
+    scale: [0.8, 1.3],
+    depth: [0, 14],
+    keep: away,
+  });
+  scatter(plants, ctx, {
+    kind: "bracken",
+    count: Math.round(cols / 9),
+    born: [0, 3],
+    scale: [0.8, 1.3],
+    depth: [0, 14],
+    keep: away,
+  });
+  scatter(plants, ctx, {
+    kind: "thistle",
+    count: Math.round(cols / 18),
+    born: [3, 6],
+    scale: [0.9, 1.3],
+    depth: [6, 12],
     keep: (x) => Math.abs(x - gloomyX) > 20 && Math.abs(x - gloomyX) < 30,
   });
   for (const p of plants) {
@@ -743,7 +823,9 @@ function heldBalloon(g, x, y, dir, frame, colours) {
   const knotX = x - dir;
   const knotY = y - string;
   line(g, cord, x, y, knotX, knotY);
-  rows.forEach((w, i) => rect(g, body, knotX - (w >> 1), knotY - (rows.length - 1 - i), w, 1));
+  rows.forEach((w, i) => {
+    rect(g, body, knotX - (w >> 1), knotY - (rows.length - 1 - i), w, 1);
+  });
   if (rows.length > 5) rect(g, shine, knotX - (rows[2] >> 1) + 1, knotY - rows.length + 4, 1, 2);
 }
 
@@ -964,7 +1046,12 @@ function flightPath(f, from, hover, hoverLift) {
   const ceiling = f.groundY + 8 - 30; // Pooh, his string and balloon stand about 27 above his feet
   const cruise = Math.min(ceiling, Math.max(tallest + 8 + CLEAR_PINES, hoverLift + 6));
   const across = hover - from;
-  const points = [[from, 0], [from, cruise], [hover - Math.sign(across) * Math.min(DESCENT_RUN, Math.abs(across)), cruise], [hover, hoverLift]];
+  const points = [
+    [from, 0],
+    [from, cruise],
+    [hover - Math.sign(across) * Math.min(DESCENT_RUN, Math.abs(across)), cruise],
+    [hover, hoverLift],
+  ];
   const length = points.slice(1).reduce((sum, [x, y], i) => sum + Math.hypot(x - points[i][0], y - points[i][1]), 0);
   return { points, length, time: length / FLIGHT_SPEED + FLIGHT_EASE };
 }
@@ -974,7 +1061,14 @@ function pathAt({ points, length, time }, t) {
   const a = FLIGHT_EASE;
   const v = FLIGHT_SPEED;
   t = Math.max(0, t);
-  const gone = t >= time ? length : t < a ? (v * t * t) / (2 * a) : t < time - a ? (v * a) / 2 + v * (t - a) : length - (v * (time - t) ** 2) / (2 * a);
+  const gone =
+    t >= time
+      ? length
+      : t < a
+        ? (v * t * t) / (2 * a)
+        : t < time - a
+          ? (v * a) / 2 + v * (t - a)
+          : length - (v * (time - t) ** 2) / (2 * a);
   let left = gone;
   for (let i = 1; i < points.length; i += 1) {
     const [x0, y0] = points[i - 1];
@@ -995,7 +1089,8 @@ function beginFlight(f, fl) {
   const tree = f.plants.find((p) => p.kind === "beeTree");
   if (!tree) return;
   const hive = hiveSpot(tree, 1, f.groundY + tree.depth);
-  const fits = (side) => hive.x - side * HOVER_OFF > FLIGHT_MARGIN && hive.x - side * HOVER_OFF < f.cols - FLIGHT_MARGIN;
+  const fits = (side) =>
+    hive.x - side * HOVER_OFF > FLIGHT_MARGIN && hive.x - side * HOVER_OFF < f.cols - FLIGHT_MARGIN;
   let side = pooh.x < hive.x ? 1 : -1;
   if (!fits(side)) side = -side;
   const hover = clamp(hive.x - side * HOVER_OFF, FLIGHT_MARGIN, f.cols - FLIGHT_MARGIN);
@@ -1003,7 +1098,12 @@ function beginFlight(f, fl) {
   const away = room(side) >= CHASE_RUN ? side : -side;
   const lift = Math.max(6, f.groundY - hive.y - 7);
   Object.assign(fl, {
-    t: 0, hive, side, away, hover, lift,
+    t: 0,
+    hive,
+    side,
+    away,
+    hover,
+    lift,
     path: flightPath(f, pooh.x, hover, lift),
     run: Math.min(CHASE_RUN, room(away)),
     released: false,
@@ -1204,12 +1304,44 @@ export default {
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.45, 0.65], dark: [0.45, 0.62] },
   mature: {
-    hills: 1.5, pine: 3, fir: 3, tree: 3, slim: 3, beeTree: 3, hive: 3, poohHouse: 3, pigletHouse: 3, owlHouse: 3, tracks: 1,
-    gloomyPlace: 2, heather: 1.5, gorse: 2, bracken: 1.5, thistle: 2, pit: 1.5, honeyPots: 2,
+    hills: 1.5,
+    pine: 3,
+    fir: 3,
+    tree: 3,
+    slim: 3,
+    beeTree: 3,
+    hive: 3,
+    poohHouse: 3,
+    pigletHouse: 3,
+    owlHouse: 3,
+    tracks: 1,
+    gloomyPlace: 2,
+    heather: 1.5,
+    gorse: 2,
+    bracken: 1.5,
+    thistle: 2,
+    pit: 1.5,
+    honeyPots: 2,
   },
   paint: {
-    hills, pine, fir, tree, slim, beeTree, hive, poohHouse, pigletHouse, owlHouse, gloomyPlace, heather, gorse, tracks,
-    bracken, thistle, pit, honeyPots,
+    hills,
+    pine,
+    fir,
+    tree,
+    slim,
+    beeTree,
+    hive,
+    poohHouse,
+    pigletHouse,
+    owlHouse,
+    gloomyPlace,
+    heather,
+    gorse,
+    tracks,
+    bracken,
+    thistle,
+    pit,
+    honeyPots,
   },
   generate,
   soil,
