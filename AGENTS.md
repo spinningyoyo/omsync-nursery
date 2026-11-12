@@ -15,6 +15,8 @@ contract; `docs/adr/` holds the reasons behind the layout and the stack.
 - The mascot's master is `src/nursery/assets/brand/mascot-grid.txt`. Change the grid, run
   `uv run nursery brand`, and never edit or copy a built brand file.
 - `.nursery/` is the owner's working state: read it, and leave its files in place.
+- Tests are end-to-end tests only, in `tests/e2e/`. Do not write unit tests: a test drives the real
+  engine, CLI or studio from the outside. Run `uv run pytest` after code changes.
 - Release only when the owner asks: `uv run nursery release --patch|--minor|--major`. The tag is
   `vX.Y.Z`, the version in `pyproject.toml`. While the major version is 0, use `--minor` for a
   contract change and `--patch` for anything else. omsync takes a release on its own schedule.
@@ -25,6 +27,7 @@ contract; `docs/adr/` holds the reasons behind the layout and the stack.
 uv sync
 git config core.hooksPath .githooks   # once per clone: pre-commit and commit-msg checks
 sh scripts/check.sh               # ruff, Biome, import boundaries, brand and catalogue freshness
+uv run pytest                     # the end-to-end tests (needs Chrome); -m "not browser" skips Chrome
 uv run nursery --help
 uv run nursery release --patch --dry-run   # or --minor, --major
 uv run nursery catalog            # rebuilds docs/scenes/<scene>.md

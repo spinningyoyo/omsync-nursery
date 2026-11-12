@@ -29,6 +29,20 @@ The studio opens in a Chrome window without tabs. If no Chromium browser is inst
 a normal browser tab. Use `--no-window` to start the server only. Run the command from this
 checkout, because the studio draws the scenes from the files in it.
 
+## Development
+
+```sh
+sh scripts/check.sh                # lint, format, import boundaries, brand and catalogue freshness
+uv run pytest                      # every test; needs Chrome (a few minutes)
+uv run pytest -m "not browser"     # only the tests that need no Chrome
+uv run pytest -m "not slow"        # leave out the tests that build a wheel
+```
+
+The tests are end-to-end only, in `tests/e2e/`: the engine in headless Chrome on a page that stands
+in for omsync, the `nursery` command as a subprocess in a throwaway git repository, the studio in
+Chrome, and the wheel in a fresh venv. There are no unit tests. GitHub Actions runs the checks and
+the tests on each push (`.github/workflows/ci.yml`).
+
 ## Where things are
 
 - `src/nursery/assets/`: the files that omsync installs. `js/nursery.js` is the engine, and its

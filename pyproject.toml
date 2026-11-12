@@ -10,6 +10,7 @@ dependencies = []
 
 [dependency-groups]
 dev = [
+    "pytest>=9.2.0",
     "ruff",
     "selenium>=4.20",
 ]
@@ -68,3 +69,14 @@ max-complexity = 10  # ruff's default; split a function that grows past it, do n
 "src/nursery/preview/render.py" = ["T201"]
 "src/nursery/studio/server.py" = ["T201", "S404", "S603", "S607"]
 "scripts/check_js_imports.py" = ["T201"]
+# The end-to-end tests assert (S101), start git, uv, Chrome and the command with fixed arguments and
+# no shell (S404, S603, S607), and open the studio's local port (S310).
+"tests/**" = ["S101", "S404", "S603", "S607", "S310"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "browser: drives headless Chrome (deselect with -m 'not browser')",
+    "slow: builds a wheel or runs a long command (deselect with -m 'not slow')",
+]
