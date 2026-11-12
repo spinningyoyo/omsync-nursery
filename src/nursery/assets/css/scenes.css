@@ -2,6 +2,8 @@
  * Each scene's colours for the page that hosts it. The host owns the layout and how the colours
  * are used; this file only names them, per scene id.
  *
+ * Grid, on :root: --landing-cell, the size of one backdrop grid cell, shared by all scenes.
+ *
  * Tint, on [data-tint="<id>"] (the host's <html> while signed in): --scene-tint in light and
  * --scene-tint-dark in dark. The host mixes them into its page background.
  *
@@ -11,6 +13,11 @@
  *
  * A new scene adds both, plus its entry in scenes.json and SCENES in js/nursery.js.
  */
+
+/* The size of one grid cell on the page, in CSS pixels: the art's pixel size times its grid
+   cell (4px * 16). The host draws its backdrop grid with it. */
+
+:root { --landing-cell: 64px; }
 
 /* Tints. */
 

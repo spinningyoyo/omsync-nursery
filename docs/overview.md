@@ -156,8 +156,8 @@ the keys `soil`, `line`, `wet`, `water` and `haze`.
 sets `--landing-green`, `--landing-green-soft`, `--landing-peach`, `--landing-blush` and
 `--landing-bloom` on `[data-scene="<id>"]`, with dark values under `[data-theme="dark"]`.
 
-**Grid.** omsync sets `--landing-cell: 64px`. This value must be the art pixel size (4 px) times
-the grid cell (16 art pixels).
+**Grid.** `scenes.css` sets `--landing-cell: 64px` on `:root`. This value must be the art pixel size
+(4 px) times the grid cell (16 art pixels).
 
 **Ids.** The ids in `scenes.json`, `scenes.css` and `SCENES` must be the same. On the sign-in page,
 omsync uses the first scene if it cannot find an id.

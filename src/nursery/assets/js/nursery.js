@@ -5,7 +5,7 @@
 // scene shares the mascot's pixel size. The ground canvas sits behind the page and holds the soil
 // and plants. The water canvas sits in front and holds the fountain. Both are anchored to the
 // bottom-left of the viewport, so the soil's top edge lands on a line of the CSS grid
-// (the host's --landing-cell; omsync's styles/landing.css).
+// (--landing-cell, which scenes.css sets on :root).
 //
 // This engine owns growth, soil, water and the frame loop. What grows and who lives there is a
 // scene (the modules in scenes/, drawn with kit/). A scene supplies:
