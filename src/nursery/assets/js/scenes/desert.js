@@ -39,6 +39,7 @@ import {
   stroke,
   wind,
 } from "../kit/pixel.js";
+import { crossFlower } from "../kit/plants.js";
 import { trunk } from "../kit/trees.js";
 
 const TREE_ROWS = 36;
@@ -326,11 +327,9 @@ const BLOOM_MIX = [0, 1, 0, 1, 2];
 // The superbloom: a carpet of small wildflowers.
 function wildflower(g, p, s, base) {
   const { pal } = g;
-  const h = Math.max(1, Math.round((2 + (p.seed % 3)) * s));
+  const stem = Math.max(1, Math.round((2 + (p.seed % 3)) * s));
   const colour = pal.bloom[BLOOM_MIX[p.seed % BLOOM_MIX.length]];
-  rect(g, pal.stem, p.x, base - h, 1, h);
-  rect(g, colour, p.x - 1, base - h - 1, 3, 1);
-  rect(g, colour, p.x, base - h - 2, 1, 1);
+  crossFlower(g, p, base, { stem, stemTone: pal.stem, colour });
 }
 
 // Open desert: Joshua trees and scattered small plants, a granite pile placed to each side of the

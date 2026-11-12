@@ -16,11 +16,9 @@ import http.server
 import shutil
 import tempfile
 import threading
-import time
 from pathlib import Path
 
-from selenium import webdriver
-
+from nursery.headless import new_driver, wait_for
 from nursery.paths import JS_DIR as JS
 
 HERE = Path(__file__).resolve().parent
@@ -32,12 +30,10 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
 
 
 def collect(driver):
-    for _ in range(600):
-        result = driver.execute_script("return window.result || null")
-        if result:
-            return result
-        time.sleep(0.1)
-    raise SystemExit("the page never finished (a syntax error in a module?)")
+    result = wait_for(driver, "window.result", timeout=60)
+    if result is None:
+        raise SystemExit("the page never finished (a syntax error in a module?)")
+    return result
 
 
 def load_sheet(driver, base: str) -> list:
@@ -74,10 +70,7 @@ def main(argv: list[str]) -> None:
         ("127.0.0.1", 0), functools.partial(Quiet, directory=str(site))
     )
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")
-    options.add_argument("--force-device-scale-factor=1")
-    driver = webdriver.Chrome(options=options)
+    driver = new_driver()
     base = f"http://127.0.0.1:{server.server_port}"
     try:
         pages = load_sheet(driver, base) if mode == "sheet" else load_scenes(driver, base, argv)

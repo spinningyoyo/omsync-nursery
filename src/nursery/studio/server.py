@@ -38,12 +38,12 @@ import time
 from pathlib import Path
 from urllib.parse import urlparse
 
-from nursery import catalog
+from nursery import brand, catalog, catalog_elements
+from nursery.headless import studio_result
 from nursery.launcher import open_app
 from nursery.paths import (
     APP,
     BRAND_DIR,
-    BRAND_ID,
     CSS_DIR,
     JS_DIR,
     ROOT,
@@ -102,7 +102,8 @@ def version() -> str:
     """A fingerprint of the code the studio draws and runs, so an open studio can reload itself
     when any of it changes on disk."""
     digest = hashlib.sha256()
-    watched = [JS_DIR, CSS_DIR, BRAND_DIR, STUDIO, SCENES_JSON, Path(catalog.__file__)]
+    code = Path(catalog.__file__).parent
+    watched = [JS_DIR, CSS_DIR, BRAND_DIR, STUDIO, SCENES_JSON, *code.glob("catalog*")]
     for root in watched:
         files = [root] if root.is_file() else sorted(root.rglob("*"))
         for path in files:
@@ -123,13 +124,14 @@ def meta() -> dict:
     """The scenes, each element's label, kind, sprites and drawing function, and each painter."""
     # The catalogue is read afresh each time, so a studio that reloaded after a change sees an
     # element list that changed after the server started.
-    fresh = importlib.reload(catalog)
+    importlib.reload(catalog_elements)
+    importlib.reload(catalog)
     scenes = []
     for sid in catalog.SCENE_IDS:
         path = module_path(sid)
         text = path.read_text()
         elements = []
-        for el in fresh.ELEMENTS[sid]:
+        for el in catalog_elements.ELEMENTS[sid]:
             module = module_path(el.module) if el.module else path
             found = None
             if el.fn:
@@ -152,7 +154,6 @@ def meta() -> dict:
         scenes.append(
             {
                 "id": sid,
-                "title": catalog.SCENE_TITLES[sid],
                 "path": str(path.relative_to(ROOT)),
                 "elements": elements,
                 "painters": painters,
@@ -162,8 +163,9 @@ def meta() -> dict:
 
 
 def scene_dir(sid: str) -> Path:
-    """A scene's folder in .nursery. The mascot has one too, though it is not a scene."""
-    if sid != BRAND_ID and sid not in catalog.SCENE_IDS:
+    """A scene's folder in .nursery. The mascot has one too, though it is not a scene. This and
+    check() are the server's two places that single the mascot out; /api/brand serves the rest."""
+    if sid != brand.BRAND_ID and sid not in catalog.SCENE_IDS:
         raise KeyError(sid)
     return STORE / sid
 
@@ -318,6 +320,8 @@ class Studio(http.server.BaseHTTPRequestHandler):
             self.send_json({"version": version()})
         elif parts == ["api", "meta"]:
             self.send_json(meta())
+        elif parts == ["api", "brand"]:
+            self.send_json(brand.studio_data())
         elif len(parts) == 3 and parts[:2] == ["api", "scene"]:
             self.send_json(saved(parts[2]))
         elif parts == ["api", "proposals"]:
@@ -430,42 +434,16 @@ def print_problem(folder: Path, item: dict) -> None:
         )
 
 
-def headless(query: str) -> dict:
-    """Loads the studio with a query in headless Chrome and returns what it leaves in __result."""
-    from selenium import webdriver
-
-    server = start(0)
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")
-    options.add_argument("--force-device-scale-factor=1")
-    driver = webdriver.Chrome(options=options)
-    try:
-        driver.get(f"http://127.0.0.1:{server.server_port}/?{query}")
-        for _ in range(1200):
-            result = driver.execute_script("return window.__result || null")
-            if result:
-                break
-            time.sleep(0.1)
-        else:
-            raise SystemExit("the studio page never finished (a syntax error in a module?)")
-    finally:
-        driver.quit()
-        server.shutdown()
-    if "error" in result:
-        raise SystemExit(f"the studio page failed: {result['error']}")
-    return result
-
-
 def check(only: str | None) -> int:
     """Runs the studio's check page headless and prints each edit's state. Returns the exit code."""
-    every = (*catalog.SCENE_IDS, BRAND_ID)
+    every = (*catalog.SCENE_IDS, brand.BRAND_ID)
     sids = [only] if only else [s for s in every if (STORE / s / "edits").is_dir()]
     if only and only not in every:
         raise SystemExit(f"unknown scene {only!r}")
     if not sids:
         print("No saved edits.")
         return 0
-    result = headless(f"check={','.join(sids)}")
+    result = studio_result(f"check={','.join(sids)}")
     failed = False
     for sid, scene in result["scenes"].items():
         folder = STORE / sid / "check"
@@ -491,7 +469,7 @@ def render(sid: str, name: str) -> int:
         raise SystemExit(f"unknown scene {sid!r}")
     if not (STORE / sid / "proposals" / f"{name}.js").is_file():
         raise SystemExit(f"no proposal at .nursery/{sid}/proposals/{name}.js")
-    result = headless(f"render={sid}/{name}")
+    result = studio_result(f"render={sid}/{name}")
     for variant in result.get("variants", []):
         w, h = variant["size"]
         motion = (

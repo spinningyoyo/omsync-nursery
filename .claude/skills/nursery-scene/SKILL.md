@@ -113,11 +113,12 @@ defined, so read the file's header and the comment above the function.
 
 - `pixel.js`: placement (`placeLandmarks`, `grove`, `scatter`, `clearing`) and drawing (`part`,
   `scaledPart`, `sprite`).
-- `critters.js`: walkers, flyers (`flyBy`, `drift`, `soarAt`, `flock`), perchers and their idle
+- `critters.js`: walkers, flyers (`flyBy`, `drift`, `soarAt`, `circlingPair`, `flock`), perchers and their idle
   moves, `isNight`, `narrow`.
 - `animals.js`: one design per family, a habitat variant chosen by `kind`. Extend a family with a
   new `kind` rather than drawing a scene-local copy.
 - `trees.js`: `broadleafTree`, `coniferTree`.
+- `plants.js`: `crossFlower`, `meadowFlower`.
 - `effects.js`: mist, stars, the Milky Way.
 
 A percher stands on a plant whose top you compute from its scale (a painter helper such as

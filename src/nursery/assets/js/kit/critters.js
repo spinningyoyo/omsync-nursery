@@ -132,6 +132,13 @@ export function soarer(f, cy, phase = f.rand() * 6) {
   return { active: false, cx: f.cols * (0.3 + f.rand() * 0.4), cy, reach: Math.max(30, f.cols * 0.2), phase };
 }
 
+// Two birds circling together, as the vultures do: a lead that circles at `rate`, and a second
+// `gap` rows below it and a little behind it on the loop.
+export function circlingPair(f, cy, { rate, gap }) {
+  const lead = { ...soarer(f, cy), rate };
+  return [lead, { ...lead, cy: lead.cy + gap, phase: lead.phase + 0.45 }];
+}
+
 // The members of a flock as offsets behind and beside its leader: a loose, staggered line that
 // trails back `gap` pixels per bird, each with its own wingbeat.
 export function flock(f, size, gap, rise = 3) {

@@ -8,11 +8,13 @@ from nursery.assets import BRAND, SCENES_CSS, SCENES_JSON
 from nursery.assets import JS as JS_DIR
 
 ROOT = Path(__file__).resolve().parents[2]
+if not (ROOT / "pyproject.toml").is_file():
+    # Only an editable checkout has the docs and the working folder beside the package.
+    raise SystemExit("nursery: the studio and its tools run from a checkout of omsync-nursery")
 SCENES_DIR = JS_DIR / "scenes"  # one module per scene
 KIT_DIR = JS_DIR / "kit"  # the shared toolkit the scenes draw with
 CSS_DIR = SCENES_CSS.parent
 BRAND_DIR = BRAND  # the mascot's grid, and the files built from it
-BRAND_ID = "brand"  # the mascot is edited in the studio like a scene: .nursery/brand/edits/
 DOCS = ROOT / "docs"
 STORE = ROOT / ".nursery"  # the studio's edits, proposals and reviews; git ignores it
 STUDIO = Path(__file__).resolve().parent / "studio"
@@ -20,9 +22,9 @@ APP = STUDIO / "app"  # the studio's page: Lit components, served at / and /app/
 SHARED = STUDIO / "shared"  # the poses and families, shared by the studio and the catalogue
 
 
-def scene_ids() -> tuple[str, ...]:
-    """The scenes in picker order (scenes.json, which omsync reads too)."""
-    return tuple(scene["id"] for scene in json.loads(SCENES_JSON.read_text()))
+def scene_labels() -> dict[str, str]:
+    """Each scene's label by id, from scenes.json: the picker label, and the catalogue's title."""
+    return {scene["id"]: scene["label"] for scene in json.loads(SCENES_JSON.read_text())}
 
 
 def module_path(name: str) -> Path:

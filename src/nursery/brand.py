@@ -31,8 +31,19 @@ STUDIO_MARK_JS = APP / "brand" / "mark.js"
 STUDIO_FAVICON_SVG = APP / "brand" / "favicon.svg"
 
 COLS, ROWS = 32, 22
-INK = "#0b0b0b"  # Sure's black token
-BODY = "#d3d7d9"  # the app's --mascot-body variable takes over in the page
+# The mascot is edited in the studio like a scene, under this id: .nursery/brand/edits/.
+BRAND_ID = "brand"
+# How omsync draws the mascot by day and by night: the outline follows the text colour and the body
+# its --mascot-body variable. The eye is its own colour here, so the studio can tell it from the
+# outline. The studio takes these colours, and the backdrop it paints behind them, from
+# studio_data(); the files below use the light ones.
+PALETTES = {
+    "light": {"ink": "#0b0b0b", "eye": "#2563eb", "body": "#d3d7d9"},  # ink is Sure's black token
+    "dark": {"ink": "#ffffff", "eye": "#60a5fa", "body": "#242424"},
+}
+HAZE = {"light": "#ffffff", "dark": "#111111"}
+INK = PALETTES["light"]["ink"]
+BODY = PALETTES["light"]["body"]  # the app's --mascot-body variable takes over in the page
 TILE_FILL = "#ffffff"
 TILE = 32
 TILE_RADIUS = 6
@@ -261,6 +272,19 @@ def studio_favicon(kinds: list[list[Kind]]) -> str:
         "</svg>\n"
         "</svg>\n"
     )
+
+
+def studio_data() -> dict:
+    """What the studio needs to edit the mascot, for /api/brand: its id, the grid file (a path
+    from the repository root), the palettes and backdrops, and every cell's kind ("ink", "eye",
+    "body" or None for exterior). The studio draws these and classifies nothing itself."""
+    return {
+        "id": BRAND_ID,
+        "grid": MASCOT_GRID.relative_to(ROOT).as_posix(),
+        "palettes": PALETTES,
+        "haze": HAZE,
+        "kinds": classify(read_grid(MASCOT_GRID)),
+    }
 
 
 def outputs() -> dict[Path, bytes]:

@@ -5,7 +5,18 @@
 // plain; by day a roller and a flamingo fly over. At night it is an indigo savanna under a moon.
 // When a cub strays to an edge of the page, the lion roars from his ledge and calls it home.
 import { elephantAt, flamingoAt, flyerAt, groundBirdAt, raptorAt } from "../kit/animals.js";
-import { enter, enterBehind, flyBy, follow, isNight, narrow, soarAt, soarer, walker, wander } from "../kit/critters.js";
+import {
+  circlingPair,
+  enter,
+  enterBehind,
+  flyBy,
+  follow,
+  isNight,
+  narrow,
+  soarAt,
+  walker,
+  wander,
+} from "../kit/critters.js";
 import { mistAt, mistBand } from "../kit/effects.js";
 import {
   blob,
@@ -24,6 +35,7 @@ import {
   stroke,
   wind,
 } from "../kit/pixel.js";
+import { crossFlower } from "../kit/plants.js";
 
 const ACACIA_ROWS = 30;
 const KOPJE_ROWS = 20;
@@ -324,13 +336,7 @@ function wildflower(g, p, s, base) {
   const { pal } = g;
   const stem = Math.max(2, Math.round((4 + (p.seed % 4)) * p.scale * s));
   const colour = pal.flower[p.seed % pal.flower.length];
-  rect(g, pal.stem, p.x, base - stem, 1, stem);
-  if (s < 0.5) {
-    rect(g, colour, p.x, base - stem - 1, 1, 1);
-    return;
-  }
-  rect(g, colour, p.x - 1, base - stem - 1, 3, 1);
-  rect(g, colour, p.x, base - stem - 2, 1, 1);
+  crossFlower(g, p, base, { stem, stemTone: pal.stem, colour, bud: s < 0.5 });
 }
 
 function generate(ctx) {
@@ -781,12 +787,6 @@ function secretaryAt(g, b, _time) {
   groundBirdAt(g, b, "secretary");
 }
 
-// Two white-backed vultures circling close together on the thermals, one just behind the other.
-function circlingPair(f, cy) {
-  const lead = { ...soarer(f, cy), rate: 0.18 };
-  return [lead, { ...lead, cy: lead.cy + 6, phase: lead.phase + 0.45 }];
-}
-
 // A lilac-breasted roller in flight, the small flyers' design in its own colours.
 function rollerAt(g, r, time) {
   flyerAt(g, r, time, "roller");
@@ -935,7 +935,7 @@ const extras = {
       roar: { next: Infinity },
       roller: { next: 3, bird: null },
       flamingo: { next: 6, bird: null },
-      vultures: circlingPair(f, 40 + f.rand() * 8),
+      vultures: circlingPair(f, 40 + f.rand() * 8, { rate: 0.18, gap: 6 }),
     };
   },
 

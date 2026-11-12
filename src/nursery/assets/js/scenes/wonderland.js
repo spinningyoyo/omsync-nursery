@@ -8,7 +8,18 @@
 // hovers by the tea table, where the March Hare sips his tea; the Caterpillar and the Cheshire Cat
 // fade in where they sit. The creatures are flat colour with a darker shade, like the other scenes.
 import { flyerAt } from "../kit/animals.js";
-import { enter, enterBehind, flyBy, follow, isNight, soarAt, soarer, stroll, walker, wander } from "../kit/critters.js";
+import {
+  circlingPair,
+  enter,
+  enterBehind,
+  flyBy,
+  follow,
+  isNight,
+  soarAt,
+  stroll,
+  walker,
+  wander,
+} from "../kit/critters.js";
 import { starField } from "../kit/effects.js";
 import {
   blob,
@@ -27,7 +38,7 @@ import {
   sortPlants,
   sprite,
 } from "../kit/pixel.js";
-import meadow from "./meadow.js";
+import { meadowFlower } from "../kit/plants.js";
 
 const STARS = 40;
 const CLOUDS = 3;
@@ -398,9 +409,9 @@ function tigerLily(g, p, s, base) {
   rect(g, pal.lily[1], p.x + 1, y + 1, 1, 1);
 }
 
-// The meadow's wildflower, borrowed as it is; this palette's flowers leave out its white one.
+// The meadow's wildflower, as it is; this palette's flowers leave out its white one.
 function wildflower(g, p, s, base) {
-  meadow.paint.flower(g, p, s, base);
+  meadowFlower(g, p, s, base);
 }
 
 // The tea-party table. It sprouts from the soil, then gets its teapot (with the Dormouse peeping
@@ -812,11 +823,6 @@ function soldierAt(g, s) {
 // a tail, the pink head on the front. The umbrella opening and closing is his wingbeat: shut, it
 // is a furled spindle; open, a dome from the tip back to a scalloped rim. He flies high, at the
 // height of the flock of cards, bobbing up and down as he goes.
-// Two Umbrella Vultures circling close together, one just behind the other.
-function circlingPair(f, cy) {
-  const lead = { ...soarer(f, cy), rate: 0.2 };
-  return [lead, { ...lead, cy: lead.cy + 8, phase: lead.phase + 0.45 }];
-}
 
 function vultureAt(g, b, time) {
   const c = g.pal.vulture;
@@ -1106,7 +1112,7 @@ const extras = {
       ],
       flock: { next: 0, bird: null },
       croquet: { next: 20 + f.rand() * 10, start: -10 },
-      vultures: circlingPair(f, 46 + f.rand() * 8),
+      vultures: circlingPair(f, 46 + f.rand() * 8, { rate: 0.2, gap: 8 }),
       pigeon: { next: 4, bird: null },
       lory: { next: 8, bird: null },
       caterpillar: { alpha: 0 },

@@ -4,8 +4,9 @@
 // editor, like any sprite. Below them is the brand: omsync's mascot (Edit opens it in the same
 // editor), the favicons and the studio's mark, all built from the mascot's grid.
 import { iconSvg } from "/js/kit/pixel.js";
+import { fetchBrand } from "../services/brand-model.js";
 import { acceptAndClear } from "../services/edits.js";
-import { BRAND_ID, BRAND_PALETTES, SCENES, SceneModel } from "../services/scene-model.js";
+import { SCENES, SceneModel } from "../services/scene-model.js";
 import { act } from "../ui/action.js";
 import { css, html, LitElement, nothing, unsafeSVG } from "../ui/lit.js";
 import { shared } from "../ui/shared.js";
@@ -40,12 +41,17 @@ const sized = (scene, px) =>
   iconSvg(scene.icon.grid, scene.icon.colours).replace('width="36" height="36"', `width="${px}" height="${px}"`);
 
 // How omsync draws the mascot by day and by night: the outline follows the text colour and the
-// body its --mascot-body variable (brand.css).
-const brandTile = (theme) =>
-  `color:${BRAND_PALETTES[theme].ink};--mascot-body:${BRAND_PALETTES[theme].body};background:${theme === "light" ? "#fff" : "#111"}`;
+// body its --mascot-body variable (brand.css). The colours come from brand.py.
+const brandTile = ({ palettes, haze }, theme) =>
+  `color:${palettes[theme].ink};--mascot-body:${palettes[theme].body};background:${haze[theme]}`;
 
 export class IconsView extends LitElement {
-  static properties = { sid: {}, mascot: { state: true }, brand: { state: true } };
+  static properties = {
+    sid: {},
+    mascot: { state: true },
+    brand: { state: true },
+    brandInfo: { state: true },
+  };
 
   static styles = [
     shared,
@@ -195,13 +201,15 @@ export class IconsView extends LitElement {
 
   // The built mascot (what omsync will serve) and the mascot's saved edits.
   async loadBrand() {
+    const info = await fetchBrand();
     const [mascot, model] = await Promise.all([
       fetch("/brand/mascot.svg").then((r) => r.text()),
-      SceneModel.load(BRAND_ID),
+      SceneModel.load(info.id),
     ]);
     await model.refresh();
     this.mascot = mascot;
     this.brand = model;
+    this.brandInfo = info;
   }
 
   async clearBrandEdits() {
@@ -210,11 +218,12 @@ export class IconsView extends LitElement {
   }
 
   renderBrand() {
+    if (!this.brandInfo) return nothing;
     const edits = this.brand ? [...this.brand.edits.values()] : [];
     const waiting = edits.filter((e) => this.brand.editState(e) !== "in code").length;
     const tiles = (draw, themes = ["light", "dark"]) =>
       html`<div class="tiles">
-        ${themes.map((theme) => html`<div style=${brandTile(theme)}>${draw(theme)}</div>`)}
+        ${themes.map((theme) => html`<div style=${brandTile(this.brandInfo, theme)}>${draw(theme)}</div>`)}
       </div>`;
     return html`
       <div class="brand-head">
@@ -227,7 +236,7 @@ export class IconsView extends LitElement {
           ${tiles(() => html`<div class="mascot">${unsafeSVG(this.mascot ?? "")}</div>`)}
           <div class="line">
             <span class="muted">32×22 px</span>
-            <button class="btn" ?disabled=${!this.brand} @click=${() => act(this, "edit", { sid: BRAND_ID, name: "brand-mascot" })}>
+            <button class="btn" ?disabled=${!this.brand} @click=${() => act(this, "edit", { sid: this.brand.sid, name: "brand-mascot" })}>
               <n-icon name="pencil"></n-icon>Edit
             </button>
           </div>

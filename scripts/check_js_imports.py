@@ -4,8 +4,7 @@ The rules, from AGENTS.md and the layout of src/nursery/assets/js/:
 
 1. A module under assets/js/ imports only modules under assets/js/, by relative path, so the
    package stays self-contained. No bare names, no URLs.
-2. A scene (js/scenes/) imports only kit/ modules. It does not import another scene, except the
-   pairs in SCENE_REUSE, each with its reason.
+2. A scene (js/scenes/) imports only kit/ modules. It does not import another scene.
 3. A kit module (js/kit/) imports only other kit modules.
 
 Run from anywhere: python3 scripts/check_js_imports.py. It needs only the standard library.
@@ -17,14 +16,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 JS = ROOT / "src" / "nursery" / "assets" / "js"
-
-# (importing scene, imported scene): why the exception is fine.
-SCENE_REUSE = {
-    (
-        "scenes/wonderland.js",
-        "scenes/meadow.js",
-    ): "wonderland borrows the meadow's wildflower painter",
-}
 
 BLOCK_COMMENT = re.compile(r"/\*.*?\*/", re.DOTALL)
 LINE_COMMENT = re.compile(r"^\s*//.*$", re.MULTILINE)
@@ -67,8 +58,6 @@ def problems_in(path: Path) -> list[str]:
 
 def layer_problems(rel: str, target: str, spec: str) -> list[str]:
     if rel.startswith("scenes/") and not target.startswith("kit/"):
-        if target.startswith("scenes/") and (rel, target) in SCENE_REUSE:
-            return []
         return [f"{rel}: imports {spec!r}; a scene imports only kit/ modules, not {target}"]
     if rel.startswith("kit/") and not target.startswith("kit/"):
         return [f"{rel}: imports {spec!r}; a kit module imports only other kit modules"]

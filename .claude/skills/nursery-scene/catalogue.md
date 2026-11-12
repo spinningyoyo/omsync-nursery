@@ -8,7 +8,7 @@ the line of code that draws it. `src/nursery/catalog.py` writes it; never edit i
 Do this whenever an animal, bird or effect is added, renamed or removed, or its drawing call
 moves:
 
-1. `ELEMENTS[<scene>]` in `src/nursery/catalog.py`: the element's label, kind, sprite names,
+1. `ELEMENTS[<scene>]` in `src/nursery/catalog_elements.py`: the element's label, kind, sprite names,
    drawing function and the regexes that find where it arrives and is drawn. Each regex must
    match a line of the scene module, or the run stops and names it.
 2. `SPRITES.<scene>` in `src/nursery/studio/shared/sprites.js`: one pose per sprite name, drawn

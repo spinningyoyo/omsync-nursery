@@ -64,14 +64,13 @@ def readiness() -> list[str]:
         problems.append(f"the nursery has uncommitted changes:\n{dirty}")
 
     from nursery import brand, catalog
-    from nursery.paths import BRAND_ID
-    from nursery.studio import server
+    from nursery.headless import studio_result
 
     problems += [
         f"{path.relative_to(ROOT)} is not what the mascot's grid builds; run `nursery brand`"
         for path in brand.stale()
     ]
-    result = server.headless(f"check={','.join([*catalog.SCENE_IDS, BRAND_ID])}")
+    result = studio_result(f"check={','.join([*catalog.SCENE_IDS, brand.BRAND_ID])}")
     for sid, scene in result["scenes"].items():
         problems += scene_problems(sid, scene)
     return problems
@@ -166,6 +165,13 @@ def write_version(version: str) -> None:
     PYPROJECT.write_text(new)
 
 
+def put_back_version_files(sha: str) -> None:
+    """Restore pyproject.toml and uv.lock, in the index and on disk, to what commit `sha` holds."""
+    subprocess.run(
+        ["git", "checkout", "-q", sha, "--", "pyproject.toml", "uv.lock"], cwd=ROOT, check=False
+    )
+
+
 def commit_version(plan: Plan) -> None:
     """Commit the new version with its lock file. On failure both files are put back."""
     try:
@@ -174,12 +180,7 @@ def commit_version(plan: Plan) -> None:
         git("add", "pyproject.toml", "uv.lock")
         git("commit", "-q", "-m", f"chore: release {plan.tag}", "--", "pyproject.toml", "uv.lock")
     except BaseException:
-        subprocess.run(
-            ["git", "reset", "-q", "--", "pyproject.toml", "uv.lock"], cwd=ROOT, check=False
-        )
-        subprocess.run(
-            ["git", "checkout", "--", "pyproject.toml", "uv.lock"], cwd=ROOT, check=False
-        )
+        put_back_version_files("HEAD")
         raise
 
 
@@ -254,13 +255,15 @@ def describe(plan: Plan, state: str, remote: str | None) -> None:
 
 def tag_commit(plan: Plan) -> None:
     """Step 2: commit the new version when there is one, and tag the result."""
+    before = git("rev-parse", "HEAD")
     if plan.bump:
         commit_version(plan)
     try:
         create_tag(plan.tag)
     except ReleaseError:
-        if plan.bump:  # the tree was clean, so taking the version commit back loses nothing
-            git("reset", "-q", "--hard", "HEAD~1")
+        if plan.bump:  # the tree was clean: move the branch back and restore the two files
+            git("reset", "-q", "--soft", before)
+            put_back_version_files(before)
         raise
     print(f"2. {'Committed the version and tagged' if plan.bump else 'Tagged'} {plan.tag}")
 

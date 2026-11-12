@@ -7,7 +7,7 @@
  * Tint, on [data-tint="<id>"] (the host's <html> while signed in): --scene-tint in light and
  * --scene-tint-dark in dark. The host mixes them into its page background.
  *
- * Backdrop, on [data-scene="<id>"] (the sign-in page): the five --landing-* washes, light, then
+ * Backdrop, on [data-scene="<id>"] (the page that shows the scene): the five --landing-* washes, light, then
  * dark under [data-theme="dark"]. The host's backdrop paints them as soft gradients and the
  * scene's bloom.
  *

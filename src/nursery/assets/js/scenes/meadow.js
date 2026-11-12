@@ -26,6 +26,7 @@ import {
   sortPlants,
   wind,
 } from "../kit/pixel.js";
+import { meadowFlower } from "../kit/plants.js";
 import { broadleafTree, clump, coniferTree } from "../kit/trees.js";
 
 const TREE_ROWS = 34; // a full-grown tree at scale 1
@@ -151,25 +152,7 @@ function tuft(g, p, s, base) {
 }
 
 function flower(g, p, s, base) {
-  const { pal } = g;
-  const stem = Math.max(2, Math.round((5 + (p.seed % 5)) * p.scale * s));
-  const sway = stem >= 5 ? wind(g.time, p.x) : 0;
-  rect(g, pal.leaf[2], p.x, base - stem, 1, stem);
-  if (stem >= 4) {
-    rect(g, pal.leaf[1], p.x - 1, base - 2, 1, 1);
-    rect(g, pal.leaf[1], p.x + 1, base - 3, 1, 1);
-  }
-  const colour = pal.flowers[p.seed % pal.flowers.length];
-  const x = p.x + sway;
-  const y = base - stem;
-  if (s <= 0.5) {
-    rect(g, colour, x, y - 1, 1, 1);
-    return;
-  }
-  rect(g, colour, x, y - 2, 1, 1);
-  rect(g, colour, x - 1, y - 1, 3, 1);
-  rect(g, colour, x, y, 1, 1);
-  rect(g, colour === pal.flowers[2] ? pal.flowers[3] : pal.centre, x, y - 1, 1, 1);
+  meadowFlower(g, p, s, base);
 }
 
 function bush(g, p, s, base) {

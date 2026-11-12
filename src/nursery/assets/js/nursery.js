@@ -1,5 +1,5 @@
-// The pixel scene engine. omsync draws it on its sign-in page (its layouts/auth.html and
-// controllers/nursery_controller.js, from the omsync-nursery package, served at /static/vendor/nursery/).
+// The pixel scene engine. The host page draws it; what the host reads is the contract in
+// docs/overview.md.
 //
 // Two canvases are drawn at one art pixel = P CSS pixels and scaled up without smoothing, so the
 // scene shares the mascot's pixel size. The ground canvas sits behind the page and holds the soil
