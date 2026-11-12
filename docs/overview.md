@@ -141,13 +141,25 @@ must widen its range together with its host code.
   scene pickers from this file. A new scene shows in omsync with no change to omsync.
 - `SCENES_CSS`: the colours of each scene. omsync links this file as its own stylesheet.
 
-**Exports.** omsync imports `Nursery`, `SCENES`, `MAX_STAGE`, `WATER_MS` and `COOLDOWN_MS` from
-`nursery.js`. It imports `iconSvg` and `clamp` from `kit/pixel.js`.
+**Exports.** omsync imports `Nursery`, `SCENES`, `MAX_STAGE`, `WATER_MS`, `COOLDOWN_MS`,
+`FINALE_MS`, `releaseMs` and `showMs` from `nursery.js`. It imports `iconSvg` and `clamp` from
+`kit/pixel.js`.
 
 **Engine.** omsync makes the engine with `{ ground, water, reducedMotion, scene, stage }`. It reads
-`stage`. It calls `sprinkle(clientX, clientY)`, `setScene(scene, stage)` and `destroy()`. The
+`stage`. It calls `sprinkle(clientX, clientY, level)`, `setScene(scene, stage)` and `destroy()`. The
 engine reads `data-theme` on `<html>` on each frame. The value "dark" is night. omsync waits
 `COOLDOWN_MS` between two waterings, and its watering animation lasts `WATER_MS`.
+
+**Charged watering.** The `level` argument of `sprinkle` is optional, from 1 to 8. If a host omits
+it, `sprinkle` gives one stage and the upright fountain, as before. This plain click is level 0.
+With a level, the plants gain that many stages (up to `MAX_STAGE`). The fountain starts as the
+click's spray and then opens wider while it runs. Each level reaches farther than the click, and
+level 8 wets the whole ground. The opening lasts `releaseMs(level)` milliseconds: 1 200 at level 1,
+and 200 more for each level, to 2 600 at level 8. At level 8, jets follow for `FINALE_MS`
+milliseconds, 150 ms after the opening ends. A host can use these two values to drain its water at
+the same speed as the spray. `showMs(level)` is the whole release (`WATER_MS` without a level). A
+host waits for it before the next `sprinkle`. The rainbow, the mist and the fireflies show on the
+ground canvas, behind the page. Under reduced motion the plants grow and nothing else shows.
 
 **Scenes.** omsync reads the `id` and the `icon` of each scene. Each palette, light and dark, has
 the keys `soil`, `line`, `wet`, `water` and `haze`.
