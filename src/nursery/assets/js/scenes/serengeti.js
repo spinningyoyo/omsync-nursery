@@ -2,9 +2,10 @@
 // red-brown soil, with blue-grey hills and a tall granite rock where a lion paces his ledge. Far
 // off, the great migration streams along the horizon, wildebeest in single file. Elephants with a
 // calf, a giraffe that browses the acacias, zebras, a secretary bird and three lion cubs walk the
-// plain; by day a roller and a flamingo fly over. At night it is an indigo savanna under a moon.
+// plain, and by day a cheetah stalks through the grass and rests in it; a roller and a flamingo fly
+// over. At night it is an indigo savanna under a moon.
 // When a cub strays to an edge of the page, the lion roars from his ledge and calls it home.
-import { elephantAt, flamingoAt, flyerAt, groundBirdAt, raptorAt } from "../kit/animals.js";
+import { elephantAt, felidAt, felidPoses, flamingoAt, flyerAt, groundBirdAt, raptorAt } from "../kit/animals.js";
 import {
   circlingPair,
   enter,
@@ -13,6 +14,7 @@ import {
   follow,
   isNight,
   narrow,
+  rest,
   soarAt,
   walker,
   wander,
@@ -45,6 +47,7 @@ const PRIDE_SHELF = -22; // where the ledge starts, back across the rock's face
 const PRIDE_BACK = 56; // how far its shoulder and rubble reach behind it: no tree may stand there
 const LION_HALF = 11; // half the walking lion's width: he keeps his whole body on the ledge
 const LION_MID = 7; // from lionAt's x to the middle of the walking lion, the way he faces
+const LION_FELID = 6; // from lionAt's x to the x felidAt draws the lion at, the way he faces
 const LION_STRIDE = 8; // art px a second, walking to the end of the ledge to roar
 const ROAR = 2.2; // seconds the roar lasts
 const CUB_EDGE = 8; // a cub this near an edge of the page has strayed
@@ -72,8 +75,8 @@ const LIGHT = {
   giraffe: ["#eab25c", "#b8762e", "#6d4520", "#fbeccb"],
   zebra: ["#e9e4d8", "#262220", "#b3a998"],
   wildebeest: ["#5d524d", "#382f2b", "#cdbfae"],
-  lion: ["#d9a25a", "#8e5a2b", "#4e2d17", "#f2d59c"],
-  lionShade: ["#b9803f", "#6e4220"],
+  lion: { T: "#d9a25a", S: "#b9803f", M: "#8e5a2b", N: "#6e4220", P: "#f2d59c", D: "#4e2d17", e: "#4e2d17" },
+  cheetah: { T: "#e2b464", S: "#bf8d48", P: "#f6e6c4", D: "#2e2218", e: "#2e2218" },
   roar: "#8e5a2b",
   secretary: ["#8f97a0", "#2b2f36", "#f08a3c", "#f6f2ea"],
   roller: ["#b9a0e8", "#2aa3a0", "#2f4fa6", "#1f2a3c"],
@@ -107,8 +110,8 @@ const DARK = {
   giraffe: ["#9a7440", "#6a4a2a", "#3a2818", "#b8a478"],
   zebra: ["#a9a7b4", "#1a1820", "#7c7a88"],
   wildebeest: ["#3a3642", "#24212a", "#7c7a88"],
-  lion: ["#9c7a52", "#5e4330", "#2a1f18", "#c8b08a"],
-  lionShade: ["#7e6040", "#46311f"],
+  lion: { T: "#9c7a52", S: "#7e6040", M: "#5e4330", N: "#46311f", P: "#c8b08a", D: "#2a1f18", e: "#2a1f18" },
+  cheetah: { T: "#9e8058", S: "#866844", P: "#b8aa9a", D: "#2a2224", e: "#2a2224" },
   roar: "#e8d4a8",
   secretary: ["#5b6270", "#1e2026", "#c57532", "#b9bcc6"],
   roller: ["#7e6aa6", "#1f6e72", "#22346e", "#141a2a"],
@@ -404,56 +407,8 @@ function soil(pal, x, y, depth, turf) {
 
 // Creatures
 
-// A maned lion: a ring of mane round a small tawny face, which it keeps whether it sits upright or
-// walks the ledge. Facing right as written; T tawny, S tawny shade, M mane, N mane shade, P pale,
-// D dark, e eye (shut in a blink). Rows 0 to 7 of LION_SIT are the head.
-const LION_HEAD = [
-  "............NNNN.....",
-  "...........NMMMMMN...",
-  "..........NMMTMMMMN..",
-  ".........NMMMTMTTTTT.",
-  ".........NMMMMMTeTTTT",
-  ".........NMMMMMTTTTTD",
-  ".........NMMMMMTTPPPP",
-  ".........NMMMMMSSPPP.",
-];
-const LION_SIT = [
-  ...LION_HEAD,
-  "......TTTNMMMMMMMNN..",
-  "....TTTTTTNMMMMMMN...",
-  "..TTTTTTTTTNMMMMN....",
-  ".TTTTTTTTTTTTPPTT....",
-  ".TTTTTTTTTTSSTTT.....",
-  ".STTTTTTTTTSSTTT.....",
-  ".SSTTTTTTTTSSTTTTT...",
-  "..SSSSSSTTT.STTTTTTT.",
-  "...TTTTTT..TTTTTTTT..",
-];
-// Walking, the head is carried level with the back and the mane rests on the shoulders. Rows 12 on
-// are the legs: LION_LEGS gives each leg's column and thigh width.
-const LION_WALK = [
-  "..............NNNN.....",
-  ".............NMMMMMN...",
-  "............NMMTMMMMN..",
-  "...........NMMMTMTTTTT.",
-  "...........NMMMMMTeTTTT",
-  "...........NMMMMMTTTTTD",
-  ".....TTTTTTNMMMMMTTPPPP",
-  "...TTTTTTTTNMMMMMSSPPP.",
-  "..TTTTTTTTTNMMMMMMMNN..",
-  ".TTTTTTTTTTTNMMMMMMN...",
-  ".TTTTTTTTTTTTNMMMMN....",
-  ".TSSSSSSSSSSSPPPTT.....",
-];
+// The standing lion's legs, for the roar: each leg's column and thigh width.
 const LION_LEGS = { hindNear: [1, 3], hindFar: [5, 2], foreFar: [9, 2], foreNear: [12, 3] };
-// How far each pose carries the lower leg ahead of its thigh, and how deep it is: planted forward,
-// passing under the body, planted back, lifted and swinging forward.
-const LION_SWING = [
-  { dx: 1, h: 3 },
-  { dx: 0, h: 3 },
-  { dx: -1, h: 3 },
-  { dx: 0, h: 2 },
-];
 // Roaring, the standing lion lifts his head a row, the jaw starting to drop, then opens it wide. An
 // ear shows in the mane behind his face.
 const LION_RAISED = [
@@ -498,47 +453,14 @@ const LION_BRISTLE = [
 ];
 const ROAR_RINGS = [0.3, 0.8, 1.3]; // when each ring leaves his mouth, in seconds into the roar
 
-// A maned lion. It sits on the pride rock or paces on its ledge: its feet rest on the rock at row y.
-// Its palette is lion: [tawny, mane, nose, muzzle], with lionShade: [tawny shade, mane shade]. Seated,
-// its tail tuft flicks and it blinks over a two-second round. While l.roar holds the seconds into a
-// roar, it stands and roars.
+// A maned lion, drawn by the cat family's felidAt, or roaring. He paces his ledge and rests on it:
+// his feet stand on the rock at row y. While l.roar holds the seconds into a roar, he stands and roars.
 function lionAt(g, l, y, time) {
-  const [tawny, mane, dark, pale] = g.pal.lion;
-  const [tawnyShade, maneShade] = g.pal.lionShade;
-  const x = Math.round(l.x);
-  const frame = Math.floor(time * 4) % 8;
-  const colours = { T: tawny, S: tawnyShade, M: mane, N: maneShade, P: pale, D: dark, e: dark };
   if (l.roar != null) {
-    roaringLionAt(g, l, y, colours);
+    roaringLionAt(g, l, y, g.pal.lion);
     return;
   }
-  if (l.state === "sit") {
-    colours.e = frame === 5 ? tawny : dark;
-    sprite(g, LION_SIT, colours, x - 4, y, l.dir, 0, LION_SIT.length);
-    const px = (colour, dx, dy, w, h) => part(g, colour, x - 4, y, l.dir, dx, dy, w, h);
-    const lift = frame === 2 || frame === 3;
-    px(tawnyShade, 0, lift ? -6 : -5, 1, lift ? 5 : 3);
-    px(dark, -1, lift ? -8 : -2, 2, 2);
-    return;
-  }
-  // Standing is the walk with every leg planted under the body; its tail hangs still.
-  const walking = l.state === "walk";
-  const k = walking ? Math.floor(l.phase) % 4 : 1;
-  const px = (colour, dx, dy, w, h) => part(g, colour, x - 4, y, l.dir, dx, dy, w, h);
-  // The tail goes first, so the body covers its root; its tuft swings with the stride.
-  const tuft = k % 2 ? -6 : -7;
-  px(tawnyShade, 0, tuft - 1, 1, 2);
-  px(maneShade, -2, tuft, 2, 2);
-  sprite(g, LION_WALK, colours, x - 4, y - 5, l.dir, 0, LION_WALK.length);
-  const leg = (colour, [dx, w], phase) => {
-    const { dx: foot, h } = LION_SWING[walking ? phase % 4 : 1];
-    px(colour, dx, -5, w, 2);
-    px(colour, dx + foot, -3, Math.max(2, w - 1), h);
-  };
-  leg(tawnyShade, LION_LEGS.hindFar, k + 2);
-  leg(tawnyShade, LION_LEGS.foreFar, k);
-  leg(tawny, LION_LEGS.hindNear, k);
-  leg(tawny, LION_LEGS.foreNear, k + 2);
+  felidAt(g, { ...l, kind: "lion", x: l.x + l.dir * LION_FELID, y }, time);
 }
 
 // The lion standing four-square and roaring, l.roar seconds in: his head lifts, his mouth opens wide
@@ -639,8 +561,7 @@ const CUB_BOUND_IN = [
 // then. While the lion calls, c.pose takes over: "stand", "up" (standing, looking up), "sitUp" or
 // "bound".
 function cubAt(g, c, time) {
-  const [tawny, , dark, pale] = g.pal.lion;
-  const [shade] = g.pal.lionShade;
+  const { T: tawny, S: shade, D: dark, P: pale } = g.pal.lion;
   const y = g.groundY + 7;
   const x = Math.round(c.x) - c.dir * 5;
   const pose = c.pose ?? (c.state === "walk" ? "walk" : "sit");
@@ -930,6 +851,7 @@ const extras = {
       elephant: walker(f),
       calf: walker(f, 0.5),
       lion: walker(f),
+      cheetah: walker(f),
       cubs: Array.from({ length: 3 }, () => ({ ...walker(f), pose: null, armed: false })),
       call: null,
       roar: { next: Infinity },
@@ -941,7 +863,7 @@ const extras = {
 
   // The secretary bird comes at stage 1. The lion comes on last, at stage 8, on the pride rock, and
   // his cubs with him (one on a phone); his first call comes a little after. The elephant pair
-  // comes at 7.
+  // comes at 7. The cheetah comes at 6, by day and not on a phone: the plain is already full.
   onGrow(f) {
     const x = f.extra;
     if (f.stage >= 1) enter(f, x.secretary);
@@ -950,6 +872,7 @@ const extras = {
       enter(f, x.giraffe);
       if (!narrow(f)) enterBehind(f, x.foal, x.zebra, 9);
     }
+    if (f.stage >= 6 && !narrow(f)) enter(f, x.cheetah);
     if (f.stage >= 7) {
       enter(f, x.elephant);
       enterBehind(f, x.calf, x.elephant, 12);
@@ -986,7 +909,15 @@ const extras = {
     x.calf.state = x.elephant.state;
     x.calf.phase = x.elephant.phase;
     const called = call(f, dt);
-    if (!called.includes(x.lion)) pace(f, x.lion, dt);
+    if (!called.includes(x.lion)) {
+      pace(f, x.lion, dt);
+      rest(f, x.lion, felidPoses("lion"));
+    }
+    // The cheetah stalks slowly, then lies up in the grass or stretches; it is out by day only.
+    if (!isNight(f)) {
+      wander(f, x.cheetah, dt, { speed: 9, stride: 7, sit: [4, 9], walk: [3, 6] });
+      rest(f, x.cheetah, felidPoses("cheetah"));
+    }
     for (const cub of x.cubs) {
       if (!called.includes(cub)) wander(f, cub, dt, { speed: 6, stride: 8, sit: [2, 6], walk: [2, 5] });
     }
@@ -1029,6 +960,7 @@ const extras = {
     if (x.secretary.active) secretaryAt(g, x.secretary, f.time);
     if (x.elephant.active) elephantAt(g, { ...x.elephant, kind: "african" }, f.time);
     if (x.calf.active) elephantAt(g, { ...x.calf, kind: "african" }, f.time);
+    if (x.cheetah.active && !isNight(f)) felidAt(g, { ...x.cheetah, kind: "cheetah" }, f.time);
     if (x.lion.active) lionAt(g, x.lion, x.ledge.y, f.time);
     for (const c of x.cubs) if (c.active) cubAt(g, c, f.time);
   },

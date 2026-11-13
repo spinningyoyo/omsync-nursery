@@ -1379,3 +1379,789 @@ export function flyerAt(g, b, time, kind) {
 export function kingfisherAt(g, b, time) {
   flyerAt(g, b, time, "kingfisher");
 }
+
+// Cats
+
+// One design for every cat, after the Serengeti lion: a level back, the head carried at the front,
+// near legs in the coat and far legs in its shade, a pale muzzle, throat and chest, and a dark nose
+// and tail tip. Members differ in size, colour, markings, ears and tail. Each walks with its
+// diagonal leg pairs lifting in turn, and rests in one of its poses (felidPoses): sitting, the
+// arched back (the smaller cats only), lying down (sphinx) and the downward-dog stretch. The arch,
+// the lie and the stretch are made from each member's walk grid, so they keep its build.
+//
+// Grid letters: T coat, S shade, P pale, D dark (nose, spots, tip), e eye, M mane (or the house
+// cat's face), N mane shade, L and l the near and far legs; the house cat adds the regions its coats
+// colour. A member's palette is an object of these letters, read from g.pal under `pal` or its kind.
+
+// The lion, the family's model: his mane, his tufted tail, and the build every member shares.
+const LION = {
+  walk: [
+    "................NNNN.....",
+    "...............NMMMMMN...",
+    "..............NMMTMMMMN..",
+    ".............NMMMTMTTTTT.",
+    ".............NMMMMMTeTTTT",
+    ".............NMMMMMTTTTTD",
+    ".......TTTTTTNMMMMMTTPPPP",
+    ".....TTTTTTTTNMMMMMSSPPP.",
+    "....TTTTTTTTTNMMMMMMMNN..",
+    "..STTTTTTTTTTTNMMMMMMN...",
+    "NNSTTTTTTTTTTTTNMMMMN....",
+    "NN.TSSSSSSSSSSSPPPTT.....",
+    ".........................",
+    ".........................",
+    ".........................",
+    ".........................",
+    ".........................",
+  ],
+  legs: [
+    [3, 3, 12],
+    [7, 2, 12],
+    [11, 2, 12],
+    [14, 3, 12],
+  ],
+  thigh: 2,
+  rump: 3,
+  head: 13,
+  sit: [
+    ".............NNNN.....",
+    "............NMMMMMN...",
+    "...........NMMTMMMMN..",
+    "..........NMMMTMTTTTT.",
+    "..........NMMMMMTeTTTT",
+    "..........NMMMMMTTTTTD",
+    "..........NMMMMMTTPPPP",
+    "..........NMMMMMSSPPP.",
+    ".......TTTNMMMMMMMNN..",
+    ".....TTTTTTNMMMMMMN...",
+    "...TTTTTTTTTNMMMMN....",
+    "..TTTTTTTTTTTTPPTT....",
+    ".STTTTTTTTTTSSTTT.....",
+    ".SSTTTTTTTTTSSTTT.....",
+    ".SSSTTTTTTTTSSTTTTT...",
+    "DD.SSSSSSTTT.STTTTTTT.",
+    "DD..TTTTTT..TTTTTTTT..",
+  ],
+  lieTail: { len: 4, tip: "N" },
+};
+
+// The cheetah: L, the slimmest and longest-legged, a small round head with the black tear line
+// from eye to mouth, solid spots, a tucked waist, and a long tail ringed black to a white tip.
+const CHEETAH = {
+  walk: [
+    "....................T.T..",
+    "...................TTTTT.",
+    ".....TTTTTTTTTTTTTTTTeTTT",
+    "....TTDTTTDTTTDTTTTTTTDPD",
+    "...TTTTTDTTTDTTTDTTTTPDP.",
+    "..TTDTTTTTTTTTDTTTTTPP...",
+    "..TSSSSSDTTTDTTTTTPPP....",
+    ".T.........SSSSSSPP......",
+    ".D.......................",
+    ".T.......................",
+    ".D.......................",
+    ".T.......................",
+    "..P......................",
+    ".........................",
+  ],
+  legs: [
+    [3, 2, 7],
+    [6, 1, 7],
+    [14, 1, 8],
+    [16, 2, 8],
+  ],
+  thigh: 2,
+  rump: 3,
+  head: 18,
+  sit: [
+    ".........T.T..",
+    "........TTTTT.",
+    "........TTeTTT",
+    "........TTTDPD",
+    "........TTTDP.",
+    ".......TTTPP..",
+    "......TDTTPP..",
+    ".....TTTTTPP..",
+    "....TDTTTSLP..",
+    "...TTTTDTSLL..",
+    "...TDTTTTSLL..",
+    "...TTTDTTSLL..",
+    "...STTTTTSLL..",
+    "...SSTTDTSLL..",
+    "P..SSSSTTSLLL.",
+    ".TDTDTTTT.LLLL",
+  ],
+  lieTail: { len: 6, tip: "P", rings: "D" },
+};
+
+// The cougar: L, plain tawny, a small head on a long body, the hindquarters a little higher than
+// the shoulders, white muzzle and throat, and a long heavy tail with a dark tip hooked up.
+const COUGAR = {
+  walk: [
+    "....................T.T...",
+    "...................TTTTT..",
+    ".....TTTTTTTTTTTTTTTTeTTT.",
+    "...TTTTTTTTTTTTTTTTTTTTTPD",
+    "..TTTTTTTTTTTTTTTTTTTTPPP.",
+    "..TTTTTTTTTTTTTTTTTTTPP...",
+    "..TSTTTTTTTTTTTTTTTTPP....",
+    "..T.SSSSSSSSSSSSSSSPP.....",
+    "..T.......................",
+    "..T.......................",
+    "..T.......................",
+    ".DT.......................",
+    ".DD.......................",
+  ],
+  legs: [
+    [4, 3, 8],
+    [8, 2, 8],
+    [15, 2, 8],
+    [18, 3, 8],
+  ],
+  thigh: 2,
+  rump: 3,
+  head: 19,
+  sit: [
+    "............T.T..",
+    "...........TTTTT.",
+    "...........TTeTTT",
+    "...........TTTTPD",
+    "...........TTTPP.",
+    "..........TTTPP..",
+    ".........TTTTPP..",
+    "........TTTTTPP..",
+    "......TTTTTTSLP..",
+    "....TTTTTTTTSLL..",
+    "...TTTTTTTTTSLL..",
+    "..STTTTTTTTTSLL..",
+    "..SSTTTTTTTTSLL..",
+    ".DSSSTTTTTTSSLLL.",
+    "DDTTTSSTTTT.SLLLL",
+  ],
+  lieTail: { len: 7, tip: "D" },
+};
+
+// The clouded leopard: M, long and low on short legs, grey-tawny under big dark-rimmed clouds, and
+// a tail as long as its body, thick and ringed, held out low with the tip turned up.
+const CLOUDED = {
+  walk: [
+    "....................T.T.",
+    "...................TTTTT",
+    "..........TTTTTTTTTTeTTT",
+    ".........DDTTDDTTDDTTTPD",
+    "TT......TDSDTDSDTDSDTPP.",
+    "DT.....TTDDTTDDTTDDTPP..",
+    ".TDTDTDTSSSSSSSSSSSSP...",
+    "..DTDTD.................",
+    "........................",
+    "........................",
+  ],
+  legs: [
+    [8, 2, 7],
+    [10, 1, 7],
+    [16, 1, 7],
+    [18, 2, 7],
+  ],
+  thigh: 1,
+  rump: 7,
+  head: 19,
+  sit: [
+    ".........T.T..",
+    "........TTTTT.",
+    "........TTeTTT",
+    "........TDTTPD",
+    ".......TTDTPP.",
+    "......TDDTTPP.",
+    ".....TDSDDSLP.",
+    "....TDDTTDSLL.",
+    "....TDSDTTSLL.",
+    "...SSDDTDTSLLL",
+    "TDTDTDSSSS.LLL",
+  ],
+  lieTail: { len: 9, tip: "D", rings: "D" },
+};
+
+// The bobcat: M, long-legged for its size, black ear tufts, a pale ruff at the jaw, spots on a
+// tawny-grey catCoat, a white belly and a bobbed tail, black above and white below.
+const BOBCAT = {
+  walk: [
+    "............D.D.",
+    "............T.T.",
+    "...........TTTTT",
+    "..TTTTTTTTTTTeTT",
+    ".DTTDTTTDTTTTTPD",
+    ".PTTTTDTTTTPPTP.",
+    "..TTTDTTTTPPP...",
+    "..TPPDPPPDPP....",
+    "................",
+    "................",
+    "................",
+  ],
+  legs: [
+    [2, 2, 8],
+    [4, 1, 8],
+    [8, 1, 8],
+    [10, 2, 8],
+  ],
+  thigh: 1,
+  rump: 2,
+  head: 11,
+  sit: [
+    "....D.D...",
+    "....T.T...",
+    "....TTTTT.",
+    "....TTeTTT",
+    "...PTTTTPD",
+    "...PPTTPP.",
+    "...TTTPPP.",
+    "..TDTTPP..",
+    ".TTTTDSLP.",
+    ".TDTTTSLL.",
+    ".TTTDTSLL.",
+    "DSTTTTSLL.",
+    "PSSSSTTLLL",
+  ],
+  lieTail: { len: 1, tip: "D" },
+};
+
+// The house cat: S, tail held up as it walks, its coat picked from CAT_COATS when the scene loads. Its
+// grid names regions, and each coat colours them: A ears, H the cap of the head, M the face, K the
+// tail, B a patch on the back and Y one on the haunch; X, Z and W are the tabby's stripes where they
+// cross the back patch, the haunch patch and the plain catCoat.
+const HOUSECAT = {
+  walk: [
+    ".KK......A.A",
+    ".K......HHHH",
+    ".K..TBXBHMeM",
+    ".KYZYBXBTMMD",
+    "..YYZTTWTPPP",
+    "..SSSSSSSSP.",
+    "............",
+    "............",
+    "............",
+  ],
+  legs: [
+    [2, 1, 6],
+    [4, 1, 6],
+    [7, 1, 6],
+    [9, 1, 6],
+  ],
+  thigh: 1,
+  rump: 2,
+  head: 8,
+  sit: [
+    "....A.A..",
+    "....HHHH.",
+    "....MMeMM",
+    "...BMMMPD",
+    "...BXBPP.",
+    "..TBXBSL.",
+    ".YZTWTSL.",
+    ".YYZTWSL.",
+    "KSYYTTSL.",
+    "KKSSSSSLL",
+  ],
+  lieTail: { len: 4, tip: "K", catCoat: "K" },
+};
+
+// The house cat's coats, after the owner's reference sheet; a scene picks one as it loads. Each names its colours: catCoat, shade
+// (a grey edge on a white cat), pale chest and muzzle, nose, eye, and the regions the grid names.
+const catCoat = ({ T, S, P = T, D, e, A = T, H = T, M = T, K = T, B = T, Y = T, stripe = T, L = T, l = S }) => ({
+  T,
+  S,
+  P,
+  D,
+  e,
+  A,
+  H,
+  M,
+  K,
+  B,
+  Y,
+  X: stripe === T ? B : stripe,
+  Z: stripe === T ? Y : stripe,
+  W: stripe,
+  L,
+  l,
+});
+const CAT_WHITE = "#f6f3ee";
+const CAT_COATS = {
+  white: catCoat({ T: CAT_WHITE, S: "#bdb8c0", D: "#d88f98", e: "#5a9ae0", A: "#e8b4ba" }),
+  "silver-tabby": catCoat({
+    T: "#a4a4aa",
+    S: "#76767e",
+    P: "#ecebe8",
+    D: "#4a3a3a",
+    e: "#c9b840",
+    stripe: "#5c5c64",
+    K: "#8a8a92",
+  }),
+  "orange-white": catCoat({
+    T: CAT_WHITE,
+    S: "#bdb8c0",
+    D: "#d88f98",
+    e: "#5a9a3a",
+    A: "#e88a2a",
+    H: "#e88a2a",
+    K: "#e88a2a",
+    Y: "#e88a2a",
+  }),
+  siamese: catCoat({
+    T: "#dccbb6",
+    S: "#b4a08a",
+    P: "#ece0d0",
+    D: "#3a2a28",
+    e: "#4a8ad0",
+    A: "#4e3e3a",
+    H: "#4e3e3a",
+    M: "#5e4a44",
+    K: "#4e3e3a",
+    L: "#5e4a44",
+    l: "#46363a",
+  }),
+  black: catCoat({ T: "#24222a", S: "#16141a", D: "#3a3440", e: "#e2c43a" }),
+  ginger: catCoat({
+    T: "#f0a040",
+    S: "#c87a28",
+    P: "#f8dcb0",
+    D: "#c87060",
+    e: "#5a9a3a",
+    stripe: "#d07a22",
+    K: "#e08a30",
+  }),
+  calico: catCoat({
+    T: CAT_WHITE,
+    S: "#bdb8c0",
+    D: "#d88f98",
+    e: "#5a9a3a",
+    A: "#2e2826",
+    H: "#e07a2a",
+    K: "#2e2826",
+    B: "#2e2826",
+    Y: "#e07a2a",
+  }),
+  grey: catCoat({ T: "#86868e", S: "#62626a", D: "#c88a92", e: "#e2c43a", A: "#a0a0a8" }),
+  tortie: catCoat({
+    T: "#2c2422",
+    S: "#1c1614",
+    D: "#3a2c2a",
+    e: "#5a9a3a",
+    H: "#b8641e",
+    B: "#2c2422",
+    Y: "#b8641e",
+    stripe: "#8a4a1c",
+    K: "#2c2422",
+  }),
+  tuxedo: catCoat({
+    T: "#2a2a30",
+    S: "#d8d6da",
+    P: CAT_WHITE,
+    D: "#d88f98",
+    e: "#e2c43a",
+    M: CAT_WHITE,
+    L: CAT_WHITE,
+    l: "#bdb8c0",
+  }),
+  "brown-tabby": catCoat({
+    T: "#a8865e",
+    S: "#86684a",
+    P: "#ead8b6",
+    D: "#3a2a22",
+    e: "#5e8a3a",
+    stripe: "#5a4230",
+    K: "#7a5c3e",
+  }),
+};
+
+const FELIDS = { lion: LION, cheetah: CHEETAH, cougar: COUGAR, clouded: CLOUDED, bobcat: BOBCAT, housecat: HOUSECAT };
+// The arched back reads as a camel's hump on the long-bodied big cats, so only the smaller cats arch.
+const FELID_ARCHES = new Set(["clouded", "bobcat", "housecat"]);
+
+const FELID_SWING = [1, 0, -1, 0]; // the lower leg's lead over its thigh, through the stride
+const blankRow = (w) => ".".repeat(w);
+
+// The arched back: the body between rump and head lifts in a curve up to `rise` rows at its middle
+// and the head drops a row; the legs are planted straight and reach the ground from the lifted body.
+function archOf(s) {
+  const H = s.walk.length;
+  const w = s.walk[0].length;
+  const rise = Math.max(2, Math.round(H / 4));
+  const span = s.head - s.rump;
+  const lift = (c) => {
+    if (c >= s.head) return -Math.max(1, Math.round(rise / 2));
+    if (c < s.rump) return 0;
+    const u = (c - s.rump + 0.5) / span;
+    return Math.round(rise * Math.sin(Math.PI * Math.min(1, u * 1.1)) ** 0.7);
+  };
+  const out = Array.from({ length: H + rise }, () => blankRow(w).split(""));
+  const bodyRows = Math.min(...s.legs.map((l) => l[2])); // rows above the legs
+  const belly = (c) => Math.round(Math.max(0, lift(c)) / 2);
+  for (let c = 0; c < w; c++) {
+    const col = s.walk.map((line) => line[c]);
+    if (c < s.rump || c >= s.head) {
+      // Tail and head move as they are.
+      col.forEach((ch, r) => {
+        const row = r + rise - lift(c);
+        if (ch !== "." && row >= 0 && row < H + rise) out[row][c] = ch;
+      });
+      continue;
+    }
+    // The body's column is stretched: its back lifts by lift(c) and its belly by half that, so the
+    // body stays whole and its markings and belly shade ride along.
+    const filled = col
+      .slice(0, bodyRows)
+      .map((ch, r) => [ch, r])
+      .filter(([ch]) => ch !== ".");
+    if (!filled.length) continue;
+    const top = filled[0][1];
+    const bottom = filled[filled.length - 1][1];
+    const newTop = top - lift(c);
+    const newBottom = bottom - belly(c);
+    for (let row = newTop; row <= newBottom; row++) {
+      const u = newBottom === newTop ? 0 : (row - newTop) / (newBottom - newTop);
+      const ch = col[Math.round(top + u * (bottom - top))];
+      if (ch !== ".") out[row + rise][c] = ch;
+    }
+  }
+  // The feet gather in under the arch, the hind pair a step forward and the fore pair a step back.
+  const gather = Math.max(1, Math.round(span / 8));
+  const legs = s.legs.map(([dx, w2, top], i) => {
+    const at = dx + (i < 2 ? gather : -gather);
+    return [at, w2, top + rise - belly(at + (w2 >> 1))];
+  });
+  return { grid: out.map((r) => r.join("")), legs };
+}
+
+// Lying down: the body sinks onto the ground with the legs folded under, the head stays up a row or
+// two, the forepaws reach out in front and the tail lies along the ground behind.
+function lieOf(s) {
+  const H = s.walk.length;
+  const t = s.lieTail;
+  const shift = Math.max(0, t.len - s.rump);
+  const w = s.walk[0].length + 3 + shift;
+  const top = Math.min(...s.legs.map((l) => l[2]));
+  const drop = H - top;
+  const headUp = Math.max(1, Math.round(drop / 3));
+  const out = Array.from({ length: H }, () => blankRow(w).split(""));
+  s.walk.forEach((line, r) => {
+    [...line].forEach((ch, c) => {
+      if (ch === "." || c < s.rump) return;
+      const row = r + drop - (c >= s.head ? headUp : 0);
+      if (row < H) out[row][c + shift] = ch;
+    });
+  });
+  // Forepaws along the ground, out past the chest.
+  const [fore] = s.legs.slice(-1);
+  const front = Math.max(...s.walk.map((l) => l.replace(/\.+$/, "").length));
+  const paws = drop >= 5 ? 2 : 1;
+  for (let r = H - paws; r < H; r++) {
+    for (let c = fore[0]; c <= front + 1; c++) out[r][c + shift] = "L";
+  }
+  // The haunch, folded: a patch of shade over the hind feet.
+  const [hind] = s.legs;
+  for (let c = hind[0]; c < hind[0] + hind[1] + 2; c++) {
+    if (out[H - 2][c + shift] !== ".") out[H - 2][c + shift] = "S";
+  }
+  // The tail, along the ground behind the rump, its tip turned up.
+  for (let i = 1; i <= t.len; i++) {
+    const c = s.rump - i + shift;
+    const colour = i === t.len ? t.tip : t.rings && i % 2 === 0 ? t.rings : (t.catCoat ?? "T");
+    out[H - 1][c] = colour;
+    if (i === t.len && t.len > 2) out[H - 2][c] = colour;
+  }
+  return { grid: out.map((r) => r.join("")), shift };
+}
+
+// The downward dog, a cat's long stretch: the hind legs stay up straight, so the rump is high, and
+// the body slopes down to a chest held just off the ground, with the forelegs stretched out flat in
+// front and the head low between them, looking ahead. The tail keeps its walking line.
+function bowOf(s) {
+  const H = s.walk.length;
+  const front = Math.max(...s.walk.map((l) => l.replace(/\.+$/, "").length));
+  const w = front + 4;
+  const top = Math.min(...s.legs.map((l) => l[2]));
+  const paws = H - top >= 5 ? 2 : 1;
+  const low = H - top - paws; // how far the chest sinks: to just above the paws
+  const rise = Math.max(1, Math.round((H - top) / 2)); // how far the rump lifts on straightened legs
+  const span = s.head - s.rump;
+  const drop = (c) => {
+    if (c < s.rump) return -rise;
+    if (c >= s.head) return Math.max(0, low - (low >= 3 ? 1 : 0));
+    return Math.round(-rise + (low + rise) * ((c - s.rump + 1) / span) ** 1.4);
+  };
+  const out = Array.from({ length: H + rise }, () => blankRow(w).split(""));
+  s.walk.forEach((line, r) => {
+    [...line].forEach((ch, c) => {
+      if (ch === ".") return;
+      const row = r + rise + (c < s.rump || r < top ? drop(c) : 0);
+      if (r >= top && c >= s.rump) return; // the legs are drawn on their own
+      if (row >= 0 && row < H + rise - paws) out[row][c] = ch;
+    });
+  });
+  // The forelegs, flat along the ground and reaching past the nose: the far one a little behind.
+  const full = H + rise;
+  const [, , foreFar, foreNear] = s.legs;
+  for (let r = full - paws; r < full; r++) {
+    for (let c = foreFar[0]; c <= front; c++) out[r][c] = "l";
+    for (let c = foreNear[0]; c <= front + 2; c++) out[r][c] = "L";
+  }
+  // The hind legs, straight from the lifted rump to the ground.
+  const [hindNear, hindFar] = s.legs;
+  const legs = [hindNear, hindFar].map(([dx, lw, t]) => [dx, lw, t + rise + drop(dx + (lw >> 1))]);
+  return { grid: out.map((r) => r.join("")), legs };
+}
+
+// The owner's pixel edits on the family's proposal, kept as touch-ups to each member's finished
+// pose grid, as CANID_PATCHES keeps the wolf's: [column, row, letter], null to erase. They
+// fill the gaps in the stretch's slope, ring the cheetah's tail from a dark root to a dark tip that
+// curls up, trim the lying lion's paws and widen his tuft, and close the small cats' lying gaps.
+const FELID_PATCHES = {
+  cheetah: {
+    walk: [
+      [18, 3, "D"],
+      [1, 7, "D"],
+      [1, 8, "T"],
+      [1, 9, "D"],
+      [1, 10, "T"],
+      [1, 11, "D"],
+    ],
+    sit: [
+      [8, 4, "D"],
+      [0, 12, "D"],
+      [0, 13, "T"],
+      [0, 14, "D"],
+    ],
+    lie: [
+      [0, 12, null],
+      [1, 12, "D"],
+      [0, 13, null],
+      [1, 13, null],
+      [2, 13, "T"],
+      [3, 13, "D"],
+      [4, 13, "T"],
+      [5, 13, "D"],
+    ],
+    bow: [
+      [1, 7, "D"],
+      [1, 8, "T"],
+      [5, 8, "T"],
+      [1, 9, "D"],
+      [5, 9, "T"],
+      [7, 9, "S"],
+      [8, 9, "S"],
+      [1, 10, "T"],
+      [5, 10, "T"],
+      [7, 10, "S"],
+      [8, 10, "S"],
+      [9, 10, "S"],
+      [1, 11, "D"],
+      [7, 11, "S"],
+      [10, 11, "S"],
+      [11, 11, "S"],
+      [7, 12, "S"],
+      [11, 12, "S"],
+      [12, 12, "S"],
+      [7, 13, "S"],
+      [12, 13, "S"],
+      [13, 13, "S"],
+      [7, 14, "S"],
+      [13, 14, "S"],
+      [14, 14, "S"],
+      [15, 14, "S"],
+      [7, 15, "S"],
+      [14, 15, "S"],
+      [15, 15, "S"],
+      [16, 15, "S"],
+      [7, 16, "S"],
+      [7, 17, "S"],
+    ],
+  },
+  clouded: {
+    walk: [[23, 1, null]],
+    lie: [
+      [23, 8, "T"],
+      [24, 8, "T"],
+    ],
+    bow: [
+      [16, 10, "S"],
+      [21, 10, "T"],
+      [22, 10, "T"],
+    ],
+  },
+  lion: {
+    sit: [
+      [10, 16, "T"],
+      [11, 16, "T"],
+      [12, 16, null],
+      [13, 16, null],
+      [14, 16, null],
+      [20, 16, "T"],
+    ],
+    lie: [
+      [1, 15, "N"],
+      [25, 15, null],
+      [26, 15, null],
+      [27, 15, null],
+      [1, 16, "N"],
+      [25, 16, null],
+      [26, 16, null],
+      [27, 16, null],
+    ],
+    bow: [
+      [5, 7, "T"],
+      [6, 7, "T"],
+      [7, 7, "T"],
+      [8, 7, "T"],
+      [4, 8, "T"],
+      [6, 8, "T"],
+      [8, 8, "T"],
+      [9, 8, "T"],
+      [10, 8, "T"],
+      [9, 9, "T"],
+      [10, 9, "T"],
+      [11, 9, "T"],
+      [11, 10, "T"],
+      [12, 10, "T"],
+      [12, 11, "T"],
+      [6, 14, "T"],
+      [7, 14, "T"],
+      [6, 15, "T"],
+      [13, 17, "T"],
+      [14, 17, "T"],
+      [15, 17, "P"],
+      [16, 17, "P"],
+      [17, 17, "P"],
+      [18, 17, "T"],
+      [19, 17, "T"],
+    ],
+  },
+  bobcat: {
+    lie: [
+      [12, 9, "T"],
+      [13, 9, "T"],
+      [14, 9, "T"],
+    ],
+    bow: [
+      [8, 11, "P"],
+      [9, 11, "P"],
+      [12, 11, "T"],
+      [13, 11, "T"],
+      [14, 11, "T"],
+    ],
+  },
+  cougar: {
+    bow: [
+      [15, 12, "S"],
+      [15, 13, "S"],
+      [16, 13, "S"],
+      [17, 13, "S"],
+    ],
+  },
+};
+
+// A pose grid with its member's touch-ups applied.
+function felidPatched(kind, pose, grid) {
+  const cells = FELID_PATCHES[kind]?.[pose];
+  if (!cells) return grid;
+  const rows = grid.map((line) => line.split(""));
+  for (const [c, r, letter] of cells) {
+    while (rows[r].length <= c) rows[r].push(".");
+    rows[r][c] = letter ?? ".";
+  }
+  return rows.map((line) => line.join(""));
+}
+
+const felidCache = new Map();
+// A member's pose grid, made once: "arch", "lie" or "bow".
+function felidPose(kind, pose) {
+  const key = `${kind}-${pose}`;
+  if (!felidCache.has(key)) {
+    const s = FELIDS[kind];
+    felidCache.set(key, pose === "arch" ? archOf(s) : pose === "lie" ? lieOf(s) : bowOf(s));
+  }
+  return felidCache.get(key);
+}
+
+// The poses a cat of `kind` rests in, for a walker to choose from when it stops.
+export const felidPoses = (kind) => (FELID_ARCHES.has(kind) ? ["sit", "arch", "lie", "bow"] : ["sit", "lie", "bow"]);
+
+// The house cat's coat names, for a scene to pick from as it loads, and their palettes, keyed
+// housecat-<name>, to spread into the scene's day and night palettes. At night the near-black coats
+// are lifted off the dark page and every cat's eyes stay lit.
+export const HOUSECAT_COAT_NAMES = Object.keys(CAT_COATS);
+export const HOUSECAT_COATS = { light: {}, dark: {} };
+for (const [name, pal] of Object.entries(CAT_COATS)) {
+  HOUSECAT_COATS.light[`housecat-${name}`] = pal;
+  const dark = Object.fromEntries(Object.entries(pal).map(([k, v]) => [k, nightColour(v)]));
+  for (const k of Object.keys(pal)) {
+    if (["#24222a", "#2c2422", "#2a2a30", "#2e2826"].includes(pal[k])) dark[k] = "#3e3c4a";
+  }
+  dark.e = pal.e;
+  HOUSECAT_COATS.dark[`housecat-${name}`] = dark;
+}
+
+// A coat colour at night: darkened and cooled toward the scenes' indigo.
+function nightColour(hex) {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const cool = [58, 53, 96];
+  const out = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v, i) => Math.round(v * 0.62 + cool[i] * 0.22));
+  return `#${out.map((v) => Math.min(255, v).toString(16).padStart(2, "0")).join("")}`;
+}
+
+// A cat of `kind` (lion, cheetah, cougar, clouded, bobcat or housecat), x at the middle of its body.
+// It walks, stands, or rests in c.pose ("sit" when none is set) while its state is not "walk"; at
+// rest it blinks now and then. A pose a member does not have is drawn standing.
+export function felidAt(g, c, time) {
+  const s = FELIDS[c.kind];
+  const pal = g.pal[c.pal ?? c.kind];
+  const y = feet(g, c);
+  const pose = c.state === "walk" ? "walk" : c.state === "stand" ? "stand" : (c.pose ?? "sit");
+  const blink = pose !== "walk" && Math.floor(time * 4 + (c.phase ?? 0) * 3) % 11 === 0;
+  const colours = { L: pal.T, l: pal.S, ...pal };
+  if (blink) colours.e = c.kind === "housecat" ? pal.M : pal.T;
+  const x = Math.round(c.x);
+  const mid = s.walk[0].length >> 1;
+  const px = (colour, dx, dy, w, h) => part(g, colour, x - mid, y, c.dir, dx, dy, w, h);
+  if (pose === "sit") {
+    const w = s.sit[0].length;
+    sprite(g, felidPatched(c.kind, "sit", s.sit), colours, x - (w >> 1), y, c.dir, 0, s.sit.length);
+    return;
+  }
+  if (pose === "lie") {
+    const { grid: lying, shift } = felidPose(c.kind, "lie");
+    const grid = felidPatched(c.kind, "lie", lying);
+    sprite(g, grid, colours, x - mid, y, c.dir, shift, grid.length);
+    return;
+  }
+  if (pose === "bow") {
+    const { grid: bowing, legs } = felidPose(c.kind, "bow");
+    const grid = felidPatched(c.kind, "bow", bowing);
+    const H = grid.length;
+    sprite(g, grid, colours, x - mid, y, c.dir, 0, H);
+    for (const [[dx, w, top], colour] of [
+      [legs[1], colours.l],
+      [legs[0], colours.L],
+    ]) {
+      px(colour, dx, top - H, w, H - top);
+    }
+    return;
+  }
+  const arch = pose === "arch" && FELID_ARCHES.has(c.kind) ? felidPose(c.kind, "arch") : null;
+  const grid = arch ? felidPatched(c.kind, "arch", arch.grid) : felidPatched(c.kind, "walk", s.walk);
+  const legs = arch ? arch.legs : s.legs;
+  const H = grid.length;
+  sprite(g, grid, colours, x - mid, y, c.dir, 0, H);
+  const walking = pose === "walk";
+  const k = walking ? Math.floor(c.phase) % 4 : 1;
+  const leg = (colour, [dx, w, top], phase) => {
+    const p = walking ? phase % 4 : 1;
+    const lower = H - top - s.thigh;
+    px(colour, dx, top - H, w, s.thigh);
+    px(colour, dx + FELID_SWING[p], top - H + s.thigh, w, p === 3 ? lower - 1 : lower);
+  };
+  const [hindNear, hindFar, foreFar, foreNear] = legs;
+  leg(colours.l, hindFar, k + 2);
+  leg(colours.l, foreFar, k);
+  leg(colours.L, hindNear, k);
+  leg(colours.L, foreNear, k + 2);
+}

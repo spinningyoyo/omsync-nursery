@@ -5,8 +5,32 @@
 // the wall beside it. A cottontail, a red fox that now and then leaps on a mouse in the grass, a
 // bull elk, a black bear and cub share the meadow; by day a belted kingfisher, a golden eagle and
 // butterflies fly over.
-import { bearAt, canidAt, cervidAt, flyerAt, hareAt, kingfisherAt, raptorAt } from "../kit/animals.js";
-import { enter, enterBehind, flyBy, follow, isNight, soarAt, soarer, stroll, walker, wander } from "../kit/critters.js";
+// A bobcat hunts the meadow edge and rests in the grass: sitting, lying, arching or stretching.
+import {
+  bearAt,
+  canidAt,
+  cervidAt,
+  felidAt,
+  felidPoses,
+  flyerAt,
+  hareAt,
+  kingfisherAt,
+  raptorAt,
+} from "../kit/animals.js";
+import {
+  enter,
+  enterBehind,
+  flyBy,
+  follow,
+  isNight,
+  narrow,
+  rest,
+  soarAt,
+  soarer,
+  stroll,
+  walker,
+  wander,
+} from "../kit/critters.js";
 import {
   blob,
   CLEARING,
@@ -40,6 +64,7 @@ const FALL_ROWS_PER_SECOND = 3; // slow, because the fall is a mile away
 const STREAK_ROWS = 4;
 
 const LIGHT = {
+  bobcat: { T: "#b08a64", S: "#8a6a4a", P: "#f0e6d6", D: "#2e241e", e: "#2e241e" },
   leaf: ["#cdeaa4", "#a3d675", "#78bb5c", "#559c4a"],
   pine: ["#b4dcae", "#86c392", "#5ca67a", "#43876a"],
   bloom: "#ffffff",
@@ -89,6 +114,7 @@ const LIGHT = {
 };
 
 const DARK = {
+  bobcat: { T: "#7a6153", S: "#624d43", P: "#a29a9a", D: "#292228", e: "#292228" },
   leaf: ["#8fc272", "#6ba455", "#4c8541", "#356a35"],
   pine: ["#6fae8a", "#52926f", "#3c7658", "#2b5d46"],
   bloom: "#f5f5f5",
@@ -520,6 +546,7 @@ const extras = {
   init(f) {
     const colours = [0, 1, 2, 4];
     return {
+      cat: walker(f),
       petals: [],
       eagle: { next: 0, bird: null },
       soarer: soarer(f, 46 + f.rand() * 10),
@@ -548,6 +575,7 @@ const extras = {
   // comes at stage 1, a bear and cub at 4 (when El Capitan has grown in and the firefall starts),
   // a fox at 5 and an elk at 7.
   onGrow(f) {
+    if (f.stage >= 6 && !narrow(f)) enter(f, f.extra.cat);
     const { bears, firefall } = f.extra;
     if (f.stage >= 4 && firefall.next === Infinity) firefall.next = f.time + 3;
     if (f.stage >= 1) enter(f, f.extra.rabbit);
@@ -566,6 +594,8 @@ const extras = {
   busy: (f) => f.stage >= 2 || f.extra.petals.length > 0,
 
   update(f, dt) {
+    wander(f, f.extra.cat, dt, { speed: 8, stride: 7, sit: [4, 9], walk: [3, 6] });
+    rest(f, f.extra.cat, felidPoses("bobcat"));
     const {
       petals,
       rabbit,
@@ -648,6 +678,7 @@ const extras = {
   },
 
   draw(g, f) {
+    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "bobcat" }, f.time);
     const day = !isNight(f);
     for (const fly of f.extra.flies) {
       if (day && f.time >= fly.from) butterflyAt(g, fly, f.time);

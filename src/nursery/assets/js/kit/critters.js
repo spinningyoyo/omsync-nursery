@@ -63,6 +63,13 @@ export function wander(f, w, dt, { speed, stride = 7, sit = [2, 5], walk = [3, 8
   }
 }
 
+// A walker that stops rests in one of `poses` (felidPoses, for a cat) for the whole stop, picked as
+// it stops; walking clears it. Call it after wander().
+export function rest(f, w, poses) {
+  if (w.state === "walk") w.pose = null;
+  else if (!w.pose) w.pose = poses[Math.floor(f.rand() * poses.length)];
+}
+
 // Crosses the page and, once it is off the far edge, comes back, stepping as it goes.
 export function stroll(f, w, dt, speed) {
   if (!w.active) return;

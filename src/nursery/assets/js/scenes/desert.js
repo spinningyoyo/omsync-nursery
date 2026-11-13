@@ -5,7 +5,8 @@
 // teeter past. In dark mode it is a late-summer desert night under the Milky Way: the day birds are
 // gone, a great horned owl watches from a Joshua tree, the coyote sits up to howl, and the Perseids
 // fall in two patterns, with quiet spells between.
-import { canidAt, hareAt, owlAt, raptorAt, sheepAt, tortoiseAt } from "../kit/animals.js";
+// At night a pale desert bobcat comes out to hunt, and rests between prowls.
+import { canidAt, felidAt, felidPoses, hareAt, owlAt, raptorAt, sheepAt, tortoiseAt } from "../kit/animals.js";
 import {
   doing,
   enter,
@@ -17,6 +18,7 @@ import {
   isNight,
   narrow,
   percher,
+  rest,
   walker,
   wander,
 } from "../kit/critters.js";
@@ -75,6 +77,7 @@ const BLOOMS = 0.7;
 const SMALL_PLANTS = 0.6;
 
 const LIGHT = {
+  bobcatDesert: { T: "#c8a67c", S: "#a0805c", P: "#f4ecdc", D: "#3a2e24", e: "#3a2e24" },
   joshua: ["#d4e28a", "#a9c262", "#7d9c4c"],
   trunk: ["#b19575", "#8a7058"],
   yucca: ["#c4da86", "#98b85c", "#6e9040"],
@@ -108,6 +111,7 @@ const LIGHT = {
 };
 
 const DARK = {
+  bobcatDesert: { T: "#897362", S: "#705b4e", P: "#a49e9e", D: "#31282b", e: "#31282b" },
   joshua: ["#a8c46a", "#84a04e", "#628038"],
   trunk: ["#8c7358", "#6c5742"],
   yucca: ["#9dbb68", "#7a9a4a", "#587a36"],
@@ -765,6 +769,7 @@ function meteorAt(g, m) {
 const extras = {
   init(f) {
     return {
+      cat: walker(f),
       stars: starField(f, STARS, 70),
       band: milkyWay(f),
       milky: null,
@@ -800,6 +805,7 @@ const extras = {
   // The jackrabbit comes at stage 1, a roadrunner at 3, the tortoise at 4, a coyote with its pup at
   // 5; the snake shows itself on some visits only. The hawk stoops at the jackrabbit from stage 7.
   onGrow(f) {
+    if (f.stage >= 7 && !narrow(f)) enter(f, f.extra.cat);
     const x = f.extra;
     if (f.stage >= 3) enter(f, x.runner);
     if (f.stage >= 4 && !narrow(f)) enter(f, x.tortoise);
@@ -815,6 +821,11 @@ const extras = {
   busy: () => true,
 
   update(f, dt) {
+    // The cat wanders, and when it stops it rests in one of its poses, by night only.
+    if (isNight(f)) {
+      wander(f, f.extra.cat, dt, { speed: 8, stride: 7, sit: [4, 9], walk: [3, 6] });
+      rest(f, f.extra.cat, felidPoses("bobcat"));
+    }
     const x = f.extra;
     const night = isNight(f);
     wander(f, x.runner, dt, { speed: 26, stride: 12, sit: [1, 3], walk: [1.5, 4] });
@@ -886,6 +897,7 @@ const extras = {
   },
 
   draw(g, f) {
+    if (f.extra.cat.active && isNight(f)) felidAt(g, { ...f.extra.cat, kind: "bobcat", pal: "bobcatDesert" }, f.time);
     const x = f.extra;
     const night = isNight(f);
     if (f.stage >= 2 && !night) hawkAt(g, x.hawk);

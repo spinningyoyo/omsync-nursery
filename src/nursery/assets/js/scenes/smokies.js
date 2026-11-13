@@ -7,7 +7,18 @@
 // turkey and a golden eagle, a cardinal and a chimney swift pass through; the bear rears up to sniff the air, the cub climbs a tree, the
 // elk bugles. At night the Milky Way arches over the ridges as it does on an October evening, a
 // barred owl watches from a branch, and the day birds have gone to roost.
-import { bearAt, cervidAt, flyerAt, groundBirdAt, hareAt, owlAt, raptorAt } from "../kit/animals.js";
+// A bobcat, the park's only wild cat, prowls the floor and rests on it now and then.
+import {
+  bearAt,
+  cervidAt,
+  felidAt,
+  felidPoses,
+  flyerAt,
+  groundBirdAt,
+  hareAt,
+  owlAt,
+  raptorAt,
+} from "../kit/animals.js";
 import {
   doing,
   enter,
@@ -18,6 +29,7 @@ import {
   isNight,
   narrow,
   percher,
+  rest,
   soarAt,
   soarer,
   stroll,
@@ -89,6 +101,7 @@ const TONES = {
 };
 
 const LIGHT = {
+  bobcat: { T: "#b08a64", S: "#8a6a4a", P: "#f0e6d6", D: "#2e241e", e: "#2e241e" },
   red: ["#fb9a6a", "#ea5a34", "#c93e2a", "#9c2c22"],
   orange: ["#ffc874", "#f9a040", "#dd7b2c", "#b45a21"],
   yellow: ["#fff3aa", "#ffd95e", "#ebb83c", "#c99629"],
@@ -150,6 +163,7 @@ const LIGHT = {
 };
 
 const DARK = {
+  bobcat: { T: "#7a6153", S: "#624d43", P: "#a29a9a", D: "#292228", e: "#292228" },
   red: ["#f27a52", "#d4482e", "#aa3426", "#7e2620"],
   orange: ["#f5b060", "#e48c36", "#c26a28", "#964c1e"],
   yellow: ["#f2e08a", "#e2c04e", "#c9a233", "#a38024"],
@@ -486,6 +500,7 @@ function milkyWay(f) {
 const extras = {
   init(f) {
     return {
+      cat: walker(f),
       stars: starField(f, STARS, 55),
       band: milkyWay(f),
       milky: null,
@@ -511,6 +526,7 @@ const extras = {
   },
 
   onGrow(f) {
+    if (f.stage >= 5 && !narrow(f)) enter(f, f.extra.cat);
     const x = f.extra;
     if (f.stage >= 1) enter(f, x.groundhog);
     if (f.stage >= 3) enter(f, x.turkey);
@@ -524,6 +540,8 @@ const extras = {
   busy: () => true,
 
   update(f, dt) {
+    wander(f, f.extra.cat, dt, { speed: 8, stride: 7, sit: [4, 9], walk: [3, 6] });
+    rest(f, f.extra.cat, felidPoses("bobcat"));
     const x = f.extra;
     if (f.stage >= 1) {
       for (const p of f.plants) {
@@ -651,6 +669,7 @@ const extras = {
   },
 
   draw(g, f) {
+    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "bobcat" }, f.time);
     const x = f.extra;
     for (const m of x.mists) mistAt(g, m, f.time, f.cols);
     if (x.turkey.active) turkeyAt(g, x.turkey, f.time);

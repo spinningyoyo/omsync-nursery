@@ -5,7 +5,8 @@
 // kingfishers fly over; a gibbon swings through the canopy, a dusky langur sits on a branch, and a
 // line of otters, a macaque and an elephant with her calf pass below. At night one tree of
 // fireflies flashes in time.
-import { elephantAt, flyerAt, kingfisherAt, raptorAt } from "../kit/animals.js";
+// A clouded leopard, Khao Sok's secret cat, pads along the floor and rests between walks.
+import { elephantAt, felidAt, felidPoses, flyerAt, kingfisherAt, raptorAt } from "../kit/animals.js";
 import {
   doing,
   enter,
@@ -17,6 +18,7 @@ import {
   isNight,
   narrow,
   percher,
+  rest,
   stroll,
   walker,
   wander,
@@ -50,6 +52,7 @@ const FIREFLIES = 26;
 const MISTS = 8;
 
 const LIGHT = {
+  clouded: { T: "#b8a27a", S: "#8e7a58", P: "#e6dcc4", D: "#3a3028", e: "#2a2420" },
   leaf: ["#7fae6e", "#5a9058", "#3e7346", "#2b5a3a"],
   fern: ["#8fbf78", "#649c5c", "#457d48", "#305f38"],
   bamboo: ["#c3d68a", "#8fb05a", "#6a8e42", "#4c6e30"],
@@ -86,6 +89,7 @@ const LIGHT = {
 };
 
 const DARK = {
+  clouded: { T: "#7f7061", S: "#65574c", P: "#9b948f", D: "#31292e", e: "#272229" },
   leaf: ["#5e8e5c", "#46784c", "#33603e", "#244a30"],
   fern: ["#6a9a62", "#4e8052", "#386644", "#284e34"],
   bamboo: ["#9fb46e", "#7a974c", "#5e7b3c", "#45602e"],
@@ -950,6 +954,7 @@ function bigCrown(f) {
 const extras = {
   init(f) {
     return {
+      cat: walker(f),
       flies: Array.from({ length: FIREFLIES }, (_, i) => ({
         homeX: ((i + f.rand()) / FIREFLIES) * f.cols,
         homeY: f.groundY - 6 - f.rand() * 30,
@@ -986,6 +991,7 @@ const extras = {
   // macaque, the langur, the otters, the elephants. The first otter comes at stage 1, the rest of
   // the line at 7.
   onGrow(f) {
+    if (f.stage >= 5 && !narrow(f)) enter(f, f.extra.cat);
     const { monkey, otters, elephants } = f.extra;
     if (f.stage >= 4) enter(f, monkey);
     if (f.stage >= 1) enter(f, otters[0]);
@@ -1000,6 +1006,8 @@ const extras = {
   busy: (f) => f.stage >= 2,
 
   update(f, dt) {
+    wander(f, f.extra.cat, dt, { speed: 7, stride: 7, sit: [4, 9], walk: [3, 6] });
+    rest(f, f.extra.cat, felidPoses("clouded"));
     const x = f.extra;
     if (f.stage >= 3 && !isNight(f)) {
       flyBy(f, x.hornbills, dt, {
@@ -1023,11 +1031,11 @@ const extras = {
     }
     if (x.langur) fidget(f, x.langur);
     wander(f, x.monkey, dt, { speed: 11 });
-    const [lead, ...rest] = x.otters;
+    const [lead, ...trail] = x.otters;
     wander(f, lead, dt, { speed: 9, stride: 3.5, sit: [2, 4], walk: [3, 6] });
     lead.lookout = true;
     let ahead = lead;
-    for (const o of rest) {
+    for (const o of trail) {
       follow(o, ahead, dt, 10);
       o.state = lead.state;
       o.phase = lead.phase + 0.7;
@@ -1041,6 +1049,7 @@ const extras = {
   },
 
   draw(g, f) {
+    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "clouded" }, f.time);
     const x = f.extra;
     const night = isNight(f);
     if (f.stage >= 2) for (const m of x.mists) mistAt(g, m, f.time, f.cols);

@@ -4,7 +4,18 @@
 // lupines bloom, the fox wears its brown coat and a puffin brings sand eels home to the stack. At
 // night it is winter: two curtains of aurora hang over it, mirrored in the fjord and lighting the
 // snow, the fox is white and the puffins on the stack sleep.
-import { canidAt, cervidAt, flyerAt, owlAt, swanAt } from "../kit/animals.js";
+// A farm cat wanders the lava field; its coat is one of eleven, picked as the scene loads.
+import {
+  canidAt,
+  cervidAt,
+  felidAt,
+  felidPoses,
+  flyerAt,
+  HOUSECAT_COAT_NAMES,
+  HOUSECAT_COATS,
+  owlAt,
+  swanAt,
+} from "../kit/animals.js";
 import {
   doing,
   drift,
@@ -15,7 +26,9 @@ import {
   flyBy,
   follow,
   isNight,
+  narrow,
   percher,
+  rest,
   walker,
   wander,
 } from "../kit/critters.js";
@@ -65,6 +78,7 @@ const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const dither = (x, y) => (BAYER[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
 
 const LIGHT = {
+  ...HOUSECAT_COATS.light,
   snow: ["#f7fbfd", "#d6e5ef", "#a9c4d8"],
   basalt: ["#9a9fa6", "#7c8188", "#60656d", "#42474e"],
   moss: ["#a2cf6c", "#78ad55", "#5a8c45", "#42693a"],
@@ -92,6 +106,7 @@ const LIGHT = {
 };
 
 const DARK = {
+  ...HOUSECAT_COATS.dark,
   snow: ["#8294a8", "#63758b", "#4a5a70"],
   basalt: ["#3b3f47", "#2c3038", "#21242a", "#16181c"],
   moss: ["#5f8c5a", "#4c7549", "#3d6040", "#2f4d33"],
@@ -622,6 +637,7 @@ const extras = {
       rate: 0.6 + f.rand() * 1.6,
     }));
     return {
+      cat: { ...walker(f), pal: `housecat-${HOUSECAT_COAT_NAMES[Math.floor(f.rand() * HOUSECAT_COAT_NAMES.length)]}` },
       fjord: 0,
       stars,
       lum: new Float32Array(f.cols), // how bright the aurora is over each column
@@ -642,6 +658,7 @@ const extras = {
 
   // The fjord rises over the first waterings, and jumps to its level under reduced motion.
   onGrow(f) {
+    if (f.stage >= 3 && !narrow(f)) enter(f, f.extra.cat);
     const x = f.extra;
     if (f.reduced) x.fjord = fjordLevel(f);
     if (f.stage >= 1) {
@@ -659,6 +676,8 @@ const extras = {
   busy: () => true,
 
   update(f, dt) {
+    wander(f, f.extra.cat, dt, { speed: 7, stride: 7, sit: [4, 9], walk: [3, 6] });
+    rest(f, f.extra.cat, felidPoses("housecat"));
     const x = f.extra;
     x.fjord += (fjordLevel(f) - x.fjord) * Math.min(1, dt * 0.8);
     if (f.stage >= 2) {
@@ -723,6 +742,7 @@ const extras = {
   },
 
   draw(g, f) {
+    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "housecat" }, f.time);
     const x = f.extra;
     if (f.theme === "dark") auroraLight(g, f);
     if (f.stage >= 1) {

@@ -60,6 +60,11 @@ function seaFrame(stage, time, whale) {
 // Animal and effect sprites: each takes the scene module copy M and the painter group g.
 export const SPRITES = {
   meadow: {
+    "meadow-bobcat": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat" }), 0),
+    "meadow-bobcat-sitting": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat", state: "sit", pose: "sit" }), 0),
+    "meadow-bobcat-arching": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat", state: "sit", pose: "arch" }), 0),
+    "meadow-bobcat-lying": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat", state: "sit", pose: "lie" }), 0),
+    "meadow-bobcat-stretching": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat", state: "sit", pose: "bow" }), 0),
     "meadow-rabbit": (_M, g) => animals.hareAt(g, walk()),
     "meadow-fox": (_M, g) => animals.canidAt(g, walk({ kind: "red" })),
     "meadow-fox-pounce": (_M, g) => animals.canidAt(g, walk({ kind: "red", state: "pounce", lift: 6 })),
@@ -98,6 +103,15 @@ export const SPRITES = {
       ),
   },
   rainforest: {
+    "rainforest-clouded-leopard": (_M, g) => animals.felidAt(g, walk({ kind: "clouded" }), 0),
+    "rainforest-clouded-leopard-sitting": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "clouded", state: "sit", pose: "sit" }), 0),
+    "rainforest-clouded-leopard-arching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "clouded", state: "sit", pose: "arch" }), 0),
+    "rainforest-clouded-leopard-lying": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "clouded", state: "sit", pose: "lie" }), 0),
+    "rainforest-clouded-leopard-stretching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "clouded", state: "sit", pose: "bow" }), 0),
     "rainforest-kingfisher": (_M, g) => animals.kingfisherAt(g, bird(), 0),
     "rainforest-hornbill": (M, g) => M.hornbillAt(g, bird(), 0),
     "rainforest-hornbill-up": (M, g) => M.hornbillAt(g, bird(), 0.4),
@@ -119,6 +133,37 @@ export const SPRITES = {
     "rainforest-mist": (_M, g) => effects.mistAt(g, { x0: 90, y: 30, w: 40, h: 6, speed: 0 }, 0, 80),
   },
   hawaii: {
+    "hawaii-cat": (_M, g) => animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico" }), 0),
+    "hawaii-cat-sitting": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-arching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "arch" }), 0),
+    "hawaii-cat-lying": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "lie" }), 0),
+    "hawaii-cat-stretching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "bow" }), 0),
+    "hawaii-cat-white": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-white", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-silver-tabby": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-silver-tabby", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-orange-white": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-orange-white", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-siamese": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-siamese", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-black": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-black", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-ginger": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-ginger", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-calico": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-grey": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-grey", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-tortie": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-tortie", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-tuxedo": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-tuxedo", state: "sit", pose: "sit" }), 0),
+    "hawaii-cat-brown-tabby": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "sit" }), 0),
     "hawaii-tropicbird": (M, g) => M.tropicbirdAt(g, bird(), 0),
     "hawaii-iiwi": (_M, g) => animals.flyerAt(g, bird(), 0, "iiwi"),
     "hawaii-crab": (_M, g) => animals.crabAt(g, walk({ lane: 0 }), g.groundY + 5),
@@ -152,6 +197,15 @@ export const SPRITES = {
     },
   },
   desert: {
+    "desert-bobcat": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat", pal: "bobcatDesert" }), 0),
+    "desert-bobcat-sitting": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "bobcat", pal: "bobcatDesert", state: "sit", pose: "sit" }), 0),
+    "desert-bobcat-arching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "bobcat", pal: "bobcatDesert", state: "sit", pose: "arch" }), 0),
+    "desert-bobcat-lying": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "bobcat", pal: "bobcatDesert", state: "sit", pose: "lie" }), 0),
+    "desert-bobcat-stretching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "bobcat", pal: "bobcatDesert", state: "sit", pose: "bow" }), 0),
     "desert-hawk": (M, g) => M.hawkAt(g, { x: 40, y: 20, dir: 1, bank: false, stoop: null }),
     "desert-hawk-bank": (M, g) => M.hawkAt(g, { x: 40, y: 20, dir: 1, bank: true, stoop: null }),
     "desert-hawk-stoop": (M, g) => M.hawkAt(g, { x: 40, y: 20, dir: 1, stoop: { t: 0 } }),
@@ -203,6 +257,11 @@ export const SPRITES = {
     },
   },
   smokies: {
+    "smokies-bobcat": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat" }), 0),
+    "smokies-bobcat-sitting": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat", state: "sit", pose: "sit" }), 0),
+    "smokies-bobcat-arching": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat", state: "sit", pose: "arch" }), 0),
+    "smokies-bobcat-lying": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat", state: "sit", pose: "lie" }), 0),
+    "smokies-bobcat-stretching": (_M, g) => animals.felidAt(g, walk({ kind: "bobcat", state: "sit", pose: "bow" }), 0),
     "smokies-eagle-side": (_M, g) => animals.raptorAt(g, bird({ kind: "eagleSide", pal: "eagle" })),
     "smokies-eagle-side-flapping": (_M, g) =>
       animals.raptorAt(g, bird({ kind: "eagleSide", pal: "eagle" }), { bank: true }),
@@ -240,6 +299,11 @@ export const SPRITES = {
     },
   },
   serengeti: {
+    "serengeti-cheetah": (_M, g) => animals.felidAt(g, walk({ kind: "cheetah" }), 0),
+    "serengeti-cheetah-sitting": (_M, g) => animals.felidAt(g, walk({ kind: "cheetah", state: "sit", pose: "sit" }), 0),
+    "serengeti-cheetah-lying": (_M, g) => animals.felidAt(g, walk({ kind: "cheetah", state: "sit", pose: "lie" }), 0),
+    "serengeti-cheetah-stretching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "cheetah", state: "sit", pose: "bow" }), 0),
     "serengeti-zebra": (M, g) => M.zebraAt(g, walk(), 0),
     "serengeti-zebra-foal": (M, g) => M.zebraAt(g, walk({ scale: 0.6 }), 0),
     "serengeti-giraffe": (M, g) => M.giraffeAt(g, walk(), 0),
@@ -248,6 +312,8 @@ export const SPRITES = {
     "serengeti-elephant-calf": (_M, g) => animals.elephantAt(g, walk({ kind: "african", scale: 0.5 }), 0),
     "serengeti-lion": (M, g) => M.lionAt(g, walk(), ANIMAL_BOX.ground + 7, 0),
     "serengeti-lion-sitting": (M, g) => M.lionAt(g, walk({ state: "sit" }), ANIMAL_BOX.ground + 7, 0),
+    "serengeti-lion-lying": (M, g) => M.lionAt(g, walk({ state: "sit", pose: "lie" }), ANIMAL_BOX.ground + 7, 0),
+    "serengeti-lion-stretching": (M, g) => M.lionAt(g, walk({ state: "sit", pose: "bow" }), ANIMAL_BOX.ground + 7, 0),
     "serengeti-lion-raised": (M, g) => M.lionAt(g, walk({ state: "stand", roar: 0.1 }), ANIMAL_BOX.ground + 7, 0),
     "serengeti-lion-roaring": (M, g) => M.lionAt(g, walk({ state: "stand", roar: 0.5 }), ANIMAL_BOX.ground + 7, 0),
     "serengeti-cub": (M, g) => M.cubAt(g, walk(), 0),
@@ -278,6 +344,37 @@ export const SPRITES = {
     },
   },
   iceland: {
+    "iceland-cat": (_M, g) => animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby" }), 0),
+    "iceland-cat-sitting": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-arching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "arch" }), 0),
+    "iceland-cat-lying": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "lie" }), 0),
+    "iceland-cat-stretching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "bow" }), 0),
+    "iceland-cat-white": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-white", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-silver-tabby": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-silver-tabby", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-orange-white": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-orange-white", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-siamese": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-siamese", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-black": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-black", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-ginger": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-ginger", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-calico": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-grey": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-grey", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-tortie": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-tortie", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-tuxedo": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-tuxedo", state: "sit", pose: "sit" }), 0),
+    "iceland-cat-brown-tabby": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "sit" }), 0),
     "iceland-fjord": (M, g) => {
       M.default.extras.drawBack(g, {
         groundY: ANIMAL_BOX.ground,
@@ -338,6 +435,11 @@ export const SPRITES = {
     "iceland-stag": (_M, g) => animals.cervidAt(g, walk({ kind: "reindeer", sex: "m" })),
   },
   yellowstone: {
+    "yellowstone-cougar": (_M, g) => animals.felidAt(g, walk({ kind: "cougar" }), 0),
+    "yellowstone-cougar-sitting": (_M, g) => animals.felidAt(g, walk({ kind: "cougar", state: "sit", pose: "sit" }), 0),
+    "yellowstone-cougar-lying": (_M, g) => animals.felidAt(g, walk({ kind: "cougar", state: "sit", pose: "lie" }), 0),
+    "yellowstone-cougar-stretching": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "cougar", state: "sit", pose: "bow" }), 0),
     "yellowstone-bison": (M, g) => M.bisonAt(g, walk({ scale: 1 })),
     "yellowstone-bison-grazing": (M, g) => M.bisonAt(g, walk({ scale: 1, state: "sit" })),
     "yellowstone-bison-calf": (M, g) => M.bisonAt(g, walk({ scale: 0.55 })),

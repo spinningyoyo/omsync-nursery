@@ -5,7 +5,8 @@
 // rocky crag; by day a bald eagle and a trumpeter swan fly over. The dark theme is a starry night:
 // the cold air condenses far more of the hot spring's steam, and after each eruption it stacks into
 // a moonlit tower that climbs past the peaks.
-import { bearAt, canidAt, cervidAt, flyerAt, raptorAt, sheepAt, swanAt } from "../kit/animals.js";
+// A cougar slips along the valley and rests on it: sitting, lying or stretching.
+import { bearAt, canidAt, cervidAt, felidAt, felidPoses, flyerAt, raptorAt, sheepAt, swanAt } from "../kit/animals.js";
 import {
   doing,
   enter,
@@ -16,6 +17,7 @@ import {
   isNight,
   narrow,
   percher,
+  rest,
   soarAt,
   soarer,
   walker,
@@ -63,6 +65,7 @@ const SURGE_PUFFS = 30;
 const SURGE_LENGTH = 16.5; // seconds from the surge's first puff until its last has faded
 
 const LIGHT = {
+  cougar: { T: "#c49a6c", S: "#a07850", P: "#f0e2cc", D: "#3a2a20", e: "#3a2a20" },
   range: ["#8ea7c0", "#7b95b0", "#64829f"],
   snow: "#ffffff",
   pine: ["#4d7460", "#3b5f4e", "#2b4a3d", "#1f3b30"],
@@ -114,6 +117,7 @@ const LIGHT = {
 };
 
 const DARK = {
+  cougar: { T: "#866b58", S: "#705647", P: "#a29894", D: "#312629", e: "#312629" },
   range: ["#2c3d57", "#22334b", "#1a283d"],
   snow: "#c7d2e4",
   pine: ["#34594a", "#2a4a3c", "#213b30", "#183027"],
@@ -626,6 +630,7 @@ const extras = {
     const cone = f.plants.find((p) => p.kind === "geyserCone");
     const spring = f.plants.find((p) => p.kind === "hotSpring");
     return {
+      cat: walker(f),
       stars: starField(f, STARS, 70),
       cone: { x: cone.x, top: f.groundY + cone.depth - CONE_ROWS },
       spring,
@@ -656,6 +661,7 @@ const extras = {
   // then), the elk at 6, the grizzly at 7 and the bison calf at 8. The bighorn takes its crag once
   // the crag has grown.
   onGrow(f) {
+    if (f.stage >= 6 && !narrow(f)) enter(f, f.extra.cat);
     const x = f.extra;
     if (f.stage >= 1) enter(f, x.pronghorn);
     if (f.stage >= 4) enter(f, x.bison);
@@ -675,6 +681,8 @@ const extras = {
   busy: () => true,
 
   update(f, dt) {
+    wander(f, f.extra.cat, dt, { speed: 9, stride: 7, sit: [4, 9], walk: [3, 6] });
+    rest(f, f.extra.cat, felidPoses("cougar"));
     const x = f.extra;
     const g = x.geyser;
     if (f.stage >= 5 && f.time >= g.next) {
@@ -763,6 +771,7 @@ const extras = {
   },
 
   draw(g, f) {
+    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "cougar" }, f.time);
     const x = f.extra;
     const night = isNight(f);
     if (x.spring.shown > 1) {

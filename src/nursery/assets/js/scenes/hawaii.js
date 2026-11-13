@@ -5,8 +5,18 @@
 // hatchling, a pua'a (feral pig) roots about, and a humpback whale spouts offshore. Where the waves
 // break on the sand, spray flies up.
 
-import { crabAt, flyerAt, groundBirdAt, honuShellAt } from "../kit/animals.js";
-import { enter, enterBehind, flyBy, follow, isNight, walker, wander } from "../kit/critters.js";
+// A feral cat (pōpoki) prowls the sand; its coat is one of eleven, picked as the scene loads.
+import {
+  crabAt,
+  felidAt,
+  felidPoses,
+  flyerAt,
+  groundBirdAt,
+  HOUSECAT_COAT_NAMES,
+  HOUSECAT_COATS,
+  honuShellAt,
+} from "../kit/animals.js";
+import { enter, enterBehind, flyBy, follow, isNight, narrow, rest, walker, wander } from "../kit/critters.js";
 import {
   blob,
   clamp,
@@ -36,6 +46,7 @@ const SPRAY_MAX = 60; // droplets at most
 const GRAVITY = 60; // art pixels per second squared: a drop is in the air for up to 0.8 s
 
 const LIGHT = {
+  ...HOUSECAT_COATS.light,
   leaf: ["#bfe6a0", "#8bd070", "#58b45e", "#3a9150"],
   trunk: ["#b99672", "#957452"],
   coconut: "#6b4a2f",
@@ -73,6 +84,7 @@ const LIGHT = {
 };
 
 const DARK = {
+  ...HOUSECAT_COATS.dark,
   leaf: ["#8cc278", "#66a85a", "#478844", "#336b36"],
   trunk: ["#8f7352", "#6e563d"],
   coconut: "#4a3220",
@@ -507,6 +519,7 @@ function updateSpray(f, dt) {
 const extras = {
   init(f) {
     return {
+      cat: { ...walker(f), pal: `housecat-${HOUSECAT_COAT_NAMES[Math.floor(f.rand() * HOUSECAT_COAT_NAMES.length)]}` },
       sea: 0,
       tropicbirds: [
         { next: 3, bird: null },
@@ -526,6 +539,7 @@ const extras = {
 
   // The tide eases in while the scene animates, and jumps to its level under reduced motion.
   onGrow(f) {
+    if (f.stage >= 4 && !narrow(f)) enter(f, f.extra.cat);
     const x = f.extra;
     if (f.reduced) x.sea = tide(f);
     x.crabs.forEach((crab, i) => {
@@ -546,6 +560,8 @@ const extras = {
   busy: () => true,
 
   update(f, dt) {
+    wander(f, f.extra.cat, dt, { speed: 7, stride: 7, sit: [4, 9], walk: [3, 6] });
+    rest(f, f.extra.cat, felidPoses("housecat"));
     const x = f.extra;
     x.sea += (tide(f) - x.sea) * Math.min(1, dt * 0.8);
     if (f.stage >= 2 && !isNight(f))
@@ -622,6 +638,7 @@ const extras = {
   },
 
   draw(g, f) {
+    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "housecat" }, f.time);
     for (const bird of f.extra.tropicbirds) if (bird.bird && !isNight(f)) tropicbirdAt(g, bird.bird, f.time);
     if (f.extra.iiwi.bird && !isNight(f)) flyerAt(g, f.extra.iiwi.bird, f.time, "iiwi");
     for (const c of f.extra.crabs) if (c.active) crabAt(g, c, g.groundY + 5 + c.lane);
