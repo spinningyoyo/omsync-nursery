@@ -6,6 +6,12 @@
 // Tools: pencil, eraser, colour picker and rectangle selection. A selection's pixels can be
 // dragged or nudged with the arrow keys (day and night move together), or deleted at once. Every
 // stroke, move and delete is one step of undo, in one history shared by all frames.
+//
+// Zoom: each sprite opens at Fit, the largest whole zoom that shows all of it. + and - (or
+// Ctrl/⌘ with the wheel, or a pinch) step through ZOOMS, keeping the pixel under the pointer, or
+// the middle of the view, where it was; 0 goes back to Fit. Zoomed past Fit, day and night each
+// scroll in their own pane, kept in step so the same pixel lines up in both. Hold Space and drag,
+// or drag with the middle button, to pan.
 import { describeColour } from "../services/palette.js";
 import { drawZoomed } from "../services/pixels.js";
 import { act } from "../ui/action.js";
@@ -32,6 +38,10 @@ const TOOLS = [
 ];
 
 const signed = (n) => (n >= 0 ? `+${n}` : `${n}`);
+
+// The zooms + and - step through, in screen px per art px.
+const ZOOMS = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64];
+const WHEEL_STEP = 60; // wheel delta, summed, that makes one zoom step (a pinch sends many small ones)
 
 export class EditorView extends LitElement {
   static properties = {
@@ -146,18 +156,42 @@ export class EditorView extends LitElement {
         flex: 1;
       }
       .canvases {
-        display: flex;
-        gap: var(--space-5);
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, max-content);
+        grid-template-rows: minmax(0, 1fr);
         justify-content: center;
-        align-items: center;
+        gap: var(--space-5);
         padding: var(--space-5);
-        overflow: auto;
+        min-height: 0;
       }
       figure {
         display: grid;
+        grid-template-rows: minmax(0, max-content) auto;
+        align-content: center;
         gap: var(--space-2);
         margin: 0;
+        min-height: 0;
+        min-width: 0;
         justify-items: center;
+      }
+      /* Each theme's canvas scrolls in its own pane once it is zoomed past the space. */
+      .pane {
+        display: grid;
+        place-items: safe center;
+        max-width: 100%;
+        max-height: 100%;
+        min-height: 0;
+        overflow: auto;
+      }
+      .pane.panning,
+      .pane.panning .paint {
+        cursor: grab;
+      }
+      .zoom-level {
+        color: var(--muted);
+        font-size: var(--text-xs);
+        font-variant-numeric: tabular-nums;
       }
       figcaption {
         display: flex;
@@ -262,8 +296,13 @@ export class EditorView extends LitElement {
   ];
 
   canvas = { light: createRef(), dark: createRef() };
+  pane = { light: createRef(), dark: createRef() };
   soil = createRef();
   viewport = createRef();
+  level = null; // the zoom chosen with + and -, or null for Fit
+  anchor = null; // the art pixel a zoom keeps in place: { theme, x, y, clientX, clientY }
+  wheelSum = 0;
+  panning = false; // Space is held
 
   constructor() {
     super();
@@ -273,6 +312,10 @@ export class EditorView extends LitElement {
       if (e.key === "o" && this.session) {
         this.session.showOriginal = false;
         this.session.changed();
+      }
+      if (e.key === " " && this.panning) {
+        this.panning = false;
+        this.requestUpdate();
       }
     };
   }
@@ -294,6 +337,8 @@ export class EditorView extends LitElement {
     if (changed.has("session")) {
       changed.get("session")?.removeEventListener("change", this.onChange);
       this.session?.addEventListener("change", this.onChange);
+      this.level = null; // every sprite opens at Fit
+      this.anchor = null;
     }
   }
 
@@ -362,6 +407,17 @@ export class EditorView extends LitElement {
             </button>`
             : nothing
         }
+        <hr />
+        <button class="icon-btn tipped" aria-label="Zoom in" ?disabled=${this.z >= ZOOMS.at(-1)} @click=${() => this.zoomBy(1)}>
+          <n-icon name="zoom-in"></n-icon>${this.tip("Zoom in", "+", "Or Ctrl/⌘ with the wheel, or pinch, over the pixel to zoom on")}
+        </button>
+        <button class="icon-btn tipped" aria-label="Zoom out" ?disabled=${this.z <= ZOOMS[0]} @click=${() => this.zoomBy(-1)}>
+          <n-icon name="zoom-out"></n-icon>${this.tip("Zoom out", "-")}
+        </button>
+        <button class="icon-btn tipped" aria-label="Fit" aria-pressed=${this.level == null} @click=${() => this.zoomTo(null)}>
+          <n-icon name="scan"></n-icon>${this.tip("Fit", "0", "The whole sprite in view. Hold Space and drag, or drag with the middle button, to pan when zoomed in")}
+        </button>
+        <span class="zoom-level" aria-label="Zoom">${this.z ?? ""}×</span>
       </div>
       <div class="work">
         <div>
@@ -394,17 +450,24 @@ export class EditorView extends LitElement {
           <div class="canvases" ${ref(this.viewport)}>
             ${job.themes.map(
               (theme) => html`<figure>
-                <canvas
-                  class="pixels paint ${theme === "light" ? "checker" : "night"} ${s.tool === "select" && s.sel ? "moving" : ""}"
-                  ${ref(this.canvas[theme])}
-                  @pointerdown=${(e) => this.down(e, theme)}
-                  @pointermove=${(e) => this.move(e, theme)}
-                  @pointerup=${() => this.up()}
-                  @pointerleave=${() => {
-                    s.hover = null;
-                    s.changed();
-                  }}
-                ></canvas>
+                <div
+                  class="pane ${this.panning || this.drag?.mode === "pan" ? "panning" : ""}"
+                  ${ref(this.pane[theme])}
+                  @scroll=${(e) => this.syncScroll(e.currentTarget)}
+                  @wheel=${(e) => this.wheel(e, theme)}
+                >
+                  <canvas
+                    class="pixels paint ${theme === "light" ? "checker" : "night"} ${s.tool === "select" && s.sel ? "moving" : ""}"
+                    ${ref(this.canvas[theme])}
+                    @pointerdown=${(e) => this.down(e, theme)}
+                    @pointermove=${(e) => this.move(e, theme)}
+                    @pointerup=${() => this.up()}
+                    @pointerleave=${() => {
+                      s.hover = null;
+                      s.changed();
+                    }}
+                  ></canvas>
+                </div>
                 <figcaption>
                   <n-icon name=${theme === "light" ? "sun" : "moon"} size="14"></n-icon>
                   ${job.same ? "Day and night (they draw the same)" : theme === "light" ? "Day" : s.link ? "Night, painted together with day" : "Night"}
@@ -450,18 +513,99 @@ export class EditorView extends LitElement {
   }
 
   // The largest whole-number zoom that fits the sprite's crop in the space, for each theme.
-  zoom() {
+  fit() {
     const s = this.session;
     const box = this.viewport.value?.getBoundingClientRect();
     const room = box ? Math.min((box.width - 48) / s.job.themes.length - 32, box.height - 48) : 400;
     return Math.max(4, Math.min(32, Math.floor(Math.min(room / s.crop.w, room / s.crop.h))));
   }
 
+  zoom() {
+    return this.level ?? this.fit();
+  }
+
+  // Zooms to `level` (null for Fit), keeping `anchor`'s art pixel under the same spot on screen;
+  // without one, the pixel in the middle of the day pane.
+  zoomTo(level, anchor = this.middle()) {
+    if (level === this.level) return;
+    this.level = level;
+    this.anchor = anchor;
+    this.requestUpdate();
+  }
+
+  // One step along ZOOMS from the zoom on show, in or out.
+  zoomBy(step, anchor) {
+    const z = this.z ?? this.zoom();
+    const next = step > 0 ? (ZOOMS.find((v) => v > z) ?? ZOOMS.at(-1)) : (ZOOMS.findLast((v) => v < z) ?? ZOOMS[0]);
+    this.zoomTo(next, anchor);
+  }
+
+  // The art pixel (fractional) at a point on screen, over a theme's canvas.
+  artAt(theme, clientX, clientY) {
+    const canvas = this.canvas[theme].value;
+    if (!canvas || !this.z) return null;
+    const box = canvas.getBoundingClientRect();
+    const { crop } = this.session;
+    return {
+      theme,
+      x: crop.x + (clientX - box.left) / this.z,
+      y: crop.y + (clientY - box.top) / this.z,
+      clientX,
+      clientY,
+    };
+  }
+
+  middle() {
+    const theme = this.session?.job.themes[0];
+    const pane = theme && this.pane[theme].value;
+    if (!pane) return null;
+    const box = pane.getBoundingClientRect();
+    return this.artAt(theme, box.left + box.width / 2, box.top + box.height / 2);
+  }
+
+  // Ctrl/⌘ with the wheel, and a trackpad pinch (which the browser sends as one), zoom on the pixel
+  // under the pointer; the wheel alone scrolls the pane as usual.
+  wheel(e, theme) {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    this.wheelSum += e.deltaY;
+    if (Math.abs(this.wheelSum) < WHEEL_STEP) return;
+    const step = this.wheelSum < 0 ? 1 : -1;
+    this.wheelSum = 0;
+    this.zoomBy(step, this.artAt(theme, e.clientX, e.clientY));
+  }
+
+  // Keeps every pane scrolled to the same spot as the one that moved.
+  syncScroll(from) {
+    for (const theme of this.session?.job.themes ?? []) {
+      const pane = this.pane[theme].value;
+      if (!pane || pane === from) continue;
+      if (pane.scrollLeft !== from.scrollLeft) pane.scrollLeft = from.scrollLeft;
+      if (pane.scrollTop !== from.scrollTop) pane.scrollTop = from.scrollTop;
+    }
+  }
+
+  // After a zoom, scrolls so the anchor's art pixel is back under the spot it was at.
+  keepAnchor() {
+    const a = this.anchor;
+    this.anchor = null;
+    const canvas = a && this.canvas[a.theme].value;
+    const pane = a && this.pane[a.theme].value;
+    if (!canvas || !pane) return;
+    const box = canvas.getBoundingClientRect();
+    const { crop } = this.session;
+    pane.scrollLeft += box.left + (a.x - crop.x) * this.z - a.clientX;
+    pane.scrollTop += box.top + (a.y - crop.y) * this.z - a.clientY;
+    this.syncScroll(pane);
+  }
+
   updated() {
     const s = this.session;
     if (!s || !this.isConnected) return;
     const z = this.zoom();
+    const shown = this.z;
     this.z = z;
+    if (z !== shown) this.requestUpdate(); // the toolbar shows the zoom
     const { crop } = s;
     for (const theme of s.job.themes) {
       const canvas = this.canvas[theme].value;
@@ -508,6 +652,7 @@ export class EditorView extends LitElement {
       }
     }
     this.drawSoil();
+    if (this.anchor) this.keepAnchor();
   }
 
   // The day sprite standing on a strip of its scene's soil, at the sign-in page's scale.
@@ -559,6 +704,15 @@ export class EditorView extends LitElement {
 
   down(e, theme) {
     const s = this.session;
+    if (this.panning || e.button === 1) {
+      // Pan: Space and drag, or a middle-button drag.
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      const pane = this.pane[theme].value;
+      this.drag = { mode: "pan", pane, x: e.clientX, y: e.clientY, left: pane.scrollLeft, top: pane.scrollTop };
+      this.requestUpdate();
+      return;
+    }
     if (s.showOriginal || e.button !== 0) return;
     e.currentTarget.setPointerCapture(e.pointerId);
     const at = this.cell(e);
@@ -583,6 +737,12 @@ export class EditorView extends LitElement {
 
   move(e, theme) {
     const s = this.session;
+    if (this.drag?.mode === "pan") {
+      const d = this.drag;
+      d.pane.scrollLeft = d.left - (e.clientX - d.x);
+      d.pane.scrollTop = d.top - (e.clientY - d.y);
+      return;
+    }
     const at = this.cell(e);
     s.hover = { theme, ...at };
     const d = this.drag;
@@ -641,6 +801,29 @@ export class EditorView extends LitElement {
       return;
     }
     if (mod) return;
+    if (e.key === " ") {
+      e.preventDefault(); // Space held pans, rather than scrolling the page or pressing a button
+      if (!this.panning) {
+        this.panning = true;
+        this.requestUpdate();
+      }
+      return;
+    }
+    if (e.key === "+" || e.key === "=") {
+      e.preventDefault();
+      this.zoomBy(1);
+      return;
+    }
+    if (e.key === "-" || e.key === "_") {
+      e.preventDefault();
+      this.zoomBy(-1);
+      return;
+    }
+    if (e.key === "0") {
+      e.preventDefault();
+      this.zoomTo(null);
+      return;
+    }
     const arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     if (s.sel && arrows[e.key]) {
       e.preventDefault();

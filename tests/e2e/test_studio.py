@@ -167,3 +167,91 @@ def test_the_mascot_opens_in_the_brand_editor_at_32_by_22(chrome: Any, studio: s
     for width, height in sizes:
         assert width * 22 == height * 32, sizes
     assert console_problems(chrome) == []
+
+
+# The pixel the pointer is over in the day pane's middle, as the editor's status line reads it.
+HOVER_MIDDLE = """
+const [pane] = deep('editor-view .pane');
+const canvas = pane.querySelector('canvas');
+const box = pane.getBoundingClientRect();
+canvas.dispatchEvent(new PointerEvent('pointermove', {
+  clientX: box.left + box.width / 2, clientY: box.top + box.height / 2, bubbles: true,
+}));
+"""
+STATUS_PIXEL = (
+    "const t = deep('editor-view .status-row')[0].textContent;"
+    " return (t.match(/x (\\d+), y (\\d+)/) || []).slice(1).join(',')"
+)
+
+
+def hovered(chrome: Any) -> str:
+    chrome.execute_script(HOVER_MIDDLE)
+    assert wait_for(
+        chrome, "/x \\d+, y \\d+/.test(deep('editor-view .status-row')[0].textContent)", 5
+    )
+    return chrome.execute_script(STATUS_PIXEL)
+
+
+# The editor's zoom, in screen px per art px, as its toolbar shows it (a number and a times sign).
+ZOOM = "parseInt(deep('editor-view .zoom-level')[0].textContent, 10)"
+PANES_IN_STEP = "deep('editor-view .pane').every((p, _, ps) => p.scrollLeft === ps[0].scrollLeft)"
+
+
+def zoom_of(chrome: Any) -> int:
+    return chrome.execute_script(f"return {ZOOM}")
+
+
+def press(chrome: Any, key: str) -> None:
+    chrome.execute_script(
+        "window.dispatchEvent(new KeyboardEvent('keydown', {key: arguments[0]}))", key
+    )
+
+
+def test_the_pixel_editor_zooms_on_the_pixel_in_view_and_back_to_fit(
+    chrome: Any, studio: str
+) -> None:
+    open_studio(chrome, studio)
+    show(chrome, "Icons")
+    # The mascot: day and night in two panes, so the test sees them scroll together.
+    assert wait_for(chrome, "deep('icons-view .brand button').length >= 1", 10)
+    chrome.execute_script("clickButton('icons-view .brand', 'Edit')")
+    assert wait_for(chrome, "deep('editor-view .pane').length === 2", 10)
+    width = "return deep('editor-view canvas.paint')[0].width"
+    assert wait_for(chrome, f"{ZOOM} > 0", 5)
+    fit = zoom_of(chrome)
+    fit_width = chrome.execute_script(width)
+    fit_pressed = "return deep('editor-view [aria-label=Fit]')[0].ariaPressed"
+    assert chrome.execute_script(fit_pressed) == "true"
+    middle = hovered(chrome)
+
+    # + zooms one step in and keeps the pixel in the middle where it was.
+    press(chrome, "+")
+    assert wait_for(chrome, f"{ZOOM} !== {fit}", 5)
+    zoomed = zoom_of(chrome)
+    assert zoomed > fit
+    assert chrome.execute_script(width) == fit_width // fit * zoomed
+    assert chrome.execute_script(fit_pressed) == "false"
+    assert hovered(chrome) == middle
+
+    # Ctrl and the wheel zoom further, on the pixel under the pointer.
+    chrome.execute_script(
+        "const [pane] = deep('editor-view .pane'); const b = pane.getBoundingClientRect();"
+        " pane.dispatchEvent(new WheelEvent('wheel', {deltaY: -120, ctrlKey: true, bubbles: true,"
+        " cancelable: true, clientX: b.left + b.width / 2, clientY: b.top + b.height / 2}))"
+    )
+    assert wait_for(chrome, f"{ZOOM} !== {zoomed}", 5)
+    assert zoom_of(chrome) > zoomed
+    assert hovered(chrome) == middle
+
+    # Day and night scroll together.
+    chrome.execute_script("deep('editor-view .pane')[0].scrollLeft += 7")
+    assert wait_for(chrome, PANES_IN_STEP, 5)
+    assert chrome.execute_script("return deep('editor-view .pane')[1].scrollLeft") > 0
+
+    # 0 goes back to Fit.
+    press(chrome, "0")
+    assert wait_for(chrome, f"{ZOOM} === {fit}", 5)
+    assert chrome.execute_script(width) == fit_width
+    show(chrome, "Icons")
+    assert wait_for(chrome, "!deep('editor-view').length", 10)
+    assert console_problems(chrome) == []
