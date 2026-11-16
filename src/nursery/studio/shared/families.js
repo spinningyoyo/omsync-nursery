@@ -139,12 +139,12 @@ export const FAMILIES = [
     group: "Birds",
     differ: "size, colour, head",
     members: {
-      meadow: ["eagle"],
-      yellowstone: ["eagle"],
+      meadow: ["eagleGolden"],
+      yellowstone: ["eagleBald"],
       desert: ["hawk", "vulture"],
-      serengeti: ["vulture"],
+      serengeti: ["vultureAfrica"],
       rainforest: ["serpent"],
-      smokies: ["eagle"],
+      smokies: ["eagleGolden"],
     },
     storybook: { wonderland: ["vulture"] },
   },
@@ -161,8 +161,9 @@ export const FAMILIES = [
       iceland: ["puffin"],
       yellowstone: ["bluebird"],
       smokies: ["cardinal", "swift"],
+      hundredacre: ["kessie"],
     },
-    storybook: { hundredacre: ["kessie"], wonderland: ["pigeon", "lory"] },
+    storybook: { wonderland: ["pigeon", "lory"] },
   },
   {
     id: "long-necked-birds",
@@ -222,7 +223,7 @@ export const FAMILIES = [
     id: "conifers",
     title: "Conifers",
     group: "Trees",
-    differ: "trunk, height, clump layout",
+    differ: "height, colour, how wide and low the tiers reach, droop and hang",
     members: {
       meadow: ["sequoia", "tree-pine"],
       hundredacre: ["pine", "fir"],
@@ -267,3 +268,75 @@ export function roleIn(family, sid, name) {
 
 // Whether any family lists a scene's sprite.
 export const hasFamily = (sid, name) => FAMILIES.some((family) => roleIn(family, sid, name));
+
+// ---- Tags the checks read: the scale, predators and how crowded a scene may be ----------------------
+
+// The scale (the nursery-scene skill's Size rule). An adult's body is drawn `len` px long (its build's
+// spec), following its real head-and-body length in metres, compressed: px = a x metres^k, within
+// `tolerance` (and at least `least` px either way). a and k were fitted to the cast on 2026-11-16,
+// leaving out the five that stood far off it (the cheetah, cougar, both bears, the clouded leopard).
+export const SCALE = { a: 11.3, k: 0.39, tolerance: 0.15, least: 2 };
+
+// Each adult build's real head-and-body length in metres: a typical adult, a male where the build is
+// one. Keys are "family/member" as the checks name them. Left off: the young, the storybook cast, the
+// birds and small animals whose builds have no body length yet, and the giraffe (its head-and-body
+// length is mostly neck, which its body length leaves out).
+export const REAL_LENGTH = {
+  "cats/cat": 0.46,
+  "cats/bobcat": 0.8,
+  "cats/clouded-leopard": 0.9,
+  "cats/cheetah": 1.25,
+  "cats/cougar": 1.3,
+  "cats/lion": 2.0,
+  "dogs/arctic-fox": 0.55,
+  "dogs/fox": 0.65,
+  "dogs/coyote": 0.9,
+  "dogs/wolf": 1.2,
+  "bears/bear": 1.6,
+  "bears/grizzly": 2.1,
+  "deer/pronghorn": 1.4,
+  "deer/deer": 1.6,
+  "deer/deer-buck": 1.9,
+  "deer/stag-cow": 1.7,
+  "deer/stag": 2.0,
+  "deer/elk-cow": 2.1,
+  "deer/elk": 2.4,
+  "cattle-sheep/bighorn": 1.6,
+  "cattle-sheep/bison": 3.0,
+  "horses/zebra": 2.3,
+  "elephants/elephant-asian": 5.5,
+  "elephants/elephant-african": 6.0,
+};
+
+// The body length the scale gives for a real length, and the range it allows.
+export function scaleOf(metres) {
+  const target = SCALE.a * metres ** SCALE.k;
+  const room = Math.max(target * SCALE.tolerance, SCALE.least);
+  return { target, low: target - room, high: target + room };
+}
+
+// Predators; every other animal in a scene is prey (the food chain needs both).
+export const PREDATORS = new Set([
+  "bears/bear",
+  "bears/grizzly",
+  "dogs/fox",
+  "dogs/coyote",
+  "dogs/wolf",
+  "cats/lion",
+  "cats/cheetah",
+  "cats/cougar",
+  "cats/bobcat",
+  "cats/clouded-leopard",
+  "cats/cat",
+  "soaring-birds/hawk",
+  "soaring-birds/eagle-golden",
+  "soaring-birds/eagle-bald",
+  "soaring-birds/vulture",
+  "ground-birds/secretary",
+  "ground-birds/roadrunner",
+  "owls/owl",
+]);
+
+// Open scenes keep at most 5 ground animals and one flyer at a time; every other scene is dense, at
+// most 8 (the skill's feel and density).
+export const OPEN_SCENES = new Set(["desert", "hawaii", "serengeti"]);

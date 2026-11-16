@@ -8,2160 +8,1668 @@
 // same sprite at a smaller scale.
 //
 // A family's palette is read from g.pal under the animal's `pal` field, or the family's own name,
-// so a scene can keep two variants of one family apart.
-import { part, scaledPart, sprite } from "./pixel.js";
+// so a scene can keep two variants of one family apart. Each driver (an `...At` function) works out
+// its pose and hands it to place.js's paintAt, which lays the build's cells on the page over the
+// ground shadow, in the scene's groundShadow colour. The birds in the air are in flyers.js, their
+// visits to a perch in perch.js, and the cats' specs and coats in felid.js.
+import {
+  STANCE as BEAR_STANCE,
+  BLACK,
+  bearTones,
+  CUB,
+  climbAt,
+  drawBear,
+  drawClimb,
+  GRIZZLY,
+  grizzlyTones,
+} from "./bear.js";
+import { BEASTS, beastFrame, beastTones, drawBeast, harePoses } from "./beast.js";
+import { drawBody, roarAt, STANCE, yawnAt } from "./body.js";
+import { BIGHORN, BISON, bisonTones, CALF, calfTones, drawBovid, RAM_TURN_HEAD, sheepTones } from "./bovid.js";
+import {
+  ARCTIC,
+  STANCE as CANID_STANCE,
+  COYOTE,
+  dogTones,
+  drawDog,
+  howlAt,
+  PUP,
+  pounceAt,
+  RED,
+  WOLF,
+  YEARLING,
+} from "./canid.js";
+import { castPose, castTones, drawCast, drawLooseBalloon, swarmAt as drawSwarm } from "./cast.js";
+import { doing, stride } from "./critters.js";
+import {
+  boundRise,
+  bugleAt,
+  GAITS as DEER_GAITS,
+  DEER_SPECS,
+  drawDeer,
+  elkTones,
+  pronghornTones,
+  reindeerTones,
+  whitetailTones,
+} from "./deer.js";
+import {
+  AFRICAN,
+  AFRICAN_CALF,
+  ASIAN,
+  ASIAN_CALF,
+  CURL,
+  curlAt,
+  DUST,
+  drawElephant,
+  dustAt,
+  STANCE as ELEPHANT_STANCE,
+  elephantTones,
+  TRUMPET,
+  trumpetAt,
+} from "./elephant.js";
+import { FELIDS, felidTones } from "./felid.js";
+import { drawGiraffe, GIRAFFE, GAIT as GIRAFFE_GAIT, giraffeTones, muzzleAt } from "./giraffe.js";
+import {
+  CYCLE,
+  drawBird as drawGroundBird,
+  MEMBERS as GROUND_MEMBERS,
+  groundTones,
+  restPose,
+  restPoses,
+  STRUT,
+  speedOf,
+} from "./groundbird.js";
+import {
+  drawHorse,
+  EEYORE,
+  eeyoreTones,
+  FOAL,
+  GAIT as HORSE_GAIT,
+  dustAt as horseDustAt,
+  ZEBRA,
+  zebraTones,
+} from "./horse.js";
+import {
+  drawFlamingo,
+  drawSwan,
+  flamingoFly,
+  flamingoRest,
+  flamingoTones,
+  flamingoWade,
+  mixPose,
+  ring,
+  SWAN_RESTS,
+  SWAN_SPEED,
+  swanFly,
+  swanRest,
+  swanSwim,
+  swanTones,
+  swanWalk,
+  wake,
+} from "./longneck.js";
+import { drawPig, legClock, restPose as pigRest, pigTones, walkPose as pigWalk, WALLOW_SECONDS } from "./pig.js";
+import { hash, shadowColour, smooth } from "./pixel.js";
+import { blinkAt, breathAt, ease, feetSpan, paintAt, plotter, sinceOf, tonesFor } from "./place.js";
+import {
+  CALL_SECONDS,
+  drawPrimate,
+  GIBBON,
+  REACH as GIBBON_REACH,
+  gibbonCallAt,
+  gibbonLeap,
+  gibbonSwing,
+  gibbonTones,
+  HOP,
+  LANGUR,
+  langurHop,
+  langurPose,
+  langurTones,
+  MACAQUE,
+  macaquePose,
+  macaqueTones,
+  REACH_SECONDS,
+  reachAt,
+} from "./primate.js";
+import {
+  baskAt,
+  CRAB,
+  CRAB_POSES,
+  CRAWL,
+  crabFrame,
+  crabTones,
+  crawlAt,
+  drawBuzz,
+  drawCrab,
+  drawGrains,
+  drawHatchling,
+  drawHonu,
+  drawSnake,
+  drawTortoise,
+  HATCHLING,
+  HONU,
+  hatchTones,
+  honuTones,
+  SNAKE_POSES,
+  SNAKE_UNITS,
+  snakeFrame,
+  snakeTones,
+  strokeAt,
+  swimAt,
+  TORTOISE,
+  TORTOISE_POSES,
+  tortoiseFrame,
+  tortoiseTones,
+} from "./shell.js";
+import {
+  BOUND_CYCLE,
+  boundBeat,
+  boundX,
+  drawOtter,
+  drawSeal,
+  drawWhale,
+  otterRest,
+  otterTones,
+  SEAL_CYCLE,
+  SEAL_ROLL_SECONDS,
+  sealCycle,
+  sealRest,
+  sealTones,
+} from "./swimmer.js";
 
 // The row an animal's feet stand on: the soil line, or a perch's top when it has a `y`.
 const feet = (g, a) => a.y ?? g.groundY + 7;
 
-// Walking legs: the diagonal pairs lift in turn. Returns whether the leg at index i is lifted.
-const lifted = (a, i) => a.state === "walk" && (Math.floor(a.phase) % 2 === 0) === (i === 0 || i === 3);
-
 // Bears
 
-// One bear, in two sizes. Both have a flat back, two ears raised on the crown, a tan muzzle and a
-// sheen on the back. The grizzly is the larger, its coat paler under the belly and chest. B is the
-// coat, S its sheen or silver, M the muzzle and N the nose.
-const BEARS = {
-  black: {
-    leg: 4,
-    legs: [2, 4, 10, 12],
-    body: [
-      "..BBBBBBBBB....B..B.",
-      ".BBBBBBBBBBBBBBBBBB.",
-      "BBBSSSSSBBBBBBBBBBB.",
-      "BBBBBBBBBBBBBBBBBBMM",
-      "BBBBBBBBBBBBBBBBBMMN",
-      "BBBBBBBBBBBBBBBB....",
-      ".BBBBBBBBBBBBBB.....",
-      "..BBBB....BBBB......",
-    ],
-  },
-  grizzly: {
-    leg: 5,
-    legs: [2, 4, 12, 14],
-    body: [
-      ".....BBBBBBBBBB...B..B.",
-      "..BBBBBBBBBBBBBBBBBBBB.",
-      ".BBBSSSBBBBBBBBBBBBBBB.",
-      "BBBBBBBBBBBBBBBBBBBBBMM",
-      "BBBBBBBBBBBBBBBBBBBBMMN",
-      "BBBBBBBBBBBBBBBBBBB....",
-      "BBBBBBBBBBBBBBBBBS.....",
-      ".BBBBBBSSSSBBBBBSS.....",
-      "..BBBBS....SBBBSS......",
-    ],
-  },
-};
+// Built from parts (bear.js): the black bear, the grizzly (kind "grizzly") and the cub (`cub` true).
+// A bear walks with its feet planted, eases to a stop and rests in the pose rest() picked as it
+// stopped (bearPoses: foraging with its head down and its whole front sloping to the ground, sitting
+// up on its rump, lying, or reared up to sniff the air, or just standing and looking about); standing
+// it breathes, blinks and now and then lifts its head. State "rear" is the sniff the scene times: it
+// rears up (the nose lifting in bursts, faint wisps of air drifting in to it) and eases back down by
+// the end of b.timer, the seconds it has left. b.since (settle, critters.js) is when its state
+// changed; b.pose names a pose to show on demand (with since and timer set). A cub whose b.climb is
+// { t, lead, up, hold, down, tail, height } (seconds into the climb, and the tree's height in px) is
+// on a trunk: x is where the cub stood, and the bark is 7 px in front of it. Its palette is the
+// scene's array under b.pal or "bear" ([coat, sheen, muzzle, nose, legs]) with the scene's groundShadow
+// and bearScent beside it.
+const BEAR_SPECS = { black: BLACK, grizzly: GRIZZLY };
+const BEAR_EASE = 0.3; // seconds a walk takes to start or stop
+const BEAR_POSE = 0.7; // seconds it takes to go down to a pose or come up from it
+const BEAR_POSES = new Set(["stand", "forage", "sit", "lie", "rear"]);
 
-// A cub, drawn on its own rather than shrunk from its mother: a smaller, rounder head with one
-// small ear showing side on, a rounded back that runs over to the front legs and into the head,
-// and short legs.
-const BEAR_CUB = ["..BBBBB..B..", ".BBBBBBBBBB.", "BBBBBBBBBBBM", "BBBBBBBBBBMN", ".BBBBBBBB..."];
-const CUB_LEGS = [1, 2, 6, 7];
+// The poses a bear rests in as it stops (for rest(), critters.js): the cub does not lie or rear.
+export const bearPoses = (b) =>
+  b.cub ? ["stand", "forage", "sit"] : ["forage", "forage", "stand", "sit", "lie", "rear"];
 
-// Reared up on its hind legs to sniff the air.
-const BEAR_STAND = [
-  "....B.B..",
-  "....BBB..",
-  "....BBBMM",
-  "....BBBMN",
-  "...BBBB..",
-  "..BBBBBB.",
-  "..BSBBBBB",
-  "..BBBBB.B",
-  "..BBBBB..",
-  ".BBBBBB..",
-  ".BBBBBB..",
-  ".BSBBBB..",
-  "BBBBBBB..",
-  "BBBBBBB..",
-  ".BB..BB..",
-  ".BB..BB..",
-  "BBB.BBB..",
-];
-
-// A bear walking, or reared up when its state is "rear". A cub (`cub` true) walks as its own
-// sprite; reared up, as when it climbs, it is the adult's pose at its scale. Its palette is bear:
-// [coat, sheen, muzzle, nose, legs].
-export function bearAt(g, b) {
-  const [coat, sheen, muzzle, nose, legs] = g.pal[b.pal ?? "bear"];
-  const colours = { B: coat, S: sheen, M: muzzle, N: nose };
-  const k = b.scale ?? 1;
-  const x = Math.round(b.x);
-  const y = feet(g, b);
-  if (b.state === "rear") {
-    sprite(g, BEAR_STAND, colours, x, y, b.dir, 2, BEAR_STAND.length, k);
-    return;
+export function bearAt(g, b, time = 0) {
+  if (g.trace) return g.trace.draw(bearAt, g, b, time);
+  const spec = b.cub ? CUB : (BEAR_SPECS[b.kind] ?? BLACK);
+  const colours = g.pal[b.pal ?? "bear"];
+  const grizzly = b.kind === "grizzly";
+  const pal = tonesFor(colours, grizzly ? "grizzly" : "bear", () => (grizzly ? grizzlyTones : bearTones)(colours));
+  pal.scent = g.pal.bearScent;
+  const since = sinceOf(b, time);
+  const walking = b.state === "walk";
+  const left = b.timer ?? 100;
+  const bodyX = b.x * b.dir;
+  let pose = {
+    phase: bodyX / (spec.stride / BEAR_STANCE),
+    bodyX,
+    amp: ease(walking, since, BEAR_EASE),
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, b.phase ?? 0, 3.2),
+  };
+  let climbing = null;
+  if (b.climb) {
+    const c = climbAt(b.climb);
+    if (c.rest) pose = { ...pose, bodyX: null, amp: 0, phase: 0, rest: c.rest, breath: 0 };
+    else climbing = c;
+  } else if (!walking) {
+    const name = b.state === "rear" ? "rear" : BEAR_POSES.has(b.pose) ? b.pose : "stand";
+    const u = Math.max(0, Math.min(1, (since - BEAR_EASE * 0.8) / BEAR_POSE, left / BEAR_POSE));
+    if (name !== "stand") pose.rest = { from: "stand", to: name, u };
+    const held = u >= 1;
+    const burst = (t) => (t * 1.1) % 1 < 0.55 && Math.floor(t * 7) % 2 === 0;
+    if (name === "rear" && held && left > 0.3) {
+      pose.scent = since;
+      pose.blink = false;
+      pose.sniff = burst(time) ? 1 : 0;
+    } else if (name === "forage" && held) pose.sniff = burst(time) ? -1 : 0;
+    else if (name === "lie" && held && left > 0.8) pose.eyesShut = ((time + (b.phase ?? 0)) / 6) % 1 > 0.3;
+    // Now and then it lifts its head to look about.
+    else if (name === "stand" && since > 1 && since < 1.6) pose.headUp = 1;
   }
-  if (b.cub) {
-    CUB_LEGS.forEach((dx, i) => {
-      part(g, legs, x, y, b.dir, dx, -2, 1, lifted(b, i) ? 1 : 2);
-    });
-    sprite(g, BEAR_CUB, colours, x, y, b.dir, 0, BEAR_CUB.length + 2);
-    return;
-  }
-  const kind = BEARS[b.kind ?? "black"];
-  const px = scaledPart(g, x, y, b.dir, k);
-  kind.legs.forEach((dx, i) => {
-    px(legs, dx, -kind.leg, 2, lifted(b, i) ? kind.leg - 1 : kind.leg);
-  });
-  sprite(g, kind.body, colours, x, y, b.dir, 0, kind.body.length + kind.leg, k);
+  paintAt(
+    g,
+    Math.round(b.x),
+    feet(g, b),
+    b.dir,
+    (plot) => (climbing ? drawClimb(pal, plot, climbing) : drawBear(spec, pal, plot, pose)),
+    climbing ? null : { colour: shadowColour(g.pal), span: feetSpan },
+  );
 }
 
 // Dogs
 
-// Foxes, coyotes and wolves share one build: a trunk on four thin legs, a head with a pointed
-// muzzle and ears, and a tail. They differ in length, leg height and tail: the fox's brush is long
-// and level, the wolf's hangs. A red fox wears black stockings and ears; a wolf has a thick neck ruff
-// and a deep pale chest. The far legs take the darker shade.
-const CANIDS = {
-  red: { body: 7, high: 3, leg: 3, tail: 4, ear: 2, hang: 0, stockings: true },
-  arctic: { body: 6, high: 3, leg: 2, tail: 3, ear: 1, hang: 0, stockings: false },
-  coyote: { body: 8, high: 3, leg: 4, tail: 4, ear: 2, hang: 1, stockings: false },
-  wolf: { body: 9, high: 4, leg: 5, tail: 4, ear: 2, hang: 2, stockings: false, ruff: true },
+// Built from parts (canid.js): the wolf and its yearling, the coyote, the red and arctic foxes, and
+// a pup (any kind below scale 0.8). A dog walks with its feet planted, eases to a stop and rests in
+// the pose settleCanid picked as it stopped (standing and looking about, sitting, or lying), and in
+// a long stop may get up and stretch into the play bow before it walks on. c.state "howl" sits it
+// up to howl, rings of sound leaving the raised muzzle; "pounce" (the red fox, held c.lift pixels
+// off the ground) springs nose up and dives nose down, landing in a sit. c.since is when its state
+// last changed (settleCanid); c.pose ("stand", "sit", "lie" or "bow") and c.actAt (seconds into a
+// howl or pounce) show a pose on demand. Its palette is the scene's array under its kind (coat, dark,
+// pale, eye, tail tip) with the scene's `canid` entry beside it (the mouth, the howl's sound,
+// and dark at night), and its groundShadow.
+const CANID_SPECS = { wolf: WOLF, coyote: COYOTE, red: RED, arctic: ARCTIC };
+const CANID_SHADOW_COLUMNS = {
+  wolf: [-3, 16],
+  yearling: [-3, 15],
+  coyote: [-3, 14],
+  red: [-4, 13],
+  arctic: [-3, 11],
+  pup: [-2, 9],
 };
+const CANID_OWN = { R: "#6e2c2c", howl: "#5f6f84", dark: false };
+const CANID_POSES = new Set(["stand", "sit", "lie", "bow"]);
+const CANID_EASE = 0.25; // seconds a walk takes to start or stop
+const CANID_SETTLE = 0.5; // seconds it takes to sit or lie down
+const CANID_RISE = 0.5; // seconds it takes to get up
+const CANID_SIT_TO_HOWL = 0.4;
 
-// C is the coat, E the eye and nose, L the pale cheek; the head's top-left cell sits on the neck.
-const CANID_HEAD = ["CCC..", "CECCE", ".LLL."];
-const CANID_HOWL = ["...E", "..CC", ".CCC", "CEC.", "LL.."];
-const CANID_DOWN = ["CCC..", "CECC.", ".LLCE"];
-
-// A pup (scale below 0.8) is drawn on its own, not shrunk from its parent: two pointed ears, a short
-// back, and a short tail with a dark tip. C is the coat, D the dark, L the pale, E the nose and T the
-// tail's tip. A grid's `cx` and `cy` are the cell that stands on the pup's feet. The walking pup's legs
-// are drawn apart from it, near ones in the coat and far ones in the dark.
-const PUP_WALK = {
-  grid: [".....C.C..", ".....CCC..", "....CCCLLE", "TCCCCCL...", "..CLLLL..."],
-  cx: 2,
-  cy: 7,
-};
-const CANID_PUPS = {
-  coyote: {
-    walk: PUP_WALK,
-    sit: {
-      grid: [
-        ".....C.C..",
-        ".....CCC..",
-        ".....CCCCE",
-        "....CCCLL.",
-        "....CCL...",
-        "..CCCCL...",
-        "..CCCDC...",
-        "TCCCCDC...",
-      ],
-      cx: 2,
-      cy: 8,
-    },
-    howl: {
-      grid: [
-        ".......E.",
-        ".......CL",
-        "....CCCCL",
-        ".....CCL.",
-        "....CCL..",
-        "....CCL..",
-        "..CCCCL..",
-        "..CCCDC..",
-        "TCCCCDC..",
-      ],
-      cx: 2,
-      cy: 9,
-    },
-  },
-  arctic: {
-    walk: PUP_WALK,
-    sit: {
-      grid: ["...C.C.", "...CCCE", "..CCCL.", ".CCLL..", ".CCLL..", "CCCDC.."],
-      cx: 1,
-      cy: 6,
-    },
-  },
-};
-
-// Touch-ups to the wolf and its yearling, as extra coat pixels [dx, dy] from the feet: a smoother line
-// from the neck to the back, an ear and a tail. Keyed by kind and scale, then walking or sitting.
-const CANID_PATCHES = {
-  "wolf-1": {
-    walk: [
-      [7, -12],
-      [5, -11],
-      [1, -10],
-      [2, -10],
-      [3, -10],
-      [-1, -8],
-    ],
-    sit: [
-      [7, -13],
-      [6, -12],
-      [7, -12],
-      [5, -11],
-      [4, -10],
-      [3, -9],
-      [2, -8],
-      [3, -8],
-      [2, -7],
-      [3, -7],
-    ],
-  },
-  "wolf-0.9": {
-    walk: [
-      [6, -11],
-      [2, -9],
-      [3, -9],
-      [-1, -7],
-    ],
-    sit: [
-      [6, -11],
-      [4, -9],
-      [3, -8],
-      [2, -7],
-      [3, -7],
-      [2, -6],
-      [3, -6],
-    ],
-  },
-};
-
-// A fox, coyote or wolf, walking, sitting (`sit`), howling (`howl`) or mid-pounce (`pounce`, held
-// `lift` pixels off the ground, nose down). Its palette is [coat, dark, pale, eye, tail tip].
-function canidBase(g, c) {
-  const s = CANIDS[c.kind];
-  const [coat, dark, pale, eye, tip] = g.pal[c.pal ?? c.kind];
-  const colours = { C: coat, E: eye, L: pale };
+function canidSpec(c) {
   const k = c.scale ?? 1;
-  const x = Math.round(c.x);
-  const y = feet(g, c) - Math.round(c.lift ?? 0);
-  const px = scaledPart(g, x, y, c.dir, k);
-  const legs = s.stockings ? dark : coat;
-  const top = s.leg + s.high;
-  const pups = k < 0.8 ? (CANID_PUPS[c.kind] ?? CANID_PUPS.coyote) : null;
-  const pose = c.state === "sit" ? pups?.sit : c.state === "howl" ? pups?.howl : pups?.walk;
-  if (pose && c.state !== "pounce") {
-    if (pose === pups.walk) {
-      [1, 2, 3, 4].forEach((dx, i) => {
-        const far = i === 1 || i === 2;
-        part(g, far ? dark : legs, x, y, c.dir, dx, -2, 1, lifted(c, i) ? 1 : 2);
-      });
-    }
-    const colours = { C: coat, D: dark, L: pale, E: eye, T: tip };
-    sprite(g, pose.grid, colours, x, y, c.dir, pose.cx, pose.cy);
-    return;
-  }
-  const head = (grid, dx, dy) => sprite(g, grid, colours, x, y, c.dir, -dx, -dy, k);
-  const ears = (dx, dy) => {
-    px(s.stockings ? dark : coat, dx, dy - s.ear, 1, s.ear);
-    px(s.stockings ? dark : coat, dx + 2, dy - s.ear, 1, s.ear);
-  };
-  if (c.state === "sit" || c.state === "howl") {
-    px(coat, -s.tail + 1, -2, s.tail, 2);
-    px(tip, -s.tail + 1, -2, 1, 2);
-    px(coat, 0, -s.high - 2, s.body - 3, s.high + 2);
-    px(coat, s.body - 4, -top - 1, 4, top + 1 - s.leg);
-    px(pale, s.body - 2, -top, 2, s.high);
-    px(dark, s.body - 3, -s.leg, 1, s.leg);
-    px(legs, s.body - 1, -s.leg, 1, s.leg);
-    if (c.state === "howl") {
-      head(CANID_HOWL, s.body - 2, -top - 5);
-      px(s.stockings ? dark : coat, s.body - 3, -top - 3, 2, 1); // one ear laid back
-    } else {
-      px(coat, s.body - 2, -top - 2, 2, 1); // the back of the neck, up into the head
-      if (s.ruff) {
-        px(coat, s.body - 5, -top, 1, 3);
-        px(coat, s.body - 3, -top - 2, 1, 1);
-        px(pale, s.body, -top - 1, 1, 2);
-      }
-      head(CANID_HEAD, s.body - 1, -top - 4);
-      ears(s.body - 1, -top - 4);
-    }
-    return;
-  }
-  const pounce = c.state === "pounce";
-  [1, 3, s.body - 3, s.body - 1].forEach((dx, i) => {
-    const colour = i === 1 || i === 2 ? dark : legs;
-    if (pounce) px(colour, i < 2 ? dx - 2 : dx + 1, -s.leg, 2, 1);
-    else px(colour, dx, -s.leg, 1, lifted(c, i) ? s.leg - 1 : s.leg);
-  });
-  px(coat, 0, -top, s.body, s.high);
-  px(pale, 2, -s.leg - 1, s.body - 4, 1);
-  px(pale, s.body - 2, -top + 1, 2, s.high - 1);
-  px(coat, -s.tail, -top + s.hang, s.tail, 2);
-  px(tip, -s.tail, -top + s.hang, 1, 2);
-  if (pounce) {
-    head(CANID_DOWN, s.body - 1, -top);
-    ears(s.body - 1, -top);
-    return;
-  }
-  px(coat, s.body - 2, -top - 1, 3, 1);
-  if (s.ruff) {
-    px(coat, s.body - 5, -top - 1, 3, 1);
-    px(coat, s.body - 3, -top - 2, 2, 1);
-    px(pale, s.body, -top, 1, 2);
-  }
-  head(CANID_HEAD, s.body - 1, -top - 3);
-  ears(s.body - 1, -top - 3);
+  if (k < 0.8) return PUP;
+  if (c.kind === "wolf" && k < 1) return YEARLING;
+  return CANID_SPECS[c.kind];
 }
 
-export function canidAt(g, c) {
-  canidBase(g, c);
-  const pose = c.state === "sit" ? "sit" : c.state === "howl" || c.state === "pounce" ? null : "walk";
-  const patch = pose && CANID_PATCHES[`${c.kind}-${c.scale ?? 1}`]?.[pose];
-  if (!patch) return;
-  const x = Math.round(c.x);
-  const y = feet(g, c) - Math.round(c.lift ?? 0);
-  for (const [dx, dy] of patch) part(g, g.pal[c.pal ?? c.kind][0], x, y, c.dir, dx, dy, 1, 1);
+// Call after the scene's update has set w.state (wander, a howl, a pounce, or a leader's state for a
+// pup or yearling, passed as `lead` so it rests as its leader does). Records when the state changed
+// and, as a stop begins, the pose it rests in, when the stop ends, and whether it bows before it goes.
+export function settleCanid(f, w, lead = null) {
+  if (w.state === w.was) return;
+  const prev = w.was;
+  w.was = w.state;
+  w.prev = prev;
+  w.since = f.time;
+  if (w.state === "walk") {
+    w.lastPose = prev === "pounce" ? "dive" : prev && prev !== "walk" && !w.bows ? (w.pose ?? "sit") : null;
+    w.pose = null;
+    w.bows = false;
+    return;
+  }
+  if (w.state !== "sit") return;
+  if (prev === "pounce" || prev === "howl") {
+    w.pose = "sit";
+    w.bows = false;
+    return;
+  }
+  const by = lead ?? w;
+  w.stopEnd = f.time + Math.max(0, by.timer ?? 0);
+  if (lead) {
+    w.pose = lead.pose ?? "sit";
+    w.bows = lead.bows ?? false;
+    return;
+  }
+  const stop = w.stopEnd - f.time;
+  const r = hash(Math.round(f.time * 100), Math.round(w.x), 3);
+  w.pose = stop < 1.6 ? "stand" : stop >= 3 && r < 0.5 ? "lie" : "sit";
+  w.bows = stop >= 4.5 && hash(Math.round(f.time * 100), Math.round(w.x), 4) < 0.5;
+}
+
+// The bow before it walks on: in the last 1.6 s of the stop it gets up, bows, holds and stands.
+function canidBow(name, left) {
+  if (left > 1.6 || left < 0) return null;
+  if (left > 1.2) return { from: name, to: "stand", u: (1.6 - left) / 0.4 };
+  if (left > 0.8) return { from: "stand", to: "bow", u: (1.2 - left) / 0.4 };
+  if (left > 0.4) return { from: "bow", to: "bow", u: 0 };
+  return { from: "bow", to: "stand", u: (0.4 - left) / 0.4 };
+}
+
+export function canidAt(g, c, time = 0) {
+  if (g.trace) return g.trace.draw(canidAt, g, c, time);
+  const spec = canidSpec(c);
+  const own = g.pal.canid ?? CANID_OWN;
+  const colours = g.pal[c.pal ?? c.kind];
+  const pal = tonesFor(colours, "canid", () => dogTones(colours, own));
+  const state = c.state;
+  const walking = state === "walk";
+  const since = sinceOf(c, time);
+  const bodyX = c.x * c.dir;
+  const phase = bodyX / (spec.stride / CANID_STANCE);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, CANID_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.75 : Math.sin(time * 1.4) * 0.6,
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, c.phase ?? 0, 3.1),
+    headUp: 0,
+  };
+  let lift = 0;
+  if (state === "pounce") {
+    Object.assign(pose, { rest: pounceAt(c.actAt ?? since), amp: 0, blink: false });
+    lift = Math.max(0, Math.round(c.lift ?? 0));
+  } else if (state === "howl") {
+    const h = c.actAt ?? since;
+    const from = c.prev === "sit" && c.pose !== "stand" ? (c.pose ?? "sit") : "stand";
+    pose.rest = { from, to: "sit", u: h / CANID_SIT_TO_HOWL };
+    const act = howlAt(h - CANID_SIT_TO_HOWL);
+    if (act) Object.assign(pose, act, { blink: false });
+  } else if (walking) {
+    if (c.lastPose && since < CANID_RISE) pose.rest = { from: c.lastPose, to: "stand", u: since / CANID_RISE };
+  } else {
+    const name = CANID_POSES.has(c.pose) ? c.pose : "sit";
+    if (c.prev === "pounce") pose.rest = { from: "dive", to: "sit", u: since / 0.3 };
+    else if (c.prev === "howl") pose.rest = { from: "sit", to: "sit", u: 0 };
+    else if (name !== "stand") pose.rest = { from: "stand", to: name, u: (since - CANID_EASE * 0.6) / CANID_SETTLE };
+    const bow = c.bows && c.stopEnd != null ? canidBow(name, c.stopEnd - time) : null;
+    if (bow) pose.rest = bow;
+    // Now and then it lifts its head to look about.
+    else if (since > 1 && since < 2) pose.headUp = Math.min(1, (since - 1) / 0.25, (2 - since) / 0.25);
+  }
+  // The shadow stays on the ground, shorter the higher the dog is off it.
+  const [s0, s1] = CANID_SHADOW_COLUMNS[spec.id];
+  const shrink = Math.min(Math.floor((s1 - s0) / 2) - 1, Math.round(lift / 2));
+  const shadow = { colour: shadowColour(g.pal), span: [s0 + shrink, s1 - 1 - shrink] };
+  paintAt(g, Math.round(c.x), feet(g, c), c.dir, (plot) => drawDog(spec, pal, plot, pose), shadow, lift);
 }
 
 // Deer
 
-// One build for the family, facing right as written: a level trunk, a neck rising forward, a long
-// head and a pale rump. They differ in size and traits: the elk's dark mane and big rack, the
-// white-tail's white throat and belly and the flag it raises to run, the reindeer's pale neck ruff
-// and short legs, and the pronghorn's white bands and short black horns. C is the coat, S its darker
-// shade, D dark, P pale, R the rump and e the eye and nose.
-const ELK_HEAD = [
-  ".................CC.....",
-  "................DCCCCCC.",
-  "................DCeCCCCe",
-  "..............DDDDCCCC..",
-];
-// The elk's grazing head and neck, as the studio edit left them (meadow-elk-sitting). Cells are
-// final pixels: column 0 is 16 px in front of the feet's x, row 0 is 13 px above the feet's row.
-const ELK_SIT_HEAD = [
-  "DDD..........",
-  "DDDD.........",
-  "DDDDD....P...",
-  "DDDDDD..PP...",
-  "DDDDDDD.P.PP.",
-  "S.DDDDDPPP...",
-  "D..DDDPP..PPP",
-  "D..DDDPD.PP..",
-  "D..DCCCCP....",
-  "D...CeCC.....",
-  "D...CCCCC....",
-  "D....CCCC....",
-  "D......Ce....",
-];
-// The bugling head, raised and thrown forward, as the studio edit drew it (smokies-elk-bugle).
-const ELK_BUGLE = [
-  "..................CCe...",
-  ".................CCCC...",
-  "................CCCCC...",
-  "...............CCCeC....",
-  "..............DDDCCC....",
-];
-// Where the rack sits while bugling: forward and down from where the standing head carries it,
-// [cells forward, cells down], to follow the raised head.
-const BUGLE_RACK = [4, 4];
-// The bull's breath while he bugles, one exhale in eight frames (4 per second): a plume leaves the
-// muzzle, widens as it rises, trails a puff and breaks up. Each part is [dx, dy, w, h] from the
-// pose x and the feet row, as part() takes them.
-const ELK_BREATH = [
-  [[21, -21, 2, 1]],
-  [
-    [21, -21, 2, 2],
-    [23, -22, 1, 1],
-  ],
-  [
-    [21, -21, 2, 1],
-    [22, -22, 3, 1],
-    [24, -23, 2, 2],
-    [23, -21, 1, 1],
-  ],
-  [
-    [22, -22, 2, 1],
-    [23, -23, 3, 1],
-    [25, -24, 3, 2],
-    [24, -21, 1, 1],
-  ],
-  [
-    [24, -23, 2, 1],
-    [25, -24, 2, 1],
-    [26, -25, 2, 2],
-    [23, -22, 1, 1],
-  ],
-  [
-    [25, -24, 2, 1],
-    [27, -25, 1, 1],
-    [26, -26, 1, 1],
-  ],
-  [[27, -26, 1, 1]],
-  [],
-];
-const ELK_BODY = [
-  ".............DDDDDD.....",
-  ".............DDDDDD.....",
-  "............DDDDDD......",
-  ".CCCCCCCCCCCDDDDDD......",
-  "RRCCCCCCCCCCCDDDDD......",
-  "RRCCCCCCCCCCCCDDD.......",
-  "RRCCCCCCCCCCCCDD........",
-  ".RCCCCCCCCCCCCDD........",
-  "..SSSSSSSSSSSSS.........",
-];
-
-// The elk's trunk while it grazes: the rump's top-right cell is removed, as the studio edit left it.
-const ELK_SIT_TRUNK = [`${ELK_BODY[3].slice(0, 17)}.${ELK_BODY[3].slice(18)}`, ...ELK_BODY.slice(4)];
-
-// `trunk` is the row the back starts on, `front` the shoulder's last column, `legs` the columns of
-// the near hind, far hind, far fore and near fore legs, and `racks` what each sex wears: the set of
-// RACKS, the column it stands on and how far it sinks into the crown.
-const DEER = {
+// Built from parts (deer.js): the elk, the white-tailed deer, the wild reindeer and the pronghorn. A
+// deer walks with its hooves planted (the pronghorn trots), eases to a stop, and while it stops
+// (state "sit") lowers its head to graze, or in a long stop lies down and gets up again before it
+// walks on; standing it breathes, blinks and flicks its tail. A white-tail running (state "run")
+// bounds with its tail raised as a white flag; a bull elk bugling (state "bugle") tips his head up
+// and his breath shows. d.since (settle, critters.js) is when its state last changed and d.timer the
+// seconds its stop has left; d.hearSince and d.hearUntil (times) hold its head up to listen; d.pose "lie" lays it down and d.actAt sets how far into a bugle a
+// still pose is. `sex` is "m" or "f": a cow elk wears no rack, a reindeer cow a small one. Its palette
+// is the scene's array under its kind (or d.pal): elk [coat, dark, pale, antler, deep, shade],
+// whitetail and reindeer [coat, dark, pale, antler], pronghorn [coat, dark, pale, horn, deep].
+const DEER_BUILD = {
   elk: {
-    grid: [...ELK_HEAD, ...ELK_BODY],
-    trunk: 7,
-    front: 15,
-    leg: 6,
-    legs: [2, 5, 11, 13],
-    darkLegs: true,
-    neck: "dark",
-    racks: { m: ["elk", 12, 0] },
-    sitTrunk: ELK_SIT_TRUNK,
-    sitHead: { grid: ELK_SIT_HEAD, cx: -16, cy: 13 },
+    m: [DEER_SPECS.ELK, [-1, 18]],
+    f: [DEER_SPECS.ELK_COW, [-1, 17]],
+    tones: (c, sex) => elkTones(c, sex === "f"),
   },
-  whitetail: {
-    grid: [
-      ".............CC...",
-      "............CCCCCC",
-      "............CeCCCe",
-      "...........CCCP...",
-      "..........CCCP....",
-      ".........CCCCP....",
-      ".CCCCCCCCCCCCP....",
-      "RCCCCCCCCCCCC.....",
-      "RCCCCCCCCCCCC.....",
-      ".CSSSSSSSSSCC.....",
-      "..PPPPPPPPPP......",
-    ],
-    trunk: 6,
-    front: 11,
-    leg: 5,
-    legs: [2, 4, 9, 11],
-    neck: "coat",
-    racks: { m: ["whitetail", 10, 1] },
-  },
-  reindeer: {
-    grid: [
-      "...............CC...",
-      "..............DCCCCC",
-      "..............DCeCCe",
-      "............PPPCCCC.",
-      "...........PPPPP....",
-      ".CCCCCCCCCCPPPPP....",
-      "RRCCCCCCCCCCPPPP....",
-      "RRCCCCCCCCCCCPPP....",
-      "RRCCCCCCCCCCCPP.....",
-      ".RCCCCCCCCCCCC......",
-      "..SSSSSSSSSSS.......",
-    ],
-    trunk: 5,
-    front: 14,
-    leg: 5,
-    legs: [2, 5, 9, 12],
-    neck: "pale",
-    racks: { m: ["reindeer", 11, 0], f: ["hind", 15, 0] },
-  },
-  pronghorn: {
-    grid: [
-      "............CCCCCC",
-      "............CeCCCe",
-      "...........CPPCC..",
-      "..........CCPP....",
-      ".........CCCCP....",
-      "RCCCCCCCCCCPP.....",
-      "RRCCCCCCCCCP......",
-      "RRCCCCCCCCCC......",
-      ".RPPPPPPPPPP......",
-    ],
-    trunk: 5,
-    front: 10,
-    leg: 5,
-    legs: [2, 4, 8, 10],
-    neck: "coat",
-    racks: { m: ["pronghorn", 13, 0], f: ["pronghorn", 13, 0] },
-  },
+  whitetail: { m: [DEER_SPECS.WT_BUCK, [-1, 14]], f: [DEER_SPECS.WHITETAIL, [-1, 14]], tones: whitetailTones },
+  reindeer: { m: [DEER_SPECS.RD_BULL, [-1, 16]], f: [DEER_SPECS.RD_COWDEER, [-1, 15]], tones: reindeerTones },
+  pronghorn: { m: [DEER_SPECS.PRONGHORN, [-1, 14]], f: [DEER_SPECS.PRONGHORN, [-1, 14]], tones: pronghornTones },
 };
+const DEER_EASE = 0.3; // seconds a walk takes to start or stop
+const DEER_GRAZE = 0.7; // seconds the head takes to go down to the grass or come up
+const DEER_LIE = [0.6, 1.6]; // into a long stop: it lies down over this, and gets up as long before it ends
+const DEER_BOUND = 0.5; // seconds a bound takes
+const DEER_HEAR = 0.4; // seconds a deer takes to lift its head to listen, and to lower it
+const DEER_LISTEN = 0.35; // how far the head lifts above its carriage while it listens
 
-// Antlers and horns, standing on the crown and facing right. Every tine joins the beam.
-const RACKS = {
-  elk: ["A........", "AA..A....", ".A..A..A.", ".AA.AA.A.", "..AA.AAA.", "...AA.AA.", "....AAA.."],
-  whitetail: ["..A.A..", "A.AAAA.", "AAA....", ".AA....", "..A...."],
-  reindeer: ["A...A....", "AA..A....", ".A..AA.A.", ".AA..AAA.", "..AAAAA..", "...AAA..."],
-  hind: ["A.A", "AAA", ".A."],
-  pronghorn: ["A.A", "A.A", "A.A"],
-};
-
-// A deer walking, grazing (`sit`), running with its flag up (`run`) or, for a bull elk, bugling
-// (`bugle`, `puff` the frame of its breath, 0 to 7 at 4 a second, or left out for none). `sex` is "m" or "f". Its palette is [coat, dark,
-// pale, antler], with a deeper dark and a coat shade after them when it has its own.
-export function cervidAt(g, d) {
-  const s = DEER[d.kind];
-  const [coat, dark, pale, antler, deep = dark, shade = dark] = g.pal[d.pal ?? d.kind];
-  const colours = { C: coat, S: shade, D: dark, P: pale, R: pale, e: deep };
-  const k = d.scale ?? 1;
-  const x = Math.round(d.x);
-  const y = feet(g, d);
-  const px = scaledPart(g, x, y, d.dir, k);
-  const moving = d.state === "walk" || d.state === "run";
-  s.legs.forEach((dx, i) => {
-    const far = i === 1 || i === 2;
-    const colour = s.darkLegs ? (far ? deep : dark) : far ? dark : coat;
-    const up = moving && lifted({ ...d, state: "walk" }, i);
-    px(colour, dx, -s.leg, 2, up ? s.leg - 1 : s.leg);
-  });
-  if (d.state === "sit") {
-    // Grazing: the neck slopes down and forward from the shoulder to a head in the grass.
-    const trunk = s.sitTrunk ?? s.grid.slice(s.trunk);
-    sprite(g, trunk, colours, x, y, d.dir, 0, trunk.length + s.leg, k);
-    if (s.sitHead) {
-      sprite(g, s.sitHead.grid, colours, x, y, d.dir, s.sitHead.cx, s.sitHead.cy);
-      return;
+export function cervidAt(g, d, time = 0) {
+  if (g.trace) return g.trace.draw(cervidAt, g, d, time);
+  const build = DEER_BUILD[d.kind];
+  const [spec, [s0, s1]] = build[d.sex === "f" ? "f" : "m"];
+  const colours = g.pal[d.pal ?? d.kind];
+  const pal = tonesFor(colours, `deer:${d.sex === "f" ? "f" : "m"}`, () => build.tones(colours, d.sex));
+  // The state it came from, remembered for easing out of a run or a graze.
+  if (d.seen !== d.state) {
+    d.prev = d.seen;
+    d.seen = d.state;
+  }
+  const since = sinceOf(d, time);
+  const bodyX = d.x * d.dir;
+  const running = d.state === "run";
+  const gait = running ? "bound" : d.kind === "pronghorn" ? "trot" : "walk";
+  const G = DEER_GAITS[gait];
+  const moving = d.state === "walk" || running;
+  const pose = {
+    gait,
+    bodyX: running ? null : bodyX,
+    phase: running ? time / DEER_BOUND : bodyX / ((spec.stride * G.stride) / G.stance),
+    amp: ease(moving, since, DEER_EASE),
+    sway: Math.sin(time * 1.3) * 0.3,
+    breath: breathAt(time),
+    blink: blinkAt(time, d.phase ?? 0, 3.3),
+  };
+  if (d.state === "walk") pose.sway = Math.sin(pose.phase * 2 * Math.PI) * 0.6;
+  if (running) {
+    pose.amp = 1;
+    pose.flag = Math.min(1, since / 0.25);
+    pose.rise = boundRise(pose.phase);
+  } else if (d.prev === "run" && since < 0.25) {
+    pose.flag = 1 - since / 0.25;
+  }
+  if (d.state === "bugle") {
+    const act = bugleAt(d.actAt ?? since);
+    const from = d.prev === "sit" && (d.grazed ?? 0) > 0.5 ? "graze" : "stand";
+    pose.rest = { from, to: "stand", u: Math.min(1, (d.actAt ?? since) / 0.5) };
+    if (act) Object.assign(pose, act, { blink: false });
+  } else if (d.state === "sit") {
+    const stop = since + (d.timer ?? 100); // how long this stop lasts
+    const r = hash(Math.round((d.since ?? 0) * 100), 3, 11);
+    const [d0, d1] = DEER_LIE;
+    if (d.pose === "lie") pose.rest = { from: "lie", to: "lie", u: 0 };
+    else if (d.pose !== "graze" && stop >= 6 && r < 0.5 && since >= d0 && since < stop - d0) {
+      if (since < d1) pose.rest = { from: "stand", to: "lie", u: (since - d0) / (d1 - d0) };
+      else if (since < stop - d1) pose.rest = { from: "lie", to: "lie", u: 0 };
+      else pose.rest = { from: "lie", to: "stand", u: (since - (stop - d1)) / (d1 - d0) };
+    } else {
+      const down =
+        stop >= 2 ? Math.max(0, Math.min(1, (since - DEER_EASE) / DEER_GRAZE, (stop - since) / DEER_GRAZE)) : 0;
+      d.grazed = down;
+      pose.rest = { from: "stand", to: "graze", u: down };
     }
-    const neck = { coat, dark, pale }[s.neck];
-    let dx = s.front;
-    for (let r = -s.leg - trunk.length + 2; r < -5; r += 2, dx += 1) px(neck, dx, r, 3, 2);
-    px(coat, dx, -5, 2, 1);
-    px(coat, dx, -4, 5, 2);
-    px(deep, dx + 1, -4, 1, 1);
-    return;
+  } else if (d.state === "walk" && d.prev === "sit" && (d.grazed ?? 0) > 0 && since < DEER_GRAZE) {
+    // A walk that starts before the head is up lifts it as the deer steps off.
+    pose.rest = { from: "stand", to: "graze", u: d.grazed * (1 - since / DEER_GRAZE) };
   }
-  const bugling = d.state === "bugle";
-  const grid = bugling ? [...ELK_BUGLE, ...ELK_BODY] : s.grid;
-  sprite(g, grid, colours, x, y, d.dir, 0, grid.length + s.leg, k);
-  if (d.state === "run" && d.kind === "whitetail") px(pale, -1, -s.leg - 7, 2, 3);
-  if (bugling && Number.isInteger(d.puff)) {
-    for (const [dx, dy, w, h] of ELK_BREATH[d.puff % ELK_BREATH.length] ?? []) px(pale, dx, dy, w, h);
+  if (d.hearSince != null) {
+    // Listening to a bugle: still, the head up (the graze comes up with it), over 0.4 s each way.
+    const u = smooth(
+      Math.max(0, Math.min(1, (time - d.hearSince) / DEER_HEAR, ((d.hearUntil ?? time) - time) / DEER_HEAR)),
+    );
+    pose.head = (pose.head ?? 0) + DEER_LISTEN * u;
+    if (pose.rest?.to === "graze") pose.rest = { ...pose.rest, u: pose.rest.u * (1 - u) };
   }
-  const worn = s.racks[d.sex];
-  if (worn) {
-    const [set, crown, sink] = worn;
-    const rack = RACKS[set];
-    const cy = s.leg + grid.length + rack.length - sink;
-    const [ahead, down] = bugling ? BUGLE_RACK : [0, 0];
-    sprite(g, rack, { A: antler }, x, y, d.dir, -crown + ahead, cy - down, k);
+  if (d.state !== "sit" && since >= DEER_GRAZE) d.grazed = 0;
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  paintAt(g, Math.round(d.x), feet(g, d), d.dir, (plot) => drawDeer(spec, pal, plot, pose), shadow);
+}
+
+// Pigs
+
+// Built from parts (pig.js): the pua'a, a feral pig. It trots with its feet planted (the stride is the
+// scene's 6 px/s over 3.6 px a cycle), settles its legs one after the other into a stop and rests in the
+// pose rest() picked as it stopped (puaaPoses): "stand" (breathing, blinking, a look up), "root" (the head
+// eases down and the snout digs in strokes, soil flying up) or, in a stop long enough, "wallow", its
+// signature: a wet patch, it kneels fore end first, rolls onto its back and kicks, rises, shakes mud off
+// and dries. p.since (settle, critters.js) is when its state last changed, p.timer the seconds its stop
+// has left, p.sinceX and p.prevX where it changed; p.pose shows a pose on demand. Its palette is the
+// scene's pig ([body, dark, snout]) with puaaMud, puaaDust and groundShadow beside it.
+export const puaaPoses = (p) =>
+  (p.timer ?? 0) >= WALLOW_SECONDS
+    ? ["root", "root", "stand", "wallow", "wallow", "wallow"]
+    : ["root", "root", "stand"];
+
+// The pig's tones, made for each tenth of mud on its coat.
+const pigTonesFor = (g, mud) => {
+  const key = Math.round(mud * 10);
+  return tonesFor(g.pal, `pig:${key}`, () => pigTones(g, key / 10));
+};
+
+export function puaaAt(g, p, time = 0) {
+  if (g.trace) return g.trace.draw(puaaAt, g, p, time);
+  const since = sinceOf(p, time);
+  const walking = p.state === "walk";
+  const fy = feet(g, p);
+  let pose;
+  if (walking) {
+    const d = p.sinceX == null ? (p.phase ?? 0) * 1.2 : Math.abs(p.x - p.sinceX);
+    pose = pigWalk(legClock(d, 0), legClock(d, 0.5), true);
+  } else {
+    const d = p.sinceX == null || p.prevX == null ? 0 : Math.abs(p.sinceX - p.prevX);
+    const total = since + (p.timer ?? 0);
+    pose = {
+      ...pigWalk(legClock(d, 0, since), legClock(d, 0.5, since), false),
+      ...pigRest(p.pose ?? "stand", since, total),
+    };
+  }
+  if (walking) pose.blink = blinkAt(time, 0, 3.7);
+  drawPig(g, Math.round(p.x), fy, p.dir, pose, pigTonesFor(g, pose.mud ?? 0));
+}
+
+// Seals, otters and whales
+
+// Built from parts (swimmer.js): the Hawaiian monk seal, her pup (scale below 0.8), the Asian
+// small-clawed otter and the humpback whale. A walker's s.c (critters.js stride) is its stride clock, so
+// the seal's belly and flipper and the otter's paws hold still on the ground; its x is the centre of the
+// body. SEAL_STRIDE and OTTER_STRIDE are [px a stride, seconds a stride] for stride(): the seal hitches
+// 3 px (the pup 2.3) in 0.75 s (0.575), the otter bounds 5 px in 0.5 s. A stopped animal rests in the
+// pose rest() picked (sealPoses, "lie" or "roll"; the lead otter "stand" or "stay"); s.still is the
+// seconds it has been at rest and s.timer the seconds its stop has left, as the sprites show it.
+export const SEAL_STRIDE = [3, SEAL_CYCLE];
+export const PUP_STRIDE = [2.3, 0.575];
+export const OTTER_STRIDE = [5, BOUND_CYCLE];
+export const sealPoses = (s) => ((s.timer ?? 0) >= SEAL_ROLL_SECONDS ? ["lie", "lie", "roll", "roll"] : ["lie"]);
+
+// Seconds it has been at rest: a.still when the scene keeps it, else since its state changed.
+const stillOf = (a, time) => a.still ?? sinceOf(a, time);
+
+export function sealAt(g, s, time = 0) {
+  if (g.trace) return g.trace.draw(sealAt, g, s, time);
+  const pup = (s.scale ?? 1) < 0.8;
+  const k = pup ? 0.7 : 1;
+  const [px] = pup ? PUP_STRIDE : SEAL_STRIDE;
+  const c = s.c ?? (s.phase ?? 0) * 0.3;
+  const dir = s.dir;
+  let pose;
+  let off = 0;
+  if ((s.moving ?? s.state === "walk") || c - Math.floor(c) > 1e-6) {
+    const w = sealCycle(c, { k, reach: px / k, base: 17 });
+    pose = { ...w.pose, breath: 0, blink: (time / 3.7 + (s.phase ?? 0)) % 1 < 0.04 };
+    off = w.rear - c * px;
+  } else {
+    const still = stillOf(s, time);
+    const e = smooth(Math.min(1, still / 0.35));
+    pose = { k, len: 17 + e, ...sealRest(s.pose ?? "lie", still, still + (s.timer ?? 0), pup) };
+    if (e < 1) Object.assign(pose, { fore: "push", ftip: 3.4 - 2.6 * e, lift: 0 });
+  }
+  const half = Math.round(9 * k);
+  const tones = tonesFor(g.pal, pup ? "seal:pup" : "seal", () => sealTones(g, pup ? 0.3 : 0));
+  drawSeal(g, Math.round(s.x - dir * half + dir * off), s.y ?? g.groundY + 7, dir, pose, tones);
+}
+
+export function otterAt(g, o, time = 0) {
+  if (g.trace) return g.trace.draw(otterAt, g, o, time);
+  const dir = o.dir;
+  const c = o.c ?? (o.phase ?? 0) * 0.3;
+  let pose;
+  let off = 0;
+  let shift = 0;
+  if ((o.moving ?? o.state === "walk") || c - Math.floor(c) > 1e-6) {
+    const b = boundBeat(c);
+    pose = {
+      legs: b.legs,
+      arch: b.arch,
+      ext: b.ext,
+      air: b.air,
+      tl: b.tl,
+      blink: (time / 3.1 + (o.phase ?? 0)) % 1 < 0.04,
+    };
+    off = boundX(c) - c * OTTER_STRIDE[0];
+  } else {
+    const still = stillOf(o, time);
+    const e = smooth(Math.min(1, still / 0.35));
+    const b = boundBeat(c);
+    pose = otterRest(o.pose === "stand", still, still + (o.timer ?? 0));
+    if (e < 1)
+      Object.assign(pose, {
+        arch: b.arch * (1 - e),
+        ext: b.ext * (1 - e),
+        tl: b.tl * (1 - e),
+        legs: e < 0.5 ? b.legs : undefined,
+      });
+    if (pose.up > 0.2) shift = 2;
+  }
+  drawOtter(
+    g,
+    Math.round(o.x - dir * 7 + dir * (off + shift)),
+    o.y ?? g.groundY + 6,
+    dir,
+    pose,
+    tonesFor(g.pal, "otter", () => otterTones(g)),
+  );
+}
+
+// The whale's surfacing: w.start the time it came up, w.x the middle of its back, w.dir the way it faces
+// and w.dive whether this one dives with its flukes. wy is the water line's row.
+export function whaleAt(g, w, wy, time = 0) {
+  if (g.trace) return g.trace.draw(whaleAt, g, w, wy, time);
+  const dir = w.dir ?? 1;
+  drawWhale(g, Math.round(w.x) - dir * 7, wy, dir, time - w.start, { fluke: !!w.dive });
+}
+
+// Wild cattle and sheep
+
+// Built from parts (bovid.js, on the horse build): the American bison, its calf (scale below 0.8) and the
+// bighorn ram. b.since (settle, critters.js) is when a walker's state last changed and b.timer the seconds
+// its stop has left. A stopped bison rests in the pose rest() picked as it stopped (bisonPoses): "graze"
+// (the neck swings down, the hump and shoulders dip with it), "stand" (breathing, a tail flick, a look
+// up) or "wallow", its signature: it lies down fore end first, rolls onto its back with the legs kicking
+// and dust coming off the ground, rolls back, rises rump first and shakes a cloud of dust from its coat.
+// A calf grazes beside a grazing mother, lies down in a long stop, and else stands; b.pose or b.act with
+// b.actAt seconds in shows one on demand. Palettes: the scene's bison ([dark, tan, horn, beard, throat])
+// with bisonShade, calf ([tan, dark]), and groundShadow and bisonDust beside them.
+//
+// The ram is a percher (critters.js) that stays where it was put. Its moves (s.moves) are "look" (the head
+// lifts and turns three-quarters to face out, the horns showing either side), "graze", "lie" (chewing its
+// cud), "chew" and "stamp"; s.act with s.actAt seconds in, and s.actLasts, shows one on demand. Its
+// palette is sheep: [coat, pale, horn, dark, horn shade], with groundShadow.
+const BOVID_BUILD = { bison: [BISON, [-1, 26]], calf: [CALF, [-1, 15]], bighorn: [BIGHORN, [-1, 17]] };
+const BOVID_EASE = 0.3; // seconds a walk takes to start or stop
+const BISON_REST = 5.2; // the stop a calf lies down in
+const WALLOW_STOP = 9.3; // the stop a wallow needs: 8.8 s from the first step down to the shake
+
+// The poses a bison may rest in for a stop of b.timer seconds (for rest(), critters.js): the wallow
+// only when the stop is long enough to finish it.
+export const bisonPoses = (b) => {
+  const poses = ["graze", "graze", "stand"];
+  if ((b.timer ?? 0) >= WALLOW_STOP) poses.push("wallow", "wallow");
+  return poses;
+};
+
+const WALLOW_LOOP = [
+  [0, 0.4, "stand", "stand"],
+  [0.4, 1.7, "stand", "lie"],
+  [1.7, 2.3, "lie", "lie"],
+  [2.3, 3.2, "lie", "back"],
+  [3.2, 5.4, "back", "back"],
+  [5.4, 6.2, "back", "lie"],
+  [6.2, 6.7, "lie", "lie"],
+  [6.7, 7.9, "lie", "stand"],
+];
+const WALLOW_KICK = [3.2, 5.4];
+const WALLOW_SHAKE = [7.9, 8.8];
+
+const easeIn = (a, b) => smooth(Math.min(1, Math.max(0, a / b)));
+const bovidTones = (g, key, make) => tonesFor(g.pal[key], "bovid", () => make(g.pal[key]));
+
+// Places a bovid over its ground shadow, which spans the build's columns [s0, s1).
+function drawBovidAt(g, spec, pal, [s0, s1], x, fy, dir, pose) {
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  paintAt(g, x, fy, dir, (plot) => drawBovid(spec, pal, plot, pose), shadow);
+}
+
+export function bisonAt(g, b, time = 0) {
+  if (g.trace) return g.trace.draw(bisonAt, g, b, time);
+  const calf = (b.scale ?? 1) < 0.8;
+  const [spec, shadow] = BOVID_BUILD[calf ? "calf" : "bison"];
+  const pal = calf
+    ? bovidTones(g, "calf", calfTones)
+    : bovidTones(g, "bison", ([dark, tan, horn, beard, throat]) =>
+        bisonTones([dark, tan, horn, beard, throat], g.pal.bisonShade),
+      );
+  const dir = b.dir;
+  const x = Math.round(b.x);
+  const bodyX = b.x * dir;
+  const walking = b.state === "walk" && !b.act;
+  const since = sinceOf(b, time);
+  const stop = since + (b.timer ?? 0);
+  const phase = bodyX / (spec.stride / HORSE_GAIT.stance);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, BOVID_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.6 : Math.sin(time * 1.3) * 0.3,
+    breath: breathAt(time, 2, !walking),
+    blink: blinkAt(time, b.phase ?? 0, 3.7),
+  };
+  let wallowing = null;
+  if (!walking && (since >= BOVID_EASE || b.act)) {
+    const name = b.act ?? b.pose ?? "stand";
+    const at = b.actAt ?? since;
+    let loop = null;
+    if (calf) {
+      if (name === "graze") loop = grazingLoop(stop);
+      else if (name === "wallow" || name === "lie" || stop >= BISON_REST) loop = lyingLoop(stop);
+    } else if (name === "graze") {
+      loop = grazingLoop(stop);
+      if (at > 2.3 && at < 2.8) pose.ear = 1;
+    } else if (name === "wallow") {
+      loop = WALLOW_LOOP;
+      const [k0, k1] = WALLOW_KICK;
+      if (at >= k0 && at < k1) {
+        pose.kick = Math.sin((at - k0) * 7) * easeIn(at - k0, 0.6) * easeIn(k1 - at, 0.6);
+        pose.sway = Math.sin(time * 5) * 0.8;
+      }
+      if (at >= WALLOW_SHAKE[0] && at < WALLOW_SHAKE[1]) {
+        const u = (at - WALLOW_SHAKE[0]) / (WALLOW_SHAKE[1] - WALLOW_SHAKE[0]);
+        pose.shake = Math.sin((at - WALLOW_SHAKE[0]) * 28) * 1.2 * (1 - u);
+      }
+      wallowing = at;
+    } else if (name === "lie") loop = lyingLoop(stop);
+    else {
+      // Standing: a tail flick and, now and then, the head comes up.
+      const s = at - 1.6;
+      if (s > 0 && s < 1.2) pose.sway = Math.sin(s * 8) * 0.8;
+      pose.head = 0.3 * easeIn(Math.sin(at * 0.8) * 3, 1);
+      pose.ear = pose.head > 0.15 ? 1 : 0;
+    }
+    if (loop) pose.rest = loopAt(loop, at);
+  }
+  drawBovidAt(g, spec, pal, shadow, x, feet(g, b), dir, pose);
+  if (wallowing !== null) {
+    // A cloud at the back as it rolls, a bigger one off the coat as it shakes.
+    const fy = feet(g, b);
+    const span = (lo, hi) => (dir > 0 ? { x0: x + lo, x1: x + hi } : { x0: x - hi, x1: x - lo });
+    const [k0, k1] = WALLOW_KICK;
+    if (wallowing >= k0 + 0.2 && wallowing < k1 + 0.8) {
+      horseDustAt(g, 0, fy, ((wallowing - k0 - 0.2) * 1.2) % 1, {
+        ...span(-2, 22),
+        count: 18,
+        life: 1,
+        rise: 7,
+        colour: "bisonDust",
+      });
+    }
+    horseDustAt(g, 0, fy, wallowing - (WALLOW_SHAKE[0] - 0.1), {
+      ...span(1, 20),
+      count: 34,
+      life: 1.5,
+      rise: 13,
+      colour: "bisonDust",
+    });
   }
 }
 
-// Wild sheep
-
-// A mature ram's horn, curled in a full circle from the crown, back and round under the jaw. H is
-// the horn and R its shade on the inner edge and underside. The side view is drawn from (8, -19);
-// the front view shows one horn either side of the face, so FRONT is drawn once and mirrored.
-const HORN_SIDE = ["..HHHH.", ".HHRRHH", "HHR....", "HR.....", "HR...H.", "HHR.RH.", ".HHRR.."];
-const HORN_FRONT = [".HHH", "HHRH", "HRR.", "HRR.", "HHR.", ".HH."];
-const HORN_FRONT_FAR = HORN_FRONT.map((row) => [...row].reverse().join(""));
-
-// A bighorn: stocky, with a pale rump and muzzle and a heavy horn curled round beside its head. It
-// mostly stands on a rock: `look` turns its head to face out, `chew` works its jaw and `stamp`
-// lifts a foreleg. Its palette is sheep: [coat, pale, horn, dark, horn shade].
-export function sheepAt(g, s, { look = false, chew = false, stamp = false } = {}) {
-  const [coat, pale, horn, dark, shade] = g.pal[s.pal ?? "sheep"];
-  const k = s.scale ?? 1;
-  const x = Math.round(s.x);
-  const y = feet(g, s);
-  const px = scaledPart(g, x, y, s.dir, k);
-  const horns = { H: horn, R: shade };
-  [2, 4, 9, 11].forEach((dx, i) => {
-    const up = lifted(s, i) || (stamp && i === 3);
-    px(dark, dx, -5, 2, up ? 3 : 5);
-  });
-  px(coat, 1, -11, 12, 6);
-  px(pale, 0, -10, 2, 3);
-  px(pale, 3, -6, 8, 1);
-  px(coat, 10, -14, 3, 4);
-  if (look) {
-    px(coat, 11, -16, 4, 4);
-    px(pale, 12, -13, 2, 2 + (chew ? 1 : 0));
-    px(dark, 11, -15, 1, 1);
-    px(dark, 14, -15, 1, 1);
-    sprite(g, HORN_FRONT, horns, x, y, s.dir, -8, 18, k);
-    sprite(g, HORN_FRONT_FAR, horns, x, y, s.dir, -14, 18, k);
-    return;
+// A bighorn ram: the move it is in as [name, seconds into it, seconds it lasts], from its percher moves
+// (the first of these under way) or from s.act on demand.
+const RAM_MOVES = ["lie", "graze", "look", "stamp", "chew"];
+const RAM_LASTS = { lie: 7, graze: 3.6, look: 5, stamp: 0.4, chew: 1.5 };
+function ramMove(s, time) {
+  if (s.act) return [s.act, s.actAt ?? 1, s.actLasts ?? RAM_LASTS[s.act] ?? 3];
+  for (const name of RAM_MOVES) {
+    const u = s.moves?.[name] ? doing(s, name, time) : -1;
+    if (u >= 0) return [name, u * s.moves[name].lasts, s.moves[name].lasts];
   }
-  // The skull runs two pixels back from the neck so the curl's open middle sits on the head.
-  px(coat, 11, -16, 1, 2);
-  px(coat, 12, -17, 4, 4);
-  px(coat, 16, -16, 1, 2);
-  px(pale, 15, -14, 2, chew ? 3 : 2);
-  sprite(g, HORN_SIDE, horns, x, y, s.dir, -8, 19, k);
-  px(dark, 14, -16, 1, 1);
+  return ["stand", 0, 0];
+}
+
+export function bighornAt(g, s, time = 0) {
+  if (g.trace) return g.trace.draw(bighornAt, g, s, time);
+  const [spec, shadow] = BOVID_BUILD.bighorn;
+  const pal = bovidTones(g, s.pal ?? "sheep", sheepTones);
+  const [name, at, lasts] = ramMove(s, time);
+  const pose = {
+    amp: 0,
+    phase: 0,
+    sway: Math.sin(time * 1.6) * 0.35,
+    breath: breathAt(time, 2.4),
+    blink: blinkAt(time, s.phase ?? 0, 3.1, 0.045),
+  };
+  const chewing = (a, b) => at >= a && at < b && Math.sin(at * 11) > 0;
+  if (name === "graze") {
+    pose.rest = loopAt(grazingLoop(lasts), at);
+    pose.mouth = chewing(lasts - 1.4, lasts - 0.3) ? 1 : 0;
+  } else if (name === "lie") {
+    pose.rest = loopAt(lyingLoop(lasts), at);
+    pose.mouth = chewing(1.8, lasts - 1.8) ? 1 : 0;
+    pose.ear = at > 4 && at < 4.4 ? 1 : 0;
+  } else if (name === "look") {
+    // The head comes up and turns to face out over almost a second, holds, and turns back.
+    const turn = easeIn(Math.min(at, lasts - at), 0.9);
+    pose.head = turn * 0.9;
+    if (turn > 0.5) pose.headGrid = RAM_TURN_HEAD;
+  } else if (name === "stamp") pose.stamp = easeIn(Math.min(at, lasts - at), 0.12);
+  else if (name === "chew") pose.mouth = Math.sin(time * 11) > 0 ? 1 : 0;
+  drawBovidAt(g, spec, pal, shadow, Math.round(s.x), feet(g, s), s.dir, pose);
 }
 
 // Elephants
 
-// One build, facing right as written: a rounded back, the head carried forward, the ear laid over the
-// neck. The African has a great ear and tusks; the Asian a small ear and a twin-domed head, and tusks
-// too. A calf (scale below 0.8) is drawn on its own: a big head held high, a
-// short body and legs, a small trunk. B is the body, S its darker shade, K the ear's skin, T tusk and
-// e eye. Legs, tail and the trunk below the grid are drawn on their own.
-const AFRICAN_ELEPHANT = [
-  "......BBBBBBBBBBBB...BBBB......",
-  "....BBBBBBBBBBBBBBBBBBBBBB.....",
-  "...BBBBBBBBBBBBSSSSSBBBBBBB....",
-  "..BBBBBBBBBBBBSSSSSSSBBBBBBB...",
-  ".BBBBBBBBBBBBKKKKSSSSBBBeBBB...",
-  ".BBBBBBBBBBBBKKKKKSSSBBBBBBB...",
-  ".BBBBBBBBBBBBBBKKKSSSBBBBBBBB..",
-  ".BBBBBBBBBBBBBBBKSSSSBBBBBBBB..",
-  ".BBBBBBBBBBBBBBBBSSSSBBBBBBBB.T",
-  ".BBBBBBBBBBBBBBBBBSSSBBBBBTTTTT",
-  ".BBBBBBBBBBBBBBBBBBBBBB..BBBB..",
-  ".BBBBBBBBBBBBBBBBBBBBB....BBB..",
-  ".SBBBBBBBBBBBBBBBBBBB......BB..",
-  "..SSSSSSSSSSSSSSSSSS.......BB..",
+// Built from parts (elephant.js), a calf (scale below 0.8) drawn on its own. An elephant walks an
+// amble with its feet planted, stands breathing and blinking and now and then flaps an ear, and in a
+// long stop does one thing: curls its trunk to test the air, trumpets (rings of sound leave the
+// trunk) or takes a dust bath. A calf in a long stop lies down to sleep and gets up before the herd
+// moves on. e.since (settle, critters.js) is when its state last changed and e.timer the seconds its
+// stop has left, so an action is only chosen when it fits (e.act, "curl", "trumpet" or "dust", with
+// e.actAt seconds in, shows one on demand; e.pose "lie" lays a calf down). Its palette is the scene's `elephant`
+// array (body, shade, skin, tusk, eye) with elephantRoar and elephantDust beside it.
+const ELEPHANTS = { african: AFRICAN, asian: ASIAN, africanCalf: AFRICAN_CALF, asianCalf: ASIAN_CALF };
+const ELEPHANT_SHADOW_COLUMNS = { african: [-1, 29], africanCalf: [0, 15], asian: [-1, 25], asianCalf: [0, 15] };
+const ELEPHANT_ACTIONS = [
+  [curlAt, CURL],
+  [trumpetAt, TRUMPET],
+  [dustAt, DUST],
 ];
-const ASIAN_ELEPHANT = [
-  ".......BBBBBBBB...BBBB....",
-  ".....BBBBBBBBBBBBBBBBBB...",
-  "...BBBBBBBBBBBBSSBBBBBB...",
-  "..BBBBBBBBBBBSSSSSBBeBB...",
-  ".BBBBBBBBBBBBKKSSSBBBBBB..",
-  ".BBBBBBBBBBBBBKSSSBBBBBB..",
-  ".BBBBBBBBBBBBBBSSBBBBBBB.T",
-  ".BBBBBBBBBBBBBBBBBBBBBTTTT",
-  ".BBBBBBBBBBBBBBBBBBB.BBB..",
-  ".BBBBBBBBBBBBBBBBBB...BB..",
-  ".SBBBBBBBBBBBBBBBB....BB..",
-  "..SSSSSSSSSSSSSSS.....BB..",
-];
-const AFRICAN_CALF = [
-  ".......BBBB.....",
-  "...BBBBBBBBBBB..",
-  "..BBBBBBSSSBBBB.",
-  ".BBBBBBKKSSBBeB.",
-  ".BBBBBBKKKSBBBBB",
-  ".BBBBBBBKSBBBBBB",
-  ".BBBBBBBBBBBBBBB",
-  "..SSSSSSSSSS..BB",
-];
-const ASIAN_CALF = [
-  "................",
-  "...BBBBBBBBBBB..",
-  "..BBBBBBBBSSBBB.",
-  ".BBBBBBBBSSSBeB.",
-  ".BBBBBBBBKSSBBBB",
-  ".BBBBBBBBBSBBBBB",
-  ".BBBBBBBBBBBBBBB",
-  "..SSSSSSSSSS..BB",
-];
-// Each build: its grid, leg height, its legs as [column, near?] in walking order (near hind, far
-// hind, far fore, near fore), the trunk below the grid as [column, row, width, height] pieces, and
-// the trunk curled up instead.
-const ELEPHANTS = {
-  african: {
-    grid: AFRICAN_ELEPHANT,
-    leg: 10,
-    legs: [
-      [3, true],
-      [5, false],
-      [17, false],
-      [15, true],
-    ],
-    trunk: [
-      [27, -10, 2, 6],
-      [27, -4, 3, 1],
-      [28, -3, 2, 1],
-    ],
-    curl: [
-      [28, -10, 2, 2],
-      [29, -12, 2, 2],
-      [30, -13, 1, 1],
-    ],
-  },
-  asian: {
-    grid: ASIAN_ELEPHANT,
-    leg: 8,
-    legs: [
-      [2, true],
-      [4, false],
-      [15, false],
-      [13, true],
-    ],
-    trunk: [
-      [22, -8, 2, 4],
-      [22, -4, 3, 1],
-      [23, -3, 2, 1],
-    ],
-    curl: [
-      [23, -8, 2, 2],
-      [24, -10, 2, 2],
-      [25, -11, 1, 1],
-    ],
-  },
-  africanCalf: {
-    grid: AFRICAN_CALF,
-    leg: 4,
-    legs: [
-      [2, true],
-      [4, false],
-      [10, false],
-      [8, true],
-    ],
-    trunk: [
-      [15, -4, 1, 2],
-      [15, -2, 2, 1],
-    ],
-  },
-  asianCalf: {
-    grid: ASIAN_CALF,
-    leg: 4,
-    legs: [
-      [2, true],
-      [4, false],
-      [10, false],
-      [8, true],
-    ],
-    trunk: [
-      [15, -4, 1, 2],
-      [15, -2, 2, 1],
-    ],
-  },
-};
+const ELEPHANT_ACT_AT = 1.2; // seconds into a stop before it acts
+const ELEPHANT_EASE = 0.4; // seconds a walk takes to start or stop
+const ELEPHANT_ACT_BY_NAME = { curl: curlAt, trumpet: trumpetAt, dust: dustAt };
 
-// An elephant walking or standing. Now and then it curls its trunk up, but only while standing: a
-// walking elephant keeps it down. Its palette is elephant: [body, shade, ear skin, tusk, eye].
 export function elephantAt(g, e, time) {
-  const [body, shade, skin, tusk, eye] = g.pal[e.pal ?? "elephant"];
+  if (g.trace) return g.trace.draw(elephantAt, g, e, time);
   const calf = (e.scale ?? 1) < 0.8;
   const kind = e.kind === "asian" ? "asian" : "african";
-  const s = ELEPHANTS[calf ? `${kind}Calf` : kind];
-  const x = Math.round(e.x);
-  const y = feet(g, e) + 1;
-  const px = (colour, dx, dy, w, h) => part(g, colour, x, y, e.dir, dx, dy, w, h);
-  const rows = s.grid.length;
-  px(shade, 0, -s.leg - rows + 5, 1, rows - 6); // the tail and its tuft
-  px(eye, 0, -s.leg - 1, 1, 2);
-  // Far legs first, in shade; each near leg stands just in front of its far one.
-  for (const nearPass of [false, true]) {
-    s.legs.forEach(([dx, near], i) => {
-      if (near === nearPass) px(near ? body : shade, dx, -s.leg, 2, lifted(e, i) ? s.leg - 1 : s.leg);
-    });
+  const name = calf ? `${kind}Calf` : kind;
+  const spec = ELEPHANTS[name];
+  const colours = g.pal[e.pal ?? "elephant"];
+  const pal = tonesFor(colours, "elephant", () =>
+    elephantTones(colours, { roar: g.pal.elephantRoar, dust: g.pal.elephantDust }),
+  );
+  const walking = e.state === "walk";
+  const since = sinceOf(e, time);
+  const bodyX = e.x * e.dir;
+  const phase = bodyX / (spec.stride / ELEPHANT_STANCE);
+  const stride = Math.sin(phase * 2 * Math.PI);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, ELEPHANT_EASE),
+    sway: walking ? stride * 0.7 : Math.sin(time * 1.3) * 0.5,
+    swing: walking ? stride * 0.16 : Math.sin(time * 0.9) * 0.06,
+    breath: breathAt(time, 1.6),
+    blink: blinkAt(time, (e.phase ?? 0) * 1.7, 3.7, 0.035),
+  };
+  if (!walking && since > ELEPHANT_EASE) {
+    const stop = since + (e.timer ?? 0); // how long this stop lasts
+    const at = since - ELEPHANT_ACT_AT;
+    if (calf) {
+      // A long stop: lie down, sleep, and be up before the walk.
+      const [d0, d1, u0, u1] = [0.8, 1.8, stop - 1.6, stop - 0.6];
+      if (e.pose === "lie") {
+        Object.assign(pose, { rest: { from: "lie", to: "lie", u: 0 }, swing: 0, eyesShut: true, blink: false });
+      } else if (stop >= 5.4 && since >= d0 && since < u1) {
+        if (since < d1) pose.rest = { from: "stand", to: "lie", u: (since - d0) / (d1 - d0) };
+        else if (since < u0) pose.rest = { from: "lie", to: "lie", u: 0 };
+        else pose.rest = { from: "lie", to: "stand", u: (since - u0) / (u1 - u0) };
+        pose.swing = 0;
+        pose.eyesShut = since >= d1 + 0.4 && since < u0;
+        if (pose.eyesShut) pose.blink = false;
+      }
+    } else {
+      const r = hash(Math.round((e.since ?? 0) * 100), Math.round(e.x), kind === "asian" ? 1 : 2);
+      const fits = ELEPHANT_ACTIONS.filter(([, length]) => stop >= ELEPHANT_ACT_AT + length + 0.8);
+      const act = e.act
+        ? ELEPHANT_ACT_BY_NAME[e.act](spec, e.actAt ?? 0)
+        : fits.length && r < 0.8
+          ? fits[Math.floor((r / 0.8) * fits.length)][0](spec, at)
+          : null;
+      if (act) {
+        Object.assign(pose, act, { swing: 0, blink: false });
+      } else if (since >= 2.4 && since < 3.6) {
+        pose.ear = Math.sin((Math.PI * (since - 2.4)) / 0.6) ** 2; // two slow ear flaps
+      }
+    }
   }
-  const tusks = !calf;
-  sprite(g, s.grid, { B: body, S: shade, K: skin, T: tusks ? tusk : null, e: eye }, x, y, e.dir, 0, rows + s.leg);
-  const curl = s.curl && e.state !== "walk" && Math.sin(time * 0.7 + e.phase * 3) > 0.85;
-  for (const [dx, dy, w, h] of curl ? s.curl : s.trunk) px(body, dx, dy, w, h);
+  const [s0, s1] = ELEPHANT_SHADOW_COLUMNS[name];
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  // Its feet stand a row lower than the other families'.
+  paintAt(g, Math.round(e.x), feet(g, e) + 1, e.dir, (plot) => drawElephant(spec, pal, plot, pose), shadow);
 }
 
-// Hares
+// Zebras and giraffes
 
-// One round build, facing right as written: a round back, a head with a dark eye and nose, a pale
-// scut and a darker belly. Its feet gather under the body, then stretch out as it hops. The cottontail
-// has short ears, the jackrabbit long black-tipped ears and long legs, the groundhog a low body, tiny
-// ears, a grizzled back and dark feet and tail. F fur, S its darker shade, D dark, W the scut, G the
-// grizzled tips.
-const HARES = {
-  cottontail: {
-    sit: [".....FF..", ".....FF..", "....FFFF.", ".FFFFFDFD", "WFFFFFFFF", "WFFFFFFF.", ".SSSSSS..", ".FFF.FF.."],
-    hop: ["......FF.", "......FF.", ".....FFFF", "..FFFFFDF", "WFFFFFFFF", "WFFFFFFF.", ".SSSSSS..", "FF....FF."],
-  },
-  jackrabbit: {
-    sit: [
-      ".......D.D.",
-      ".......F.F.",
-      ".......F.F.",
-      ".......F.F.",
-      "......FFFF.",
-      ".....FFFFFF",
-      "..FFFFFFDFD",
-      "WFFFFFFFFF.",
-      "WFFFFFFFF..",
-      ".SSSSSSSS..",
-      ".FF....FF..",
-      ".FFF...FF..",
-    ],
-    hop: [
-      "........D.D",
-      "........F.F",
-      "........F.F",
-      "........F.F",
-      ".......FFFF",
-      "......FFFFF",
-      "..FFFFFFFDF",
-      "WFFFFFFFFFD",
-      "WFFFFFFFF..",
-      ".SSSSSSSS..",
-      "FFF.....FF.",
-      "FF.......F.",
-    ],
-  },
-  groundhog: {
-    sit: ["......FFF..", ".GGGGFFFDF.", "DFFFFFFFFFD", "DFFFFFFFFF.", ".SSSSSSSS..", ".DD...DD..."],
-    hop: ["......FFF..", ".GGGGFFFDF.", "DFFFFFFFFFD", "DFFFFFFFFF.", ".SSSSSSSS..", "DD.....DD.."],
-  },
+// Built from parts (horse.js): the plains zebra, and its foal (scale below 1), drawn on its own. A
+// zebra walks the four-beat walk with its hooves planted, eases to a stop and spends the stop in the
+// pose rest() picked as it stopped (zebraPoses): grazing with its head in the grass, a tail swish with
+// its ears flicking, lying down on its chest, or rolling in the dust (it goes down fore end first,
+// rolls onto its back with its legs waving, rolls back, gets up rump first and shakes, a cloud of dust
+// leaving its coat). Standing it breathes, blinks and flicks its tail. A foal in a long stop lies
+// down (or grazes beside a grazing mother). z.since (settle, critters.js) is when its state last
+// changed, z.timer the seconds its stop has left, and z.pose the pose to show on demand ("graze",
+// "swish", "lie", "roll"; z.actAt seconds in, for the roll). Its palette is the scene's `zebra` array
+// ([white, black, belly]), with the scene's groundShadow and horseDust beside it.
+const HORSE_BUILD = { zebra: [ZEBRA, [-1, 19]], foal: [FOAL, [-1, 13]] };
+const HORSE_EASE = 0.3; // seconds a walk takes to start or stop
+const HORSE_REST = [5.2, 4.4]; // the stop a foal lies down in, and a zebra
+const HORSE_ROLL = 8; // the stop a roll needs: about 7.8 s from the first step down to the shake
+
+// The poses a zebra may rest in for a stop of z.timer seconds (for rest(), critters.js): the long ones
+// only when the stop is long enough to finish.
+export const zebraPoses = (z) => {
+  const left = z.timer ?? 0;
+  const poses = ["graze", "swish"];
+  if (left >= HORSE_REST[1]) poses.push("lie");
+  if (left >= HORSE_ROLL) poses.push("roll");
+  return poses;
 };
 
-// A hare or rodent of `kind` (cottontail by default), hopping two pixels up mid-stride while it walks.
-// Its palette is [fur, dark, white]; a groundhog's is [fur, dark, grizzle].
-export function hareAt(g, r) {
-  const [fur, dark, pale] = g.pal[r.pal ?? "rabbit"];
-  const grids = HARES[r.kind ?? "cottontail"];
-  const hop = r.state === "walk" && Math.floor(r.phase) % 2 === 1;
-  const grid = hop ? grids.hop : grids.sit;
-  const colours = { F: fur, S: dark, D: dark, W: pale, G: pale };
-  sprite(g, grid, colours, Math.round(r.x), feet(g, r) - (hop ? 2 : 0), r.dir, 0, grid.length, r.scale ?? 1);
+// A stop as holds and moves: [start, end, from, to] in seconds into it.
+const lyingLoop = (stop) => [
+  [0, 0.4, "stand", "stand"],
+  [0.4, 1.5, "stand", "lie"],
+  [1.5, stop - 1.5, "lie", "lie"],
+  [stop - 1.5, stop - 0.3, "lie", "stand"],
+];
+const grazingLoop = (stop) => [
+  [0, 0.3, "stand", "stand"],
+  [0.3, 1.1, "stand", "graze"],
+  [1.1, stop - 0.8, "graze", "graze"],
+  [stop - 0.8, stop - 0.1, "graze", "stand"],
+];
+const ROLL_LOOP = [
+  [0, 0.4, "stand", "stand"],
+  [0.4, 1.5, "stand", "lie"],
+  [1.5, 2.0, "lie", "lie"],
+  [2.0, 2.7, "lie", "back"],
+  [2.7, 4.7, "back", "back"],
+  [4.7, 5.4, "back", "lie"],
+  [5.4, 5.8, "lie", "lie"],
+  [5.8, 6.9, "lie", "stand"],
+];
+const ROLL_KICK = [2.7, 4.7];
+const ROLL_SHAKE = [6.9, 7.7];
+
+function loopAt(loop, t) {
+  const seg = loop.find(([a, b]) => t >= a && t < b) ?? loop[loop.length - 1];
+  const [a, b, from, to] = seg;
+  return { from, to, u: from === to ? 0 : Math.min(1, Math.max(0, (t - a) / (b - a))) };
+}
+
+export function zebraAt(g, z, time = 0) {
+  if (g.trace) return g.trace.draw(zebraAt, g, z, time);
+  const foal = (z.scale ?? 1) < 1;
+  const [spec, [s0, s1]] = HORSE_BUILD[foal ? "foal" : "zebra"];
+  const colours = g.pal[z.pal ?? "zebra"];
+  const pal = tonesFor(colours, foal ? "foal" : "zebra", () => zebraTones(colours, foal));
+  const dir = z.dir;
+  const x = Math.round(z.x);
+  const bodyX = z.x * dir;
+  const walking = z.state === "walk";
+  const since = sinceOf(z, time);
+  const stop = since + (z.timer ?? 0);
+  const phase = bodyX / (spec.stride / HORSE_GAIT.stance);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, HORSE_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.6 : Math.sin(time * 1.3) * 0.25,
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, z.phase ?? 0, 3.3),
+  };
+  let rolling = null;
+  if (!walking && since >= HORSE_EASE) {
+    const name = z.pose ?? "stand";
+    const at = z.actAt ?? since;
+    let loop = null;
+    if (foal) {
+      // The foal grazes beside a grazing mother, lies down in a long stop, and else stands.
+      if (name === "graze") loop = grazingLoop(stop);
+      else if (stop >= HORSE_REST[0] || name === "lie") loop = lyingLoop(stop);
+    } else if (name === "graze") {
+      loop = grazingLoop(stop);
+      if (at > 2.3 && at < 2.8) pose.ear = 1;
+    } else if (name === "swish") {
+      const s = at - 0.8;
+      if (s > 0 && s < 1.4) {
+        pose.sway = Math.sin(s * 11);
+        pose.ear = s > 0.2 && s < 1.2 ? 1 : 0;
+      }
+    } else if (name === "lie") loop = lyingLoop(stop);
+    else if (name === "roll") {
+      loop = ROLL_LOOP;
+      const [k0, k1] = ROLL_KICK;
+      if (at >= k0 && at < k1) {
+        const ease = (a, b) => smooth(Math.min(1, Math.max(0, a / b)));
+        pose.kick = Math.sin((at - k0) * 8) * ease(at - k0, 0.5) * ease(k1 - at, 0.4);
+        pose.sway = Math.sin(time * 6) * 0.8;
+      }
+      if (at >= ROLL_SHAKE[0] && at < ROLL_SHAKE[1]) {
+        const u = (at - ROLL_SHAKE[0]) / (ROLL_SHAKE[1] - ROLL_SHAKE[0]);
+        pose.shake = Math.sin((at - ROLL_SHAKE[0]) * 32) * 1.2 * (1 - u);
+      }
+      rolling = at;
+    }
+    if (loop) pose.rest = loopAt(loop, at);
+  }
+  const fy = feet(g, z);
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  paintAt(g, x, fy, dir, (plot) => drawHorse(spec, pal, plot, pose), shadow);
+  if (rolling !== null) {
+    // A cloud at the back as it rolls, a bigger one off the coat as it shakes.
+    const span = (lo, hi) => (dir > 0 ? { x0: x + lo, x1: x + hi } : { x0: x - hi, x1: x - lo });
+    const [k0, k1] = ROLL_KICK;
+    if (rolling >= k0 + 0.2 && rolling < k1 + 0.8) {
+      horseDustAt(g, 0, fy, ((rolling - k0 - 0.2) * 1.2) % 1, { ...span(-1, 15), count: 10, life: 1, rise: 5 });
+    }
+    horseDustAt(g, 0, fy, rolling - (ROLL_SHAKE[0] - 0.1), { ...span(1, 15), count: 18, life: 0.9, rise: 11 });
+  }
+}
+
+// Built from parts (giraffe.js): a Masai giraffe that paces with its feet planted (each side's hooves
+// step almost together), eases to a stop and spends the stop in the pose rest() picked as it stopped:
+// "browse" (the neck leans forward and the head reaches into an acacia's leaves, the tongue curling
+// round a twig, then a leaf at its lips as it munches), "drink" (the fore legs splay, the shoulders
+// sink and the neck curves down to the water, now and then lifting the head to watch the plain) or
+// "chew" (standing, the jaw working and an ear flicking). Standing it breathes, blinks and swishes
+// its tail. n.since (settle, critters.js) is when its state last changed and n.timer the seconds its
+// stop has left. giraffeMuzzle(pose) says where the muzzle is in a still pose, as [px from x in the
+// way it faces, px above the hooves], so the scene can tell whether a tree is in reach and where the
+// water is. Its palette is the scene's `giraffe` array ([fur, patch, dark, muzzle]) with the scene's
+// groundShadow and leaf beside it.
+const GIRAFFE_EASE = 0.3; // seconds a walk takes to start or stop
+// Its shadow: a row from 3 px behind its x to 18 ahead, and a fainter one 2 px shorter at each end below.
+const GIRAFFE_SHADOW = { span: [-3, 18], rows: [[2, 0.5]] };
+export const giraffeMuzzle = (pose) => muzzleAt(GIRAFFE, pose);
+
+const within = (t, a, b) => t >= a && t < b;
+const bump = (t, a, b, rise) => smooth(Math.max(0, Math.min(1, Math.min((t - a) / rise, (b - t) / rise))));
+
+export function giraffeAt(g, n, time = 0) {
+  if (g.trace) return g.trace.draw(giraffeAt, g, n, time);
+  const colours = g.pal[n.pal ?? "giraffe"];
+  const pal = tonesFor(colours, "giraffe", () => giraffeTones(colours));
+  pal.leaf = g.pal.leaf;
+  const bodyX = n.x * n.dir;
+  const walking = n.state === "walk";
+  const since = sinceOf(n, time);
+  const stop = since + (n.timer ?? 0);
+  const phase = bodyX / (GIRAFFE.stride / GIRAFFE_GAIT.stance);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, GIRAFFE_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.9 : Math.sin(time * 1.3) * 0.5,
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, n.phase ?? 0, 2.9, 0.07),
+  };
+  if (!walking && since >= GIRAFFE_EASE) {
+    const name = n.pose === "browse" || n.pose === "drink" ? n.pose : "stand";
+    const hold = [1.5, stop - 1.7];
+    if (name !== "stand") {
+      pose.rest = loopAt(
+        [
+          [0, 0.4, "stand", "stand"],
+          [0.4, hold[0], "stand", name],
+          [hold[0], hold[1], name, name],
+          [hold[1], stop - 0.3, name, "stand"],
+        ],
+        since,
+      );
+    }
+    const held = within(since, hold[0], hold[1]);
+    if (name === "browse" && held) {
+      // The tongue reaches round a twig, the giraffe munches with a leaf at its lips, and reaches again.
+      const c = (since - hold[0] - 0.2) % 2.8;
+      if (c >= 0 && c < 0.7) pose.tongue = Math.sin((Math.PI * c) / 0.7) ** 0.6;
+      else if (c >= 0.7 && c < 1.4) Object.assign(pose, { leaf: c < 1.15, chew: Math.floor(time * 6) % 2 === 0 });
+      else if (c >= 1.4 && c < 2.1) pose.tongue = Math.sin((Math.PI * (c - 1.4)) / 0.7) ** 0.6;
+      else if (c >= 2.1) pose.chew = Math.floor(time * 6) % 2 === 0;
+    } else if (name === "drink" && held) {
+      // It dips to sip, and lifts its head for a moment to watch the plain.
+      const mid = (hold[0] + hold[1]) / 2;
+      const sip = 1.2 * Math.sin((since - hold[0]) * 2.6) ** 2;
+      const watch = hold[1] - hold[0] > 2.4 ? bump(since, mid - 0.4, mid + 0.4, 0.3) * 26 : 0;
+      pose.head = watch - sip;
+    } else if (name === "stand") {
+      // Chewing, with an ear flick or two, and now and then a look up.
+      pose.chew = since > 0.6 && Math.floor(time * 6) % 2 === 0;
+      const flick = [1.4, 2.8, 4.4].find((a) => within(since, a, a + 0.35));
+      if (flick !== undefined) pose.ear = Math.sin((Math.PI * (since - flick)) / 0.35);
+      if (since > 5.4) pose.head = bump(since, 5.4, 6.2, 0.3) * 9;
+    }
+  }
+  const shadow = { ...GIRAFFE_SHADOW, colour: shadowColour(g.pal) };
+  paintAt(g, Math.round(n.x), feet(g, n), n.dir, (plot) => drawGiraffe(GIRAFFE, pal, plot, pose), shadow);
+}
+
+// Eeyore, the Hundred Acre Wood's donkey, on the horse build with his own spec and no stripes (horse.js):
+// a grey barrel on thin legs, his head hung low on a sloping neck, long ears laid back, a dark mane and a
+// thin tail. He trudges the four-beat walk with his hooves planted; every stop he stands (breathing,
+// blinking, sighing with his head lower, flicking an ear), sits back on his haunches gloomily and gets
+// up again before he walks on. e.since (settle, critters.js) is when his state last changed and e.timer
+// the seconds his stop has left. His palette is the scene's `eeyore` array ([grey, shade, dark, muzzle])
+// with the scene's groundShadow beside it.
+const EEYORE_EASE = 0.3; // seconds a walk takes to start or stop
+const EEYORE_SHADOW = [-1, 11]; // the columns his shadow spans
+
+export function eeyoreAt(g, e, time = 0) {
+  if (g.trace) return g.trace.draw(eeyoreAt, g, e, time);
+  const colours = g.pal[e.pal ?? "eeyore"];
+  const pal = tonesFor(colours, "eeyore", () => eeyoreTones(colours));
+  const bodyX = e.x * e.dir;
+  const walking = e.state === "walk";
+  const since = sinceOf(e, time);
+  const stop = since + (e.timer ?? 0);
+  const phase = bodyX / (EEYORE.stride / HORSE_GAIT.stance);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, EEYORE_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.4 : Math.sin(time * 1.1) * 0.35,
+    breath: breathAt(time, 2, !walking),
+    blink: blinkAt(time, e.phase ?? 0, 3.1, 0.045),
+    flop: walking ? Math.sin(phase * 2 * Math.PI + 1) : Math.sin(time * 1.5) * 0.3,
+  };
+  if (!walking && since >= EEYORE_EASE) {
+    const at = e.actAt ?? since;
+    const up = Math.max(3.2, stop - 1.4);
+    // Standing he sighs (his head sinks lower) and flicks an ear; then he sits down, sighs again, and
+    // rises before the walk.
+    const loop =
+      e.pose === "sit"
+        ? [[0, Infinity, "sit", "sit"]]
+        : [
+            [0, 1.9, "stand", "stand"],
+            [1.9, 3.0, "stand", "sit"],
+            [3.0, up, "sit", "sit"],
+            [up, stop - 0.2, "sit", "stand"],
+          ];
+    pose.rest = loopAt(loop, at);
+    pose.head = -0.5 * bump(at, 0.5, 1.8, 0.4) - 0.4 * bump(at, 3.6, Math.max(3.8, up - 0.2), 0.4);
+    pose.ear = bump(at, 1.0, 1.7, 0.2) + bump(at, 4.2, 4.9, 0.2) > 0.5 ? 1 : 0;
+  }
+  const shadow = { colour: shadowColour(g.pal), span: EEYORE_SHADOW };
+  paintAt(g, Math.round(e.x), feet(g, e), e.dir, (plot) => drawHorse(EEYORE, pal, plot, pose), shadow);
+}
+
+// The Hundred Acre cast
+
+// Built from parts (cast.js): Pooh, Piglet, Tigger, Rabbit and Roo, each walking its own way (Pooh waddles,
+// Piglet trots, Tigger bounds on all fours, Rabbit and Roo hop) with its feet planted, easing into and out
+// of a stop. Stopped, each stands, breathes, blinks and glances about, and when the stop is long enough
+// Pooh, Piglet, Tigger and Roo sit and Rabbit relaxes, with a small habit (Pooh's paw to his mouth,
+// Piglet's ear and tail, Tigger's flicking tail, Rabbit washing his face, Roo's ear). w.since (settle,
+// critters.js) is when the walker's state last changed and w.timer the seconds its stop has left;
+// w.pose "sit" or "stand" shows one on demand. Pooh and Piglet with w.held (a balloon frame, 0 to 3) hold
+// a balloon up in a raised paw, and with w.lift > 1.5 (rows off the ground) hang from it. Their palettes
+// are the scene's pooh, honey, piglet, tigger, rabbit, roo, balloon, balloon2 and bee arrays, and its
+// groundShadow beside them.
+function castAt(g, id, w, time) {
+  if (g.trace) return g.trace.draw(castAt, g, id, w, time);
+  drawCast(
+    g,
+    tonesFor(g.pal, "cast", () => castTones(g.pal)),
+    id,
+    castPose(id, w, time),
+    Math.round(w.x),
+    g.groundY + 8,
+    Math.round(w.lift ?? 0),
+    w.dir,
+    id === "piglet" ? g.pal.balloon2 : g.pal.balloon,
+  );
+}
+
+export function poohAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(poohAt, g, w, time);
+  castAt(g, "pooh", w, time);
+}
+export function pigletAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(pigletAt, g, w, time);
+  castAt(g, "piglet", w, time);
+}
+
+export function tiggerAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(tiggerAt, g, w, time);
+  castAt(g, "tigger", w, time);
+}
+
+export function rabbitAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(rabbitAt, g, w, time);
+  castAt(g, "rabbit", w, time);
+}
+
+export function rooAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(rooAt, g, w, time);
+  castAt(g, "roo", w, time);
+}
+
+// The bees that swarm after Pooh and Piglet, and cross the sky on their own: a stream of seven from
+// s = { x, y, dir } (cast.js), the scene's `bee` palette.
+export function swarmAt(g, s, time = 0) {
+  if (g.trace) return g.trace.draw(swarmAt, g, s, time);
+  drawSwarm(g, s, time);
+}
+
+export { drawLooseBalloon };
+
+// Primates
+
+// Built from parts (primate.js): a macaque that walks the ground, a langur that sits on a branch and
+// now and then hops to another, and a gibbon that brachiates under the crowns. Each palette is the
+// scene's array under the animal's name (monkey, langur, gibbon) with the scene's `primate` entry
+// beside it (the mouth, the call's song, and dark at night), and its groundShadow. Tones are cached per array.
+const primateTones = (colours, make) => tonesFor(colours, "primate", make);
+
+// A painter at origin (x0, base), own unit dx forward of it and h up.
+const primatePlot = (g, x0, base, dir) => plotter(g, x0, base + 1, dir);
+
+const MACAQUE_EASE = 0.25; // seconds a walk takes to start or stop
+const MACAQUE_SIT = [0.3, 0.8]; // into a stop: it sits down over this
+const MACAQUE_YAWN_AT = 1.6;
+const MACAQUE_YAWN = 2.0;
+const MACAQUE_SHADOW = [-2, 12]; // the columns its shadow spans
+
+// The macaque walks on all fours with its feet planted (a diagonal-sequence walk), eases to a stop,
+// sits down on its rump for a stop of 2 s or more and stands before it walks on, and in a long stop
+// may yawn, showing its canines. Standing or sitting it breathes, blinks and looks up. m.since
+// (settle, critters.js) is when its state last changed and m.timer the seconds its stop has left;
+// m.pose "sit" sits it down and m.act "yawn" (with m.actAt seconds in) shows the yawn on demand. Its
+// feet stand on m.y, or four rows below the soil line.
+export function macaqueAt(g, m, time) {
+  if (g.trace) return g.trace.draw(macaqueAt, g, m, time);
+  const own = g.pal.primate;
+  const pal = primateTones(g.pal.monkey, () => macaqueTones(g.pal.monkey, own));
+  const walking = m.state === "walk";
+  const since = sinceOf(m, time);
+  const x = Math.round(m.x);
+  const bodyX = m.x * m.dir;
+  const phase = bodyX / (MACAQUE.stride / STANCE);
+  const state = {
+    phase,
+    amp: ease(walking, since, MACAQUE_EASE),
+    bodyX,
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.6 : Math.sin(time * 1.4) * 0.6,
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, m.phase ?? 0, 3.1),
+    headUp: 0,
+  };
+  if (!walking) {
+    const stop = since + (m.timer ?? 0);
+    const [d0, d1] = MACAQUE_SIT;
+    let sit = 0;
+    if (m.pose === "sit" || m.act) sit = 1;
+    else if (stop >= 2) {
+      const up = stop - 0.8;
+      sit =
+        since < d0 ? 0 : since < d1 ? (since - d0) / (d1 - d0) : since < up ? 1 : Math.max(0, 1 - (since - up) / 0.5);
+    }
+    state.rest = { from: "stand", to: "sit", u: sit };
+    const r = hash(Math.round((m.since ?? 0) * 100), x, 7);
+    const yawning =
+      m.act === "yawn"
+        ? (m.actAt ?? 0.8)
+        : stop >= MACAQUE_YAWN_AT + MACAQUE_YAWN + 1.2 && r < 0.7
+          ? since - MACAQUE_YAWN_AT
+          : -1;
+    const yawn = yawnAt(yawning);
+    if (yawn) Object.assign(state, yawn, { blink: yawn.blink ?? false });
+    else if (since > 1 && since < 2) state.headUp = Math.min(1, (since - 1) / 0.25, (2 - since) / 0.25);
+  }
+  // Its feet stand on m.y, or four rows below the soil line.
+  const fy = (m.y ?? g.groundY + 4) + 1;
+  const shadow = { colour: shadowColour(g.pal), span: MACAQUE_SHADOW };
+  paintAt(g, x, fy, m.dir, (plot) => drawPrimate(MACAQUE, pal, plot, macaquePose(state)), shadow);
+}
+
+export const LANGUR_HOP_SECONDS = HOP[HOP.length - 1][1];
+
+// A dusky langur sitting on a branch under a crown (l.x, its feet on the row above l.y, facing
+// l.dir), its tail hanging behind the branch and swaying. Its reach move (l.moves.reach, see percher
+// and fidget in critters.js) takes it up into the crown for a leaf that it eats. While l.hop
+// ({ from, to, start }) runs, it rises onto all fours, leaps to the branch at `to` and sits there.
+// The branch is drawn under each of l.perches (or l.x). Its palette is langur: [fur, face, white,
+// belly], with the scene's leaf tones for the leaf.
+export function langurAt(g, l, time) {
+  if (g.trace) return g.trace.draw(langurAt, g, l, time);
+  const own = g.pal.primate;
+  const pal = primateTones(g.pal.langur, () => langurTones(g.pal.langur, [g.pal.leaf[1], g.pal.leaf[2]], own));
+  let x = l.x;
+  let lift = 0;
+  let dir = l.dir;
+  const state = {
+    rest: { from: "sit", to: "sit", u: 0 },
+    sway: Math.sin(time * 1.3 + (l.phase ?? 0)) * 1.5,
+    breath: breathAt(time),
+    blink: blinkAt(time, l.phase ?? 0, 3.3),
+  };
+  const hopping = l.hop && time >= l.hop.start && time < l.hop.start + LANGUR_HOP_SECONDS;
+  if (hopping) {
+    const hop = langurHop(time - l.hop.start, l.hop.from, l.hop.to);
+    dir = l.hop.to > l.hop.from ? 1 : -1;
+    x = hop.x;
+    lift = hop.h;
+    state.rest = hop.rest;
+    if (hop.rest.from === "fly" || hop.rest.to === "fly") state.sway = 0;
+    state.breath = hop.rest.from === "sit" && hop.rest.to === "sit" && state.breath;
+  } else {
+    const m = l.moves?.reach;
+    const reach = m && time < m.until ? reachAt(m.lasts - (m.until - time)) : null;
+    if (reach) Object.assign(state, reach);
+  }
+  // Own x 5 is the langur's middle, so it turns where it sits.
+  const plot = primatePlot(g, Math.round(x) - dir * 5, l.y - 1 - lift, dir);
+  const P = langurPose(state);
+  drawPrimate(LANGUR, pal, plot, P, "back");
+  for (const px of l.perches ?? [l.x]) {
+    g.ctx.fillStyle = g.pal.trunk[0];
+    g.ctx.fillRect(Math.round(px) - 8, l.y, 17, 1);
+    g.ctx.fillStyle = g.pal.trunk[1];
+    g.ctx.fillRect(Math.round(px) - 8, l.y + 1, 17, 1);
+  }
+  drawPrimate(LANGUR, pal, plot, P, "front");
+}
+
+export const GIBBON_CALL_SECONDS = CALL_SECONDS;
+export const LANGUR_REACH_SECONDS = REACH_SECONDS;
+
+// A white-handed gibbon brachiating under the crowns: one hand holds (b.hx, b.hy) while its body
+// swings under it like a pendulum (b.t from 0, behind, to 1, ahead), the hands taking turns (b.count
+// swings so far) and the free one letting go of the last hold (when b.prevOk) and taking the next.
+// b.leap ({ fromX, fromY, x, y }) flies it across a gap; b.call (seconds in) stops it for its great
+// call, hanging by both hands. holdAt(x) is the row a hand can hold at x, or null; `pal` holds its
+// gibbon array [fur, face, white] and the primate entry.
+export function gibbonAt(g, b, pal, time = 0, holdAt = () => null) {
+  if (g.trace) return g.trace.draw(gibbonAt, g, b, pal, time, holdAt);
+  const tones = primateTones(pal.gibbon, () => gibbonTones(pal.gibbon, pal.primate));
+  const near = (b.count ?? 0) % 2 === 0;
+  let P;
+  let x0 = b.hx;
+  let base = b.hy;
+  if (b.call != null) P = gibbonCallAt(b.call, { near, time });
+  else if (b.leap) {
+    x0 = b.leap.fromX;
+    base = b.leap.fromY;
+    P = gibbonLeap(b.t, Math.abs(b.leap.x - b.leap.fromX), b.leap.fromY - b.leap.y, { near });
+  } else {
+    const prevY = b.prevOk ? holdAt(b.hx - b.dir * GIBBON_REACH) : null;
+    const nextY = holdAt(b.hx + b.dir * GIBBON_REACH);
+    P = gibbonSwing(b.t, { prev: prevY === null ? null : b.hy - prevY, next: nextY === null ? 0 : b.hy - nextY, near });
+    P.blink = blinkAt(time, 0, 2.9);
+  }
+  drawPrimate(GIBBON, tones, primatePlot(g, Math.round(x0), Math.round(base), b.dir), P);
+}
+
+// Hares and rodents
+
+// Built from parts (beast.js): the cottontail (meadow), the jackrabbit (desert) and the groundhog
+// (smokies). A hare hops in whole hops with its feet planted where they land (push off, stretch,
+// land on the forefeet, hind feet swung forward); a groundhog walks on four short drawn legs. Stopped
+// (state "sit") each gathers, then takes the pose r.pose names (harePoses(kind), picked by rest() in
+// critters.js) and eases back before it moves on: a hare sits up tall (the jackrabbit stands to look
+// out) with its ears turning, grazes, washes its face, loafs or lies out; a groundhog stands up to look
+// about, sits to eat or sprawls in the sun. While r.frozen holds seconds (the desert hawk's stoop) a
+// hare presses flat with its ears back. r.since and r.timer come from settle() and wander(); r.kind
+// is "cottontail" (the default), "jackrabbit" or "groundhog". Its palette is [fur, dark, white], or
+// for a groundhog [fur, dark, grizzle], with the scene's `groundShadow` beside it.
+export { harePoses };
+
+export function hareAt(g, r, time = 0) {
+  if (g.trace) return g.trace.draw(hareAt, g, r, time);
+  const kind = r.kind ?? "cottontail";
+  const colours = g.pal[r.pal ?? (kind === "groundhog" ? "groundhog" : "rabbit")];
+  const pal = tonesFor(colours, "beast", () => beastTones(colours, kind === "groundhog" ? { H: colours[2] } : {}));
+  const f = beastFrame(kind, r, time);
+  const [s0, s1] = f.shadow;
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  // f.at is its origin in its own mirrored coordinates, so the page column is -f.at facing left.
+  const ox = Math.round(f.at) * r.dir;
+  paintAt(g, ox, feet(g, r), r.dir, (plot) => drawBeast(BEASTS[kind].spec, pal, plot, f.P, f.x), shadow);
 }
 
 // Ground birds
 
-// The roadrunner's build (desert.js), shared: an egg-shaped body, a small head with an eye, a tail and
-// the wing laid along the side in a darker shade, on two thin legs that lift in turn. Each member's
-// grids, its legs' [near, far] columns and height, and its colours from its palette.
-const GROUND_BIRDS = {
-  // A wild turkey: bronze, a blue head and red wattle; standing, it struts with its tail fanned.
-  turkey: {
-    walk: [
-      "...........bb.",
-      "..........bbbD",
-      "..........brr.",
-      "...BBBBBB.b...",
-      "TBBBBBBBBBb...",
-      "TBBWWWWBBBB...",
-      "TBBBWWWWBBB...",
-      ".BBBBBBBBB....",
-      "...BBBBB......",
-    ],
-    sit: [
-      "..TTTTT.......",
-      ".TWTWTWT......",
-      "TWTWTWTWT.....",
-      "TWTBBBBTW.bb..",
-      "TTBBBBBBBbbbD.",
-      ".TBBWWWWBBrr..",
-      "..BBBWWWWBb...",
-      "..BBBBBBBB....",
-      "....BBBBB.....",
-    ],
-    legs: [4, 6],
-    tall: 2,
-    colours: ([body, wing, red, blue, dark]) => [{ B: body, W: wing, T: wing, r: red, b: blue, D: dark }, dark, dark],
-  },
-  // A secretary bird: tall on long legs, black "trousers", a crest of quills and an orange face.
-  secretary: {
-    walk: [
-      "..KK.K........",
-      "...KKKK.......",
-      "......GGG.....",
-      "......GOGKK...",
-      "......GGG.....",
-      "......GGG.....",
-      "....GGGGGG....",
-      "KKGGGGGGGG....",
-      ".WWKGGGGGG....",
-      "...WKKKKKG....",
-      ".....KKKK.....",
-      ".....KK.K.....",
-    ],
-    shift: 1,
-    legs: [5, 7],
-    tall: 6,
-    colours: ([grey, black, face, white]) => [{ G: grey, K: black, O: face, W: white }, face, black],
-  },
-  // A feral rooster, the moa: a red comb and a dark sickle tail. Standing, it pecks.
-  moa: {
-    walk: ["......cc..", ".....BBBY.", "T....BeB..", "TT..BBBc..", "TTTBBBBB..", ".TBBBBBB..", "..TBBBB..."],
-    sit: ["...........", "...........", "T..........", "TT.........", "TTTBBBBBBcc", ".TBBBBBBBe.", "..TBBBB.cY."],
-    legs: [4, 6],
-    tall: 2,
-    colours: ([body, tail, comb, legs]) => [{ B: body, T: tail, c: comb, e: tail, Y: legs }, legs, legs],
-  },
-};
+// Built from parts (groundbird.js): the roadrunner (desert), the wild turkey (Smokies), the secretary bird
+// (Serengeti) and the moa, a feral rooster (Hawaii). A bird walks with its feet planted: its stride clock
+// b.c (critters.js stride) grows with the ground it covers, GROUND_STRIDE[kind] being [px a stride, seconds
+// a stride], and groundSpeed(kind) the speed that goes with it (the roadrunner runs, the others walk). It
+// eases into a stop (b.amp, the share of walking still in its legs) and plays the pose rest() picked
+// as it stopped (groundPoses): the roadrunner's tail pump, preen and wing stretch; the turkey's display (the
+// fan spreads, it struts on slow steps, then folds) and preen; the secretary bird's stamping hunt, preen
+// and stretch; the moa's pecks in threes, scratch, preen and wing flap. b.since (settle) is when its state
+// changed and b.timer the seconds its stop has left. Call groundBirdStep() after wander() and rest() each
+// update. A bird's palette is named after its kind, with the scene's groundShadow beside it.
+export const groundSpeed = speedOf;
+const GROUND_STRIDE = Object.fromEntries(
+  Object.keys(CYCLE).map((kind) => [kind, [speedOf(kind) * CYCLE[kind], CYCLE[kind]]]),
+);
+export const groundPoses = (b, kind) => restPoses(kind, b.timer ?? 0);
 
-// A ground bird of `kind`, walking or, standing (`sit`), in its standing pose. Its palette is named
-// after its kind.
-export function groundBirdAt(g, b, kind) {
-  const s = GROUND_BIRDS[kind];
-  const [colours, near, far] = s.colours(g.pal[b.pal ?? kind]);
-  const x = Math.round(b.x);
-  const y = feet(g, b);
+export function groundBirdStep(f, b, dt, kind, x0) {
+  if (!b.active) return;
+  const strut = STRUT[kind];
+  if (strut && b.state === "sit" && b.pose === strut.pose && b.x > 14 && b.x < f.cols - 14) {
+    const since = f.time - (b.since ?? f.time);
+    if (since > strut.from && since < strut.to) b.x += b.dir * strut.speed * dt;
+  }
+  const [px, cycle] = GROUND_STRIDE[kind];
+  stride(b, x0, dt, px, cycle);
+  const goal = b.moving ? 1 : 0;
+  b.amp ??= goal;
+  b.amp += (goal - b.amp) * Math.min(1, dt / (goal ? 0.1 : 0.12));
+  if (Math.abs(goal - b.amp) < 0.01) b.amp = goal;
+}
+
+export function groundBirdAt(g, b, kind, time = 0) {
+  if (g.trace) return g.trace.draw(groundBirdAt, g, b, kind, time);
+  const spec = GROUND_MEMBERS[kind];
+  const C = groundTones(spec, g.pal[b.pal ?? kind]);
   const walking = b.state === "walk";
-  const step = Math.floor(b.phase) % 2;
-  part(g, far, x, y, b.dir, s.legs[1], -s.tall, 1, walking && step === 1 ? s.tall - 1 : s.tall);
-  part(g, near, x, y, b.dir, s.legs[0], -s.tall, 1, walking && step === 0 ? s.tall - 1 : s.tall);
-  const grid = !walking && s.sit ? s.sit : s.walk;
-  sprite(g, grid, colours, x, y - s.tall, b.dir, s.shift ?? 0, grid.length);
+  const amp = b.amp ?? (walking ? 1 : 0);
+  const seed = (b.phase ?? 0) % 7;
+  const since = sinceOf(b, time);
+  const P = walking
+    ? { ...restPose(kind, "stand", 0, time, seed), neckH: 0, neckX: 0 }
+    : restPose(kind, b.pose ?? "stand", since, time, seed);
+  const fan = P.fan ?? 0;
+  const dir = b.dir;
+  const bodyX = dir * b.x - spec.cx;
+  Object.assign(P, {
+    phase: b.c ?? (b.phase ?? 0) * 0.25,
+    amp,
+    run: kind === "runner" ? amp : 0,
+    bob: amp * (1 - fan * 0.7),
+    bodyX,
+  });
+  if (kind === "runner") {
+    P.crest = P.crest === 0 ? 0 : amp > 0.5 ? 0.45 : 1;
+    P.tailAng = (P.tailAng ?? 0) + amp * Math.sin(time * 5.1 + seed) * 7;
+  }
+  // The build draws its own shadow, as the cells on row -1. bodyX is its origin in its own mirrored
+  // coordinates, and facing left it is mirrored about the edge between columns -1 and 0.
+  const origin = Math.round(bodyX);
+  const shade = shadowColour(g.pal);
+  paintAt(g, dir > 0 ? origin : -origin - 1, feet(g, b), dir, (plot) =>
+    drawGroundBird(spec, C, (u, h, colour) => plot(u, h, h < 0 ? shade : colour), P),
+  );
 }
 
-// Shelled animals
+// Shelled and scaled
 
-// One build: a domed shell with dark seams and a dark rim, the head and legs in skin. The tortoise has
-// a high dome and tucks its head in to rest; the sea turtle a flatter shell and a front flipper that
-// sweeps up and down; the ghost crab eyes on stalks and raised claws. P shell, H seam, R rim, K skin,
-// e eye, C claw.
-const SHELLED = {
-  tortoise: {
-    walk: ["...PPPP....", "..PPHPPP...", ".PHPPPHPP..", ".PPPHPPPKKK", ".RRRRRRRKKe"],
-    sit: ["...PPPP....", "..PPHPPP...", ".PHPPPHPP..", ".PPPHPPPK..", ".RRRRRRRK.."],
-  },
-  honu: ["...PPPPP....", ".PPHPPHPP...", "PPPHPPPHPPKK", "RRRRRRRRRKKe"],
-  crab: ["..e...e..", "..P...P..", "C.PPPPP.C", "CPPPPPPPC", ".RRRRRRR."],
-};
-const FLIPPER = { up: ["....KKK", "...KK.."], down: ["...KK..", "....KKK"] };
+// Built from parts (shell.js): a desert tortoise that plods in diagonal pairs with its shell rocking,
+// a snake that slithers through bends fixed to the ground, a honu that swims on strokes of its fore
+// flippers, and a ghost crab that scuttles sideways. Each palette is the scene's array under the
+// animal's name (tortoise, snake, turtle, crab) with the scene's `groundShadow` beside it (and the
+// snake's `snakeTongue` and `snakeBuzz`). Tones are made once per array and animal, so the honu and its
+// hatchling, which share the turtle array, keep their own.
+const shellTones = (colours, key, make) => tonesFor(colours, key, () => make(colours));
 
-// A desert tortoise walking, or resting with its head in. Its feet stand on row y. Its palette is
-// tortoise: [shell, seam, skin, rim].
-export function tortoiseAt(g, t, y) {
-  const [shell, seam, skin, rim] = g.pal.tortoise;
-  const x = Math.round(t.x);
-  const walking = t.state === "walk";
-  const step = walking ? Math.floor(t.phase) % 2 : 0;
-  part(g, skin, x, y, t.dir, step ? 1 : 2, -2, 2, 2);
-  part(g, skin, x, y, t.dir, step ? 6 : 5, -2, 2, 2);
-  const grid = walking ? SHELLED.tortoise.walk : SHELLED.tortoise.sit;
-  sprite(g, grid, { P: shell, H: seam, R: rim, K: skin, e: rim }, x, y - 2, t.dir, 0, grid.length);
+// Paints an animal whose own units are laid at origin `ox` (in its mirrored coordinates, so the animal
+// faces `dir`), its feet on row y - 1, over a soft shadow on row y from column s0 to s1 (exclusive).
+function shellAt(g, ox, y, dir, [s0, s1], draw) {
+  paintAt(g, ox * dir, y, dir, draw, { colour: shadowColour(g.pal), span: [s0, s1 - 1] });
 }
 
-// A sea turtle swimming with its shell's bottom row at y, or its hatchling at scale k. Its palette is
-// turtle: [shell, dark, skin].
+// A desert tortoise walking, or stopped: it pulls its head in and settles on its plastron (the
+// default), grazes or lifts its head to look, as t.pose (TORTOISE_POSES) says. Its feet stand on row
+// y - 1. Its palette is tortoise: [shell, seam, skin, rim].
+export const tortoisePoses = TORTOISE_POSES;
+export function tortoiseAt(g, t, y, time = 0) {
+  if (g.trace) return g.trace.draw(tortoiseAt, g, t, y, time);
+  const f = tortoiseFrame(t, time);
+  const pal = shellTones(g.pal.tortoise, "tortoise", tortoiseTones);
+  shellAt(g, Math.round(f.at), y, t.dir, TORTOISE.shadow, (plot) => drawTortoise(pal, plot, f.pose));
+}
+
+// A snake slithering, or stopped: stretched flicking its tongue, coiled, or reared with its rattle
+// buzzing, as s.pose (SNAKE_POSES) says. Its palette is snake: [sand, brown].
+export const snakePoses = SNAKE_POSES;
+export function snakeAt(g, s, time = 0) {
+  if (g.trace) return g.trace.draw(snakeAt, g, s, time);
+  const f = snakeFrame(s, time);
+  const pal = shellTones(g.pal.snake, "snake", (c) => snakeTones(c, g.pal.snakeTongue));
+  shellAt(g, f.at, s.y ?? g.groundY + 6, s.dir, SNAKE_UNITS.shadow, (plot) => {
+    drawSnake(pal, plot, f.nodes, f.pose);
+    if (f.pose.buzz != null) drawBuzz(plot, g.pal.snakeBuzz, f.nodes[0], f.pose.buzz);
+  });
+}
+
+// A sea turtle swimming with its shell's bottom row at y, or its hatchling at scale k below 1. Its
+// palette is turtle: [shell, dark, skin].
 export function honuShellAt(g, t, y, time, k = 1) {
-  const [shell, dark, skin] = g.pal.turtle;
-  const colours = { P: shell, H: dark, R: dark, K: skin, e: dark };
-  const x = Math.round(t.x);
-  const up = Math.floor(time * 2) % 2;
-  sprite(g, SHELLED.honu, colours, x, y, t.dir, 0, 3, k);
-  const flipper = up ? FLIPPER.up : FLIPPER.down;
-  sprite(g, flipper, colours, x, y, t.dir, 0, up ? 4 : 0, k);
-  sprite(g, ["KK"], colours, x, y, t.dir, 1, 0, k);
-}
-
-// A ghost crab scuttling, its legs on row y. Its palette is crab: [shell, dark].
-export function crabAt(g, c, y) {
-  const [shell, dark] = g.pal.crab;
-  const x = Math.round(c.x) - 4;
-  const step = Math.floor(c.phase) % 2;
-  for (const dx of [step ? 1 : 2, step ? 3 : 4, step ? 6 : 5, 7]) part(g, dark, x, y, 1, dx, 0, 1, 1);
-  sprite(g, SHELLED.crab, { P: shell, R: dark, C: shell, e: "#1a1a1a" }, x, y, 1, 0, SHELLED.crab.length);
-}
-
-// Owls
-
-// An owl flying straight at you, its wings rooted on its shoulders: B brown, S shade, F face, E eyes,
-// K beak. Column 7 is the bird's centre; OWL_EYES is each pose's eye row.
-const OWL_FLYING = {
-  up: [
-    "S.............S",
-    "BB...........BB",
-    ".BB..S...S..BB.",
-    "..BBBFFFFFBBB..",
-    "...BBFEFEFBB...",
-    ".....FFKFF.....",
-    ".....BBBBB.....",
-    ".....BBBBB.....",
-    "......SSS......",
-  ],
-  level: [
-    ".....S...S.....",
-    ".....FFFFF.....",
-    ".BBBBFEFEFBBBB.",
-    "BBSBBFFKFFBBSBB",
-    "S....BBBBB....S",
-    ".....BBBBB.....",
-    "......SSS......",
-  ],
-  down: [
-    ".....S...S.....",
-    ".....FFFFF.....",
-    "....BFEFEFB....",
-    "..BBBFFKFFBBB..",
-    ".BBSBBBBBBBSBB.",
-    "BB...BBBBB...BB",
-    "S.....SSS.....S",
-  ],
-};
-const OWL_EYES = { up: 4, level: 2, down: 2 };
-const OWL_BEAT = ["up", "level", "down", "level"];
-
-// An owl flying straight at you: a pale face with two eyes, its wings beating up, level and down. `tufts`
-// gives it ear tufts (a great horned owl). Perched (`perch`), it stands upright and now and then
-// turns its head (`look` -1 or 1) or blinks. Its palette is owl: [brown, shade, face, eyes, beak].
-export function owlAt(g, o, time, { look = 0, blink = false } = {}) {
-  const [brown, shade, face, eyes, beak] = g.pal[o.pal ?? "owl"];
-  const x = Math.round(o.x);
-  const px = (colour, dx, dy, w, h) => part(g, colour, x, Math.round(o.y), 1, dx, dy, w, h);
-  if (o.pose === "perch") {
-    px(brown, -2, -8, 5, 8);
-    px(shade, -2, -3, 1, 3);
-    px(shade, 2, -3, 1, 3);
-    px(shade, -1, -4, 1, 1);
-    px(shade, 1, -2, 1, 1);
-    px(face, -2 + look, -8, 5 - Math.abs(look), 3);
-    if (!blink) {
-      px(eyes, -1 + look, -7, 1, 1);
-      if (look === 0) px(eyes, 1, -7, 1, 1);
-    }
-    px(beak, look, -6, 1, 1);
-    if (o.tufts) {
-      px(brown, -2, -9, 1, 1);
-      px(brown, 2, -9, 1, 1);
-    }
-    px(beak, -1, 0, 1, 1);
-    px(beak, 1, 0, 1, 1);
-    return;
-  }
-  // Silent and unhurried: two slow wingbeats, then a glide.
-  const u = (time + (o.phase ?? 0)) % 2;
-  const pose = u < 1 ? OWL_BEAT[Math.floor(u / 0.125) % OWL_BEAT.length] : "level";
-  const colours = { B: brown, S: shade, F: face, E: eyes, K: beak };
-  sprite(g, OWL_FLYING[pose], colours, x, Math.round(o.y) - 1, 1, 7, OWL_EYES[pose]);
-  if (o.tufts) {
-    px(brown, -2, -4, 1, 1); // ear tufts over the ear marks
-    px(brown, 2, -4, 1, 1);
+  if (g.trace) return g.trace.draw(honuShellAt, g, t, y, time, k);
+  const hatch = k < 1;
+  const unit = hatch ? HATCHLING : HONU;
+  // Its shell's bottom row is y, the row its feet would stand on; its middle is at t.x.
+  const x = Math.round(t.x) - t.dir * unit.mid;
+  if (hatch) {
+    const stroke = strokeAt(time / HATCHLING.cycle + 0.3 + (t.phase ?? 0) * 0.1).stroke;
+    paintAt(g, x, y + 1, t.dir, (plot) =>
+      drawHatchling(shellTones(g.pal.turtle, "hatchling", hatchTones), plot, stroke),
+    );
+  } else {
+    const swim = swimAt(time);
+    const pal = shellTones(g.pal.turtle, "honu", honuTones);
+    paintAt(g, x, y + 1, t.dir, (plot) => drawHonu(pal, (px, h, colour) => plot(px, h + swim.bob, colour), swim.pose));
   }
 }
 
-// Birds of prey
+// A honu hauled out on the sand with its feet on row y - 1: t.mode "crawl" heaves itself along on both
+// fore flippers (t.age seconds in; the scene moves its x with crawlX), "bask" lies flat blinking,
+// gasping and flicking sand onto its back (t.age seconds into the bask). Its palette is turtle:
+// [shell, dark, skin], with sand grains of the scene's soil[2].
+export { CRAWL, crawlX } from "./shell.js";
+export function honuAshoreAt(g, t, y) {
+  if (g.trace) return g.trace.draw(honuAshoreAt, g, t, y);
+  const crawling = t.mode === "crawl";
+  const pose = crawling ? crawlAt(t.age / CRAWL) : baskAt(t.age);
+  const pal = shellTones(g.pal.turtle, "honu", honuTones);
+  shellAt(g, Math.round(t.x) * t.dir - HONU.mid, y, t.dir, HONU.shadow, (plot) => {
+    drawHonu(pal, plot, pose);
+    if (!crawling) drawGrains(plot, g.pal.soil[2], t.age);
+  });
+}
 
-// Each is a pose grid. B is the dark plumage, L the pale underwing or head, R a rufous or white
-// tail, K the beak or head, S silver flight feathers and W a white band.
-const RAPTORS = {
-  // A golden or bald eagle seen from the side, a slow flyer: a long wing angled up with fingered tips.
-  // It mostly glides and now and then beats the wing down. L is the pale head, R the tail.
-  eagleSide: {
-    glide: [
-      "B.B.B...........",
-      ".BBBBB..........",
-      "...BBBBB........",
-      ".....BBBBB......",
-      "RR...BBBBBBBLLKK",
-      ".RBBBBBBBBBBB..K",
-    ],
-    flap: [
-      "RR...BBBBBBBLLKK",
-      ".RBBBBBBBBBBB..K",
-      ".....BBBBB......",
-      "...BBBBB........",
-      ".BBBBB..........",
-      "B.B.B...........",
-    ],
-    centre: [8, 4],
-    flapCentre: [8, 0],
-  },
-  // A golden or bald eagle overhead: fingered wings, paler flight feathers, a fanned tail and the
-  // head forward. It mostly glides and now and then beats its wings. A bald eagle's head (L) and tail
-  // (R) are white.
-  eagle: {
-    glide: [
-      "B.B.B...K...B.B.B",
-      "BBBBBBBBLBBBBBBBB",
-      ".SSBBBBBBBBBBBSS.",
-      "...SSSBBBBBSSS...",
-      ".......RRR.......",
-      "......RRRRR......",
-    ],
-    flap: [
-      "BB.............BB",
-      "BSB...........BSB",
-      ".BSB....K....BSB.",
-      "..BSBBBBLBBBBSB..",
-      "...BBBBBBBBBBB...",
-      "....SSBBBBBSS....",
-      ".......RRR.......",
-      "......RRRRR......",
-    ],
-    centre: [8, 2],
-    flapCentre: [8, 4],
-  },
-  // A red-tailed hawk soaring overhead, seen from below: the dark bar on the leading edge, pale
-  // underwings, a streaked belly band and the rufous tail. It banks at the ends of its circle.
-  hawk: {
-    glide: [
-      "B.............B",
-      "BBLLBBBKBBBLLBB",
-      ".BLLLLLLLLLLLB.",
-      "..BLLLWWWLLLB..",
-      "......RRR......",
-      ".....RRRRR.....",
-    ],
-    bank: [
-      "B..............",
-      "BBLLBBBKBBB....",
-      ".BLLLLLLLLLLBB.",
-      "..BLLLWWWLLLLLB",
-      "......RRR......",
-      "......RRR......",
-    ],
-    centre: [7, 2],
-    // The wingbeat, from the same view: wings up, level and swept down. The head and tail keep their
-    // rows across all three, so the body holds still while the wings beat.
-    up: [
-      "BB...........BB",
-      "BLB.........BLB",
-      ".BLB.......BLB.",
-      ".BLLBBBKBBBLLB.",
-      "..BLLLLLLLLLB..",
-      "...BLLWWWLLB...",
-      "......RRR......",
-      ".....RRRRR.....",
-    ],
-    level: [
-      "...............",
-      "...............",
-      "...............",
-      "BBBLLBBKBBLLBBB",
-      ".BLLLLLLLLLLLB.",
-      "..BLLLWWWLLLB..",
-      "......RRR......",
-      ".....RRRRR.....",
-    ],
-    down: [
-      "...............",
-      "...............",
-      "...............",
-      "....BBBKBBB....",
-      "..BBLLLLLLLBB..",
-      ".BLLLLWWWLLLLB.",
-      "BL....RRR....LB",
-      "B....RRRRR....B",
-    ],
-    poseCentre: [7, 4],
-  },
-  // A turkey vulture: wings held in a shallow V, black linings and silver flight feathers, a small
-  // red head. It never flaps; it teeters from side to side.
-  vulture: {
-    glide: ["BB.............BB", "SSBB.........BBSS", "..SSBBB.K.BBBSS..", "....SSSBBBSSS....", ".......BBB......."],
-    tilt: ["...............BB", "BB...........BBSS", "SSBBB...K.BBBSS..", "..SSSSSBBBSSS....", ".......BBB......."],
-    centre: [8, 2],
-  },
-  // A crested serpent eagle soaring: dark, with a broad white band along the trailing edge of the
-  // wings and across the tail.
-  serpent: {
-    glide: [
-      "B...............B",
-      "BBBBBBBBKBBBBBBBB",
-      ".WWWWWWBBBWWWWWW.",
-      "..B....BBB....B..",
-      ".......WWW.......",
-      "......BBBBB......",
-    ],
-    bank: [
-      "B................",
-      "BBBBBBBBKBBBBBB..",
-      ".WWWWWWBBBWWWWBBB",
-      "..B....BBB...WWW.",
-      ".......WWW.......",
-      "......BBBBB......",
-    ],
-    centre: [8, 2],
-  },
-};
-
-// A bird of prey in flight, from `kind`'s grids. `bank` picks the second pose (a bank, a tilt or a
-// wingbeat); `pose` names another of the kind's grids instead (the hawk's `up`, `level` and `down`).
-// Its palette is [dark, pale, tail, beak or head, silver, white].
-export function raptorAt(g, r, { bank = false, pose = null } = {}) {
-  const set = RAPTORS[r.kind];
-  const [dark, pale, tail, head, silver, white] = g.pal[r.pal ?? r.kind];
-  const colours = { B: dark, L: pale, R: tail, K: head, S: silver, W: white };
-  const second = set.flap ?? set.bank ?? set.tilt;
-  const grid = pose ? set[pose] : bank ? second : set.glide;
-  const [cx, cy] = pose ? (set.poseCentre ?? set.centre) : bank && set.flapCentre ? set.flapCentre : set.centre;
-  sprite(g, grid, colours, Math.round(r.x), Math.round(r.y), r.dir, cx, cy);
+// A ghost crab scuttling sideways, or stopped (alert, crouched or threatening with its claws raised,
+// as c.pose says, CRAB_POSES), its legs on row y. Its palette is crab: [shell, dark].
+export const crabPoses = CRAB_POSES;
+export function crabAt(g, c, y, time = 0) {
+  if (g.trace) return g.trace.draw(crabAt, g, c, y, time);
+  const f = crabFrame(c, time);
+  const pal = shellTones(g.pal.crab, "crab", crabTones);
+  shellAt(g, Math.round(f.at), y + 1, c.dir ?? 1, CRAB.shadow, (plot) => drawCrab(pal, plot, f.pose));
 }
 
 // Long-necked birds
 
-// One flying build, facing right as written, with the back on row 2. W is the body, S its under-shade,
-// B and T the bill. The swan's neck is stretched out and up; the flamingo's is slimmer and lower, with
-// a bent bill and L, its long legs trailing.
-const SWAN_FLYING = [
-  "................WWWBT",
-  "............WWWWWW...",
-  "..WWWWWWWWWWWWW......",
-  "WWWWWWWWWWWWWW.......",
-  "..SSSSSSSSSS.........",
-];
-const FLAMINGO_FLYING = [
-  "................WWBT.",
-  "............WWWWW..T.",
-  "...WWWWWWWWWWW.......",
-  "LLLLWWWWWWWWW........",
-  "....SSSSSSSS.........",
-];
-const WING_SHOULDER = 9; // the body column a wing's `root` column sits on
-// The wing they share through a beat: W along the leading edge, E along the trailing one. `rise` is
-// how many rows above the back its top row sits; `root` is the wing column on the shoulder.
-const WINGS = [
-  {
-    rise: 10,
-    root: 5,
-    grid: [
-      "E........",
-      "EE.......",
-      "WEE......",
-      "WWEE.....",
-      ".WWWE....",
-      ".WWWWW...",
-      "..WWWWW..",
-      "..WWWWWW.",
-      "...WWWWW.",
-      "...WWWWW.",
-    ],
-  },
-  { rise: 4, root: 6, grid: ["EEEE......", "EWWWWWW...", ".EWWWWWW..", "..EWWWWW.."] },
-  { rise: 1, root: 6, grid: ["EEWWWWWWW.", ".EEWWWWW.."] },
-  {
-    rise: -1,
-    root: 6,
-    grid: ["...WWWWWW.", "..EWWWWWW.", ".EEWWWWW..", "EEEWWW....", "EEEW......", "EE........"],
-  },
-];
-const WING_BEAT = [0, 1, 2, 3, 2, 1]; // up, opening, level, down, level, rising
-const WING_BOB = [1, 0, 0, -1, 0, 0]; // the body sinks as the wing lifts and rises on the downstroke
+// Built from parts (longneck.js): the trumpeter and whooper swans (Yellowstone, Iceland) and the lesser
+// flamingo (Serengeti). A swan walks with its feet planted: its stride clock s.c (critters.js stride) grows
+// with the ground it covers, SWAN_STRIDE being [px a stride, seconds a stride] and SWAN_SPEED the speed that
+// goes with it; swanStep() keeps it. It eases into a stop and plays the pose rest() picked from
+// swanPoses(s): on land it stands, grazes with its neck bent to the grass (a stop with no pose
+// grazes), looks about, preens or stretches and flaps; on the water (s.swimming, at the water line s.y)
+// it glides with a wake, dabbles with its head under and its tail up, preens or flaps. A flyer (pose
+// "fly") beats slow and deep with its neck stretched out and its feet trailing. A flamingo flies the
+// same way, or, when it has a state (a walker), wades on slow high steps (b.water the depth of the
+// water over its feet) and rests: it filters with its head down or stands on one leg. Palettes: swan [white, shade, bill base, bill tip] (the scene may name another, as `pal`)
+// and flamingo [pink, wing, dark], with groundShadow, and pond (or fjord, or water) for the water.
+export const SWAN_STRIDE = [SWAN_SPEED, 1.1];
+export const swanSpeed = SWAN_SPEED / SWAN_STRIDE[1];
+export const swanPoses = (s) => SWAN_RESTS[s.swimming ? "water" : "land"];
 
-// A long-necked bird in flight at (x, y), its wing rooted on the shoulder through the whole beat.
-function longNeckFlying(g, b, y, time, body, colours, wing) {
-  const x = Math.round(b.x);
-  const i = Math.floor(time * 6 + b.phase) % WING_BEAT.length;
-  const { rise, root, grid } = WINGS[WING_BEAT[i]];
-  const top = y + WING_BOB[i];
-  sprite(g, body, colours, x, top, b.dir, WING_SHOULDER, 2);
-  sprite(g, grid, wing, x, top - rise, b.dir, root, 0);
+// Keeps a swan's or a flamingo's stride clock; call it after wander(), with x0 where it stood before.
+export function longNeckStep(w, x0, dt, [px, cycle]) {
+  stride(w, x0, dt, px, cycle);
 }
 
-// A flamingo in flight: a pale pink body, a red wing with black flight feathers, its neck held out
-// ahead and its legs trailing. Its palette is flamingo: [pink, wing, dark].
-export function flamingoAt(g, b, time) {
-  const [pink, wing, dark] = g.pal.flamingo;
-  const y = Math.round(b.y + Math.sin(time * 1.2 + b.phase) * 2);
-  const colours = { W: pink, S: wing, B: pink, T: dark, L: wing };
-  longNeckFlying(g, b, y, time, FLAMINGO_FLYING, colours, { W: wing, E: dark });
+// The swan's and the flamingo's shared gait and rest: the walking pose at stride c, or the rest pose
+// the bird eased into once its feet stopped where they were.
+function walkOrRest(s, time, { walkAt, rest, stand }) {
+  const c = s.c ?? (s.phase ?? 0) * 0.25;
+  const moving = s.moving ?? s.state === "walk";
+  const held = s.c != null && c - Math.floor(c) > 1e-6;
+  if (moving || held) {
+    const w = walkAt(c);
+    const since = s.since == null ? 1 : time - s.since;
+    return moving && since < 0.3 ? mixPose(stand(w), w, smooth(since / 0.3)) : w;
+  }
+  const still = stillOf(s, time);
+  const w = walkAt(Math.round(c));
+  const r = rest(still, still + (s.timer ?? 60), w);
+  return s.c == null ? r : mixPose(w, r, smooth(Math.min(1, still / 0.3)));
 }
 
-// A swan standing or swimming (`stand`), feeding with its head down (`sit`) or flying (`fly`). A
-// grey edge along its back keeps the white bird visible on a pale page. A whooper's bill is yellow
-// at the base; a trumpeter's is all black. Its palette is swan: [white, shade, bill base, bill tip].
-export function swanAt(g, s, time) {
-  const [white, shade, base, tip] = g.pal[s.pal ?? "swan"];
-  const x = Math.round(s.x);
+export function swanAt(g, s, time = 0) {
+  if (g.trace) return g.trace.draw(swanAt, g, s, time);
+  const T = swanTones(g, s.pal ?? "swan");
+  const dir = s.dir;
+  const phase = s.phase ?? 0;
   if (s.pose === "fly") {
-    const y = Math.round(s.y + Math.sin(time * 1.1 + s.phase));
-    const colours = { W: white, S: shade, B: base, T: tip };
-    longNeckFlying(g, s, y, time, SWAN_FLYING, colours, { W: white, E: shade });
+    const c = time * 1.5 + phase * 0.37;
+    const y = Math.round(s.y + Math.sin(time * 1.1 + phase));
+    drawSwan(g, Math.round(s.x), y + 7, dir, swanFly(c), T, { time, drop: Math.sin(c * Math.PI * 2) * 0.4 });
     return;
   }
   const y = feet(g, s);
-  const step = Math.floor(s.phase) % 2;
-  const px = (colour, dx, dy, w, h) => part(g, colour, x, y, s.dir, dx, dy, w, h);
-  if (!s.swimming) {
-    px(tip, 1 + step, -2, 1, 2);
-    px(tip, 3 - step, -2, 1, 2);
-  }
-  px(white, 0, -6, 9, 4);
-  px(shade, 1, -3, 7, 1);
-  px(shade, 0, -7, 7, 1);
-  px(white, -3, -7, 3, 2);
-  px(shade, -3, -8, 2, 1);
-  if (s.state === "sit") {
-    px(white, 7, -7, 2, 3);
-    px(white, 8, -5, 3, 2);
-    px(base, 10, -5, 1, 1);
-    px(tip, 11, -5, 1, 1);
+  const ox = Math.round(s.x) + dir * 3;
+  const sit = s.state === "sit" ? (s.pose ?? "graze") : "stand";
+  if (s.swimming) {
+    const moving = s.moving ?? s.state === "walk";
+    if (moving) {
+      wake(g, ox, y, dir, time, { speed: 1 });
+      drawSwan(g, ox, y, dir, swanSwim(time + phase), T, { time });
+      return;
+    }
+    const still = stillOf(s, time);
+    const total = still + (s.timer ?? 60);
+    wake(g, ox, y, dir, time, { speed: 0.3 });
+    drawSwan(g, ox, y, dir, swanRest(s.pose ?? "glide", still, total, { water: true, time }), T, { time });
+    if (s.pose === "dabble") for (const a of [1.4, 2.2, 3]) ring(g, ox + dir * 4, y, (still - a) / 0.8, 6);
     return;
   }
-  px(white, 7, -11, 2, 5);
-  px(shade, 7, -11, 1, 4);
-  px(white, 8, -13, 3, 2);
-  px(base, 10, -12, 1, 1);
-  px(tip, 11, -12, 1, 1);
-  px(tip, 9, -13, 1, 1);
+  const p = walkOrRest(s, time, {
+    walkAt: (c) => swanWalk(c),
+    rest: (since, total, w) => swanRest(sit, since, total, { legs: [w.legs.n, w.legs.f], time }),
+    stand: (w) => swanRest("stand", 1, 60, { legs: [w.legs.n, w.legs.f], time }),
+  });
+  drawSwan(g, ox, y, dir, p, T, { time });
 }
 
-// Small flyers
-
-// One flying build, facing right as written, with the back on row 2 of each body, and one wing: teal
-// or plain on the leading edge (t, p the pale patch), dark on the trailing one (d). `rise` is how many
-// rows above the back a pose's top row sits; `root` is the wing column on the shoulder.
-const FLYER_WINGS = [
-  { rise: 5, root: 3, grid: ["d.....", "dd....", ".dt...", ".dpt..", "..ttt."] },
-  { rise: 3, root: 4, grid: ["dd....", ".ddtt.", "..dptt"] },
-  { rise: 1, root: 4, grid: ["dddtpt"] },
-  { rise: -1, root: 3, grid: ["..tpt.", ".ddt..", "dd...."] },
-];
-const FLYER_BEAT = [0, 1, 2, 3, 2, 1]; // up, opening, level, down, level, rising
-const FLYER_BOB = [1, 0, 0, -1, 0, 0]; // its body sinks as the wing lifts and rises on the downstroke
-
-// Each member: its body and the column its wing roots on, its colours from its palette, how fast it
-// beats, its wing's size (`k`), which poses it uses, and how it rises and falls as it goes.
-// The generic small flyer: C crown, H head, E eye, K bill, T tail tip, b tail, B back and l breast, with
-// the wing's t leading edge, p patch and d trailing edge, all from one palette object per kind.
-const SMALL_BODY = ["........CC.", ".......HEHK", "TbbBBBBlll.", "...BBBBll.."];
-const smallFlyer = (fps, sway) => ({
-  body: SMALL_BODY,
-  shoulder: 5,
-  fps,
-  sway,
-  colours: (pal, kind) => [pal[kind], pal[kind]],
-});
-
-// Kessie's underside is white all the way along.
-const KESSIE_BODY = ["........CC.", ".......HEHK", "TbbBBBBlll.", "...lllllll.."];
-
-const FLYERS = {
-  iiwi: smallFlyer(8, [1.8, 2]),
-  kessie: { ...smallFlyer(8, [1.6, 2]), body: KESSIE_BODY },
-  pigeon: smallFlyer(8, [1.5, 2]),
-  lory: smallFlyer(10, [1.7, 2]),
-  jay: smallFlyer(8, [1.7, 2]),
-  bluebird: smallFlyer(8, [1.9, 2]),
-  cardinal: smallFlyer(8, [1.6, 2]),
-  swift: smallFlyer(12, [2.4, 2.5]),
-  roller: {
-    body: ["........aa.", ".......leaD", "Dbbttttlll.", "...ttttll.."],
-    shoulder: 5,
-    fps: 8,
-    sway: [1.6, 2],
-    colours: ({ roller: [lilac, teal, blue, dark], rollerDepth: [pale, deep, crown] }) => {
-      const all = { l: lilac, t: teal, p: pale, b: blue, d: deep, a: crown, e: dark, D: dark };
-      return [all, all];
-    },
-  },
-  kingfisher: {
-    body: ["........bb.", ".......bbeD", "bbbbbbbbww.", "...ooooo..."],
-    shoulder: 5,
-    fps: 8,
-    sway: [9, 3],
-    colours: ({ kingfisher: [blue, orange, bill, white] }) => [
-      { b: blue, o: orange, D: bill, e: bill, w: white },
-      { t: blue, p: white, d: bill },
-    ],
-  },
-  tropicbird: {
-    body: ["........ww.", ".......wkkY", "wwwwwwwwww.", "...sssss..."],
-    shoulder: 5,
-    fps: 8,
-    sway: [1.4, 3],
-    colours: ({ tropicbird: [white, black, bill, shade] }) => [
-      { w: white, k: black, Y: bill, s: shade },
-      { t: white, p: white, d: black },
-    ],
-  },
-  puffin: {
-    body: ["......kk..", ".....kwwYT", "kkkkkkwwY.", "..wwwww..."],
-    shoulder: 4,
-    fps: 16,
-    beat: [2, 3],
-    sway: [3, 2],
-    colours: ({ puffin: [black, white, beak, tip] }) => [
-      { k: black, w: white, Y: beak, T: tip },
-      { t: black, p: black, d: black },
-    ],
-  },
-  hornbill: {
-    body: ["............ccy..", "..........wwkyyyy", "wwKwwkkkkkwwkk..y", "wwKwkkkkkkkkk...."],
-    shoulder: 8,
-    fps: 4,
-    k: 1.3,
-    sway: [4, 1.5],
-    colours: ({ hornbill: [black, white, yellow, casque] }) => [
-      { k: black, K: black, w: white, y: yellow, c: casque },
-      { t: white, p: white, d: black },
-    ],
-  },
-};
-
-// A small flyer of `kind`, its wing rooted on the shoulder through the whole beat.
-export function flyerAt(g, b, time, kind) {
-  const f = FLYERS[kind];
-  const phase = b.phase ?? 0;
-  const [colours, wingColours] = f.colours(g.pal, kind);
-  const beat = f.beat ?? FLYER_BEAT;
-  const i = Math.floor(time * f.fps + phase) % beat.length;
-  const wing = FLYER_WINGS[beat[i]];
-  const k = f.k ?? 1;
-  const [speed, reach] = f.sway;
-  const x = Math.round(b.x);
-  const y = Math.round(b.y + Math.sin(time * speed + phase) * reach) + FLYER_BOB[i];
-  sprite(g, f.body, colours, x, y, b.dir, f.shoulder, 2);
-  sprite(g, wing.grid, wingColours, x, y - Math.round(wing.rise * k), b.dir, wing.root, 0, k);
-}
-
-// A kingfisher in flight, blue over orange. Its palette is kingfisher: [blue, orange, bill, white].
-export function kingfisherAt(g, b, time) {
-  flyerAt(g, b, time, "kingfisher");
+// A flamingo in flight: a pale pink body, a red wing with black flight feathers, its neck held out
+// ahead and its legs trailing. On the ground (b.state) it wades or rests. Its palette is flamingo:
+// [pink, wing, dark].
+export function flamingoAt(g, b, time = 0) {
+  if (g.trace) return g.trace.draw(flamingoAt, g, b, time);
+  const T = flamingoTones(g);
+  const dir = b.dir;
+  if (b.state == null || b.pose === "fly") {
+    const c = time * 1.5 + (b.phase ?? 0) * 0.37 + 0.2;
+    const y = Math.round(b.y + Math.sin(time * 1.2 + (b.phase ?? 0)) * 2);
+    drawFlamingo(g, Math.round(b.x), y + 7, dir, flamingoFly(c), T, { time, drop: Math.sin(c * Math.PI * 2) * 0.4 });
+    return;
+  }
+  const y = feet(g, b);
+  const ox = Math.round(b.x) + dir * 2;
+  const sit = b.state === "sit" ? (b.pose ?? "stand") : "stand";
+  const keep = (w) => w.legs;
+  const p = walkOrRest(b, time, {
+    walkAt: (c) => flamingoWade(c),
+    rest: (since, total, w) => flamingoRest(sit, since, total, { legs: keep(w), time }),
+    stand: (w) => flamingoRest("stand", 1, 60, { legs: keep(w), time }),
+  });
+  drawFlamingo(g, ox, y, dir, { ...p, water: b.water ?? 0 }, T, { time });
 }
 
 // Cats
 
-// One design for every cat, after the Serengeti lion: a level back, the head carried at the front,
-// near legs in the coat and far legs in its shade, a pale muzzle, throat and chest, and a dark nose
-// and tail tip. Members differ in size, colour, markings, ears and tail. Each walks with its
-// diagonal leg pairs lifting in turn, and rests in one of its poses (felidPoses): sitting, the
-// arched back (the smaller cats only), lying down (sphinx) and the downward-dog stretch. The arch,
-// the lie and the stretch are made from each member's walk grid, so they keep its build.
-//
-// Grid letters: T coat, S shade, P pale, D dark (nose, spots, tip), e eye, M mane (or the house
-// cat's face), N mane shade, L and l the near and far legs; the house cat adds the regions its coats
-// colour. A member's palette is an object of these letters, read from g.pal under `pal` or its kind.
-
-// The lion, the family's model: his mane, his tufted tail, and the build every member shares.
-const LION = {
-  walk: [
-    "................NNNN.....",
-    "...............NMMMMMN...",
-    "..............NMMTMMMMN..",
-    ".............NMMMTMTTTTT.",
-    ".............NMMMMMTeTTTT",
-    ".............NMMMMMTTTTTD",
-    ".......TTTTTTNMMMMMTTPPPP",
-    ".....TTTTTTTTNMMMMMSSPPP.",
-    "....TTTTTTTTTNMMMMMMMNN..",
-    "..STTTTTTTTTTTNMMMMMMN...",
-    "NNSTTTTTTTTTTTTNMMMMN....",
-    "NN.TSSSSSSSSSSSPPPTT.....",
-    ".........................",
-    ".........................",
-    ".........................",
-    ".........................",
-    ".........................",
-  ],
-  legs: [
-    [3, 3, 12],
-    [7, 2, 12],
-    [11, 2, 12],
-    [14, 3, 12],
-  ],
-  thigh: 2,
-  rump: 3,
-  head: 13,
-  sit: [
-    ".............NNNN.....",
-    "............NMMMMMN...",
-    "...........NMMTMMMMN..",
-    "..........NMMMTMTTTTT.",
-    "..........NMMMMMTeTTTT",
-    "..........NMMMMMTTTTTD",
-    "..........NMMMMMTTPPPP",
-    "..........NMMMMMSSPPP.",
-    ".......TTTNMMMMMMMNN..",
-    ".....TTTTTTNMMMMMMN...",
-    "...TTTTTTTTTNMMMMN....",
-    "..TTTTTTTTTTTTPPTT....",
-    ".STTTTTTTTTTSSTTT.....",
-    ".SSTTTTTTTTTSSTTT.....",
-    ".SSSTTTTTTTTSSTTTTT...",
-    "DD.SSSSSSTTT.STTTTTTT.",
-    "DD..TTTTTT..TTTTTTTT..",
-  ],
-  lieTail: { len: 4, tip: "N" },
-};
-
-// The cheetah: L, the slimmest and longest-legged, a small round head with the black tear line
-// from eye to mouth, solid spots, a tucked waist, and a long tail ringed black to a white tip.
-const CHEETAH = {
-  walk: [
-    "....................T.T..",
-    "...................TTTTT.",
-    ".....TTTTTTTTTTTTTTTTeTTT",
-    "....TTDTTTDTTTDTTTTTTTDPD",
-    "...TTTTTDTTTDTTTDTTTTPDP.",
-    "..TTDTTTTTTTTTDTTTTTPP...",
-    "..TSSSSSDTTTDTTTTTPPP....",
-    ".T.........SSSSSSPP......",
-    ".D.......................",
-    ".T.......................",
-    ".D.......................",
-    ".T.......................",
-    "..P......................",
-    ".........................",
-  ],
-  legs: [
-    [3, 2, 7],
-    [6, 1, 7],
-    [14, 1, 8],
-    [16, 2, 8],
-  ],
-  thigh: 2,
-  rump: 3,
-  head: 18,
-  sit: [
-    ".........T.T..",
-    "........TTTTT.",
-    "........TTeTTT",
-    "........TTTDPD",
-    "........TTTDP.",
-    ".......TTTPP..",
-    "......TDTTPP..",
-    ".....TTTTTPP..",
-    "....TDTTTSLP..",
-    "...TTTTDTSLL..",
-    "...TDTTTTSLL..",
-    "...TTTDTTSLL..",
-    "...STTTTTSLL..",
-    "...SSTTDTSLL..",
-    "P..SSSSTTSLLL.",
-    ".TDTDTTTT.LLLL",
-  ],
-  lieTail: { len: 6, tip: "P", rings: "D" },
-};
-
-// The cougar: L, plain tawny, a small head on a long body, the hindquarters a little higher than
-// the shoulders, white muzzle and throat, and a long heavy tail with a dark tip hooked up.
-const COUGAR = {
-  walk: [
-    "....................T.T...",
-    "...................TTTTT..",
-    ".....TTTTTTTTTTTTTTTTeTTT.",
-    "...TTTTTTTTTTTTTTTTTTTTTPD",
-    "..TTTTTTTTTTTTTTTTTTTTPPP.",
-    "..TTTTTTTTTTTTTTTTTTTPP...",
-    "..TSTTTTTTTTTTTTTTTTPP....",
-    "..T.SSSSSSSSSSSSSSSPP.....",
-    "..T.......................",
-    "..T.......................",
-    "..T.......................",
-    ".DT.......................",
-    ".DD.......................",
-  ],
-  legs: [
-    [4, 3, 8],
-    [8, 2, 8],
-    [15, 2, 8],
-    [18, 3, 8],
-  ],
-  thigh: 2,
-  rump: 3,
-  head: 19,
-  sit: [
-    "............T.T..",
-    "...........TTTTT.",
-    "...........TTeTTT",
-    "...........TTTTPD",
-    "...........TTTPP.",
-    "..........TTTPP..",
-    ".........TTTTPP..",
-    "........TTTTTPP..",
-    "......TTTTTTSLP..",
-    "....TTTTTTTTSLL..",
-    "...TTTTTTTTTSLL..",
-    "..STTTTTTTTTSLL..",
-    "..SSTTTTTTTTSLL..",
-    ".DSSSTTTTTTSSLLL.",
-    "DDTTTSSTTTT.SLLLL",
-  ],
-  lieTail: { len: 7, tip: "D" },
-};
-
-// The clouded leopard: M, long and low on short legs, grey-tawny under big dark-rimmed clouds, and
-// a tail as long as its body, thick and ringed, held out low with the tip turned up.
-const CLOUDED = {
-  walk: [
-    "....................T.T.",
-    "...................TTTTT",
-    "..........TTTTTTTTTTeTTT",
-    ".........DDTTDDTTDDTTTPD",
-    "TT......TDSDTDSDTDSDTPP.",
-    "DT.....TTDDTTDDTTDDTPP..",
-    ".TDTDTDTSSSSSSSSSSSSP...",
-    "..DTDTD.................",
-    "........................",
-    "........................",
-  ],
-  legs: [
-    [8, 2, 7],
-    [10, 1, 7],
-    [16, 1, 7],
-    [18, 2, 7],
-  ],
-  thigh: 1,
-  rump: 7,
-  head: 19,
-  sit: [
-    ".........T.T..",
-    "........TTTTT.",
-    "........TTeTTT",
-    "........TDTTPD",
-    ".......TTDTPP.",
-    "......TDDTTPP.",
-    ".....TDSDDSLP.",
-    "....TDDTTDSLL.",
-    "....TDSDTTSLL.",
-    "...SSDDTDTSLLL",
-    "TDTDTDSSSS.LLL",
-  ],
-  lieTail: { len: 9, tip: "D", rings: "D" },
-};
-
-// The bobcat: M, long-legged for its size, black ear tufts, a pale ruff at the jaw, spots on a
-// tawny-grey catCoat, a white belly and a bobbed tail, black above and white below.
-const BOBCAT = {
-  walk: [
-    "............D.D.",
-    "............T.T.",
-    "...........TTTTT",
-    "..TTTTTTTTTTTeTT",
-    ".DTTDTTTDTTTTTPD",
-    ".PTTTTDTTTTPPTP.",
-    "..TTTDTTTTPPP...",
-    "..TPPDPPPDPP....",
-    "................",
-    "................",
-    "................",
-  ],
-  legs: [
-    [2, 2, 8],
-    [4, 1, 8],
-    [8, 1, 8],
-    [10, 2, 8],
-  ],
-  thigh: 1,
-  rump: 2,
-  head: 11,
-  sit: [
-    "....D.D...",
-    "....T.T...",
-    "....TTTTT.",
-    "....TTeTTT",
-    "...PTTTTPD",
-    "...PPTTPP.",
-    "...TTTPPP.",
-    "..TDTTPP..",
-    ".TTTTDSLP.",
-    ".TDTTTSLL.",
-    ".TTTDTSLL.",
-    "DSTTTTSLL.",
-    "PSSSSTTLLL",
-  ],
-  lieTail: { len: 1, tip: "D" },
-};
-
-// The house cat: S, tail held up as it walks, its coat picked from CAT_COATS when the scene loads. Its
-// grid names regions, and each coat colours them: A ears, H the cap of the head, M the face, K the
-// tail, B a patch on the back and Y one on the haunch; X, Z and W are the tabby's stripes where they
-// cross the back patch, the haunch patch and the plain catCoat.
-const HOUSECAT = {
-  walk: [
-    ".KK......A.A",
-    ".K......HHHH",
-    ".K..TBXBHMeM",
-    ".KYZYBXBTMMD",
-    "..YYZTTWTPPP",
-    "..SSSSSSSSP.",
-    "............",
-    "............",
-    "............",
-  ],
-  legs: [
-    [2, 1, 6],
-    [4, 1, 6],
-    [7, 1, 6],
-    [9, 1, 6],
-  ],
-  thigh: 1,
-  rump: 2,
-  head: 8,
-  sit: [
-    "....A.A..",
-    "....HHHH.",
-    "....MMeMM",
-    "...BMMMPD",
-    "...BXBPP.",
-    "..TBXBSL.",
-    ".YZTWTSL.",
-    ".YYZTWSL.",
-    "KSYYTTSL.",
-    "KKSSSSSLL",
-  ],
-  lieTail: { len: 4, tip: "K", catCoat: "K" },
-};
-
-// The house cat's coats, after the owner's reference sheet; a scene picks one as it loads. Each names its colours: catCoat, shade
-// (a grey edge on a white cat), pale chest and muzzle, nose, eye, and the regions the grid names.
-const catCoat = ({ T, S, P = T, D, e, A = T, H = T, M = T, K = T, B = T, Y = T, stripe = T, L = T, l = S }) => ({
-  T,
-  S,
-  P,
-  D,
-  e,
-  A,
-  H,
-  M,
-  K,
-  B,
-  Y,
-  X: stripe === T ? B : stripe,
-  Z: stripe === T ? Y : stripe,
-  W: stripe,
-  L,
-  l,
-});
-const CAT_WHITE = "#f6f3ee";
-const CAT_COATS = {
-  white: catCoat({ T: CAT_WHITE, S: "#bdb8c0", D: "#d88f98", e: "#5a9ae0", A: "#e8b4ba" }),
-  "silver-tabby": catCoat({
-    T: "#a4a4aa",
-    S: "#76767e",
-    P: "#ecebe8",
-    D: "#4a3a3a",
-    e: "#c9b840",
-    stripe: "#5c5c64",
-    K: "#8a8a92",
-  }),
-  "orange-white": catCoat({
-    T: CAT_WHITE,
-    S: "#bdb8c0",
-    D: "#d88f98",
-    e: "#5a9a3a",
-    A: "#e88a2a",
-    H: "#e88a2a",
-    K: "#e88a2a",
-    Y: "#e88a2a",
-  }),
-  siamese: catCoat({
-    T: "#dccbb6",
-    S: "#b4a08a",
-    P: "#ece0d0",
-    D: "#3a2a28",
-    e: "#4a8ad0",
-    A: "#4e3e3a",
-    H: "#4e3e3a",
-    M: "#5e4a44",
-    K: "#4e3e3a",
-    L: "#5e4a44",
-    l: "#46363a",
-  }),
-  black: catCoat({ T: "#24222a", S: "#16141a", D: "#3a3440", e: "#e2c43a" }),
-  ginger: catCoat({
-    T: "#f0a040",
-    S: "#c87a28",
-    P: "#f8dcb0",
-    D: "#c87060",
-    e: "#5a9a3a",
-    stripe: "#d07a22",
-    K: "#e08a30",
-  }),
-  calico: catCoat({
-    T: CAT_WHITE,
-    S: "#bdb8c0",
-    D: "#d88f98",
-    e: "#5a9a3a",
-    A: "#2e2826",
-    H: "#e07a2a",
-    K: "#2e2826",
-    B: "#2e2826",
-    Y: "#e07a2a",
-  }),
-  grey: catCoat({ T: "#86868e", S: "#62626a", D: "#c88a92", e: "#e2c43a", A: "#a0a0a8" }),
-  tortie: catCoat({
-    T: "#2c2422",
-    S: "#1c1614",
-    D: "#3a2c2a",
-    e: "#5a9a3a",
-    H: "#b8641e",
-    B: "#2c2422",
-    Y: "#b8641e",
-    stripe: "#8a4a1c",
-    K: "#2c2422",
-  }),
-  tuxedo: catCoat({
-    T: "#2a2a30",
-    S: "#d8d6da",
-    P: CAT_WHITE,
-    D: "#d88f98",
-    e: "#e2c43a",
-    M: CAT_WHITE,
-    L: CAT_WHITE,
-    l: "#bdb8c0",
-  }),
-  "brown-tabby": catCoat({
-    T: "#a8865e",
-    S: "#86684a",
-    P: "#ead8b6",
-    D: "#3a2a22",
-    e: "#5e8a3a",
-    stripe: "#5a4230",
-    K: "#7a5c3e",
-  }),
-};
-
-const FELIDS = { lion: LION, cheetah: CHEETAH, cougar: COUGAR, clouded: CLOUDED, bobcat: BOBCAT, housecat: HOUSECAT };
+// Built from parts (felid.js, on body.js): the lion, his cub, the cheetah, the cougar, the clouded
+// leopard, the bobcat and the house cat. Each walks with a four-beat walk, its feet planted, and rests
+// in one of its poses (felidPoses): sitting, the arched back (the smaller cats only), lying down and
+// the long stretch, easing into each. At rest the cats yawn now and then; the lion roars when his scene
+// calls for it.
 // The arched back reads as a camel's hump on the long-bodied big cats, so only the smaller cats arch.
 const FELID_ARCHES = new Set(["clouded", "bobcat", "housecat"]);
-
-const FELID_SWING = [1, 0, -1, 0]; // the lower leg's lead over its thigh, through the stride
-const blankRow = (w) => ".".repeat(w);
-
-// The arched back: the body between rump and head lifts in a curve up to `rise` rows at its middle
-// and the head drops a row; the legs are planted straight and reach the ground from the lifted body.
-function archOf(s) {
-  const H = s.walk.length;
-  const w = s.walk[0].length;
-  const rise = Math.max(2, Math.round(H / 4));
-  const span = s.head - s.rump;
-  const lift = (c) => {
-    if (c >= s.head) return -Math.max(1, Math.round(rise / 2));
-    if (c < s.rump) return 0;
-    const u = (c - s.rump + 0.5) / span;
-    return Math.round(rise * Math.sin(Math.PI * Math.min(1, u * 1.1)) ** 0.7);
-  };
-  const out = Array.from({ length: H + rise }, () => blankRow(w).split(""));
-  const bodyRows = Math.min(...s.legs.map((l) => l[2])); // rows above the legs
-  const belly = (c) => Math.round(Math.max(0, lift(c)) / 2);
-  for (let c = 0; c < w; c++) {
-    const col = s.walk.map((line) => line[c]);
-    if (c < s.rump || c >= s.head) {
-      // Tail and head move as they are.
-      col.forEach((ch, r) => {
-        const row = r + rise - lift(c);
-        if (ch !== "." && row >= 0 && row < H + rise) out[row][c] = ch;
-      });
-      continue;
-    }
-    // The body's column is stretched: its back lifts by lift(c) and its belly by half that, so the
-    // body stays whole and its markings and belly shade ride along.
-    const filled = col
-      .slice(0, bodyRows)
-      .map((ch, r) => [ch, r])
-      .filter(([ch]) => ch !== ".");
-    if (!filled.length) continue;
-    const top = filled[0][1];
-    const bottom = filled[filled.length - 1][1];
-    const newTop = top - lift(c);
-    const newBottom = bottom - belly(c);
-    for (let row = newTop; row <= newBottom; row++) {
-      const u = newBottom === newTop ? 0 : (row - newTop) / (newBottom - newTop);
-      const ch = col[Math.round(top + u * (bottom - top))];
-      if (ch !== ".") out[row + rise][c] = ch;
-    }
-  }
-  // The feet gather in under the arch, the hind pair a step forward and the fore pair a step back.
-  const gather = Math.max(1, Math.round(span / 8));
-  const legs = s.legs.map(([dx, w2, top], i) => {
-    const at = dx + (i < 2 ? gather : -gather);
-    return [at, w2, top + rise - belly(at + (w2 >> 1))];
-  });
-  return { grid: out.map((r) => r.join("")), legs };
-}
-
-// Lying down: the body sinks onto the ground with the legs folded under, the head stays up a row or
-// two, the forepaws reach out in front and the tail lies along the ground behind.
-function lieOf(s) {
-  const H = s.walk.length;
-  const t = s.lieTail;
-  const shift = Math.max(0, t.len - s.rump);
-  const w = s.walk[0].length + 3 + shift;
-  const top = Math.min(...s.legs.map((l) => l[2]));
-  const drop = H - top;
-  const headUp = Math.max(1, Math.round(drop / 3));
-  const out = Array.from({ length: H }, () => blankRow(w).split(""));
-  s.walk.forEach((line, r) => {
-    [...line].forEach((ch, c) => {
-      if (ch === "." || c < s.rump) return;
-      const row = r + drop - (c >= s.head ? headUp : 0);
-      if (row < H) out[row][c + shift] = ch;
-    });
-  });
-  // Forepaws along the ground, out past the chest.
-  const [fore] = s.legs.slice(-1);
-  const front = Math.max(...s.walk.map((l) => l.replace(/\.+$/, "").length));
-  const paws = drop >= 5 ? 2 : 1;
-  for (let r = H - paws; r < H; r++) {
-    for (let c = fore[0]; c <= front + 1; c++) out[r][c + shift] = "L";
-  }
-  // The haunch, folded: a patch of shade over the hind feet.
-  const [hind] = s.legs;
-  for (let c = hind[0]; c < hind[0] + hind[1] + 2; c++) {
-    if (out[H - 2][c + shift] !== ".") out[H - 2][c + shift] = "S";
-  }
-  // The tail, along the ground behind the rump, its tip turned up.
-  for (let i = 1; i <= t.len; i++) {
-    const c = s.rump - i + shift;
-    const colour = i === t.len ? t.tip : t.rings && i % 2 === 0 ? t.rings : (t.catCoat ?? "T");
-    out[H - 1][c] = colour;
-    if (i === t.len && t.len > 2) out[H - 2][c] = colour;
-  }
-  return { grid: out.map((r) => r.join("")), shift };
-}
-
-// The downward dog, a cat's long stretch: the hind legs stay up straight, so the rump is high, and
-// the body slopes down to a chest held just off the ground, with the forelegs stretched out flat in
-// front and the head low between them, looking ahead. The tail keeps its walking line.
-function bowOf(s) {
-  const H = s.walk.length;
-  const front = Math.max(...s.walk.map((l) => l.replace(/\.+$/, "").length));
-  const w = front + 4;
-  const top = Math.min(...s.legs.map((l) => l[2]));
-  const paws = H - top >= 5 ? 2 : 1;
-  const low = H - top - paws; // how far the chest sinks: to just above the paws
-  const rise = Math.max(1, Math.round((H - top) / 2)); // how far the rump lifts on straightened legs
-  const span = s.head - s.rump;
-  const drop = (c) => {
-    if (c < s.rump) return -rise;
-    if (c >= s.head) return Math.max(0, low - (low >= 3 ? 1 : 0));
-    return Math.round(-rise + (low + rise) * ((c - s.rump + 1) / span) ** 1.4);
-  };
-  const out = Array.from({ length: H + rise }, () => blankRow(w).split(""));
-  s.walk.forEach((line, r) => {
-    [...line].forEach((ch, c) => {
-      if (ch === ".") return;
-      const row = r + rise + (c < s.rump || r < top ? drop(c) : 0);
-      if (r >= top && c >= s.rump) return; // the legs are drawn on their own
-      if (row >= 0 && row < H + rise - paws) out[row][c] = ch;
-    });
-  });
-  // The forelegs, flat along the ground and reaching past the nose: the far one a little behind.
-  const full = H + rise;
-  const [, , foreFar, foreNear] = s.legs;
-  for (let r = full - paws; r < full; r++) {
-    for (let c = foreFar[0]; c <= front; c++) out[r][c] = "l";
-    for (let c = foreNear[0]; c <= front + 2; c++) out[r][c] = "L";
-  }
-  // The hind legs, straight from the lifted rump to the ground.
-  const [hindNear, hindFar] = s.legs;
-  const legs = [hindNear, hindFar].map(([dx, lw, t]) => [dx, lw, t + rise + drop(dx + (lw >> 1))]);
-  return { grid: out.map((r) => r.join("")), legs };
-}
-
-// The owner's pixel edits on the family's proposal, kept as touch-ups to each member's finished
-// pose grid, as CANID_PATCHES keeps the wolf's: [column, row, letter], null to erase. They
-// fill the gaps in the stretch's slope, ring the cheetah's tail from a dark root to a dark tip that
-// curls up, trim the lying lion's paws and widen his tuft, and close the small cats' lying gaps.
-const FELID_PATCHES = {
-  cheetah: {
-    walk: [
-      [18, 3, "D"],
-      [1, 7, "D"],
-      [1, 8, "T"],
-      [1, 9, "D"],
-      [1, 10, "T"],
-      [1, 11, "D"],
-    ],
-    sit: [
-      [8, 4, "D"],
-      [0, 12, "D"],
-      [0, 13, "T"],
-      [0, 14, "D"],
-    ],
-    lie: [
-      [0, 12, null],
-      [1, 12, "D"],
-      [0, 13, null],
-      [1, 13, null],
-      [2, 13, "T"],
-      [3, 13, "D"],
-      [4, 13, "T"],
-      [5, 13, "D"],
-    ],
-    bow: [
-      [1, 7, "D"],
-      [1, 8, "T"],
-      [5, 8, "T"],
-      [1, 9, "D"],
-      [5, 9, "T"],
-      [7, 9, "S"],
-      [8, 9, "S"],
-      [1, 10, "T"],
-      [5, 10, "T"],
-      [7, 10, "S"],
-      [8, 10, "S"],
-      [9, 10, "S"],
-      [1, 11, "D"],
-      [7, 11, "S"],
-      [10, 11, "S"],
-      [11, 11, "S"],
-      [7, 12, "S"],
-      [11, 12, "S"],
-      [12, 12, "S"],
-      [7, 13, "S"],
-      [12, 13, "S"],
-      [13, 13, "S"],
-      [7, 14, "S"],
-      [13, 14, "S"],
-      [14, 14, "S"],
-      [15, 14, "S"],
-      [7, 15, "S"],
-      [14, 15, "S"],
-      [15, 15, "S"],
-      [16, 15, "S"],
-      [7, 16, "S"],
-      [7, 17, "S"],
-    ],
-  },
-  clouded: {
-    walk: [[23, 1, null]],
-    lie: [
-      [23, 8, "T"],
-      [24, 8, "T"],
-    ],
-    bow: [
-      [16, 10, "S"],
-      [21, 10, "T"],
-      [22, 10, "T"],
-    ],
-  },
-  lion: {
-    sit: [
-      [10, 16, "T"],
-      [11, 16, "T"],
-      [12, 16, null],
-      [13, 16, null],
-      [14, 16, null],
-      [20, 16, "T"],
-    ],
-    lie: [
-      [1, 15, "N"],
-      [25, 15, null],
-      [26, 15, null],
-      [27, 15, null],
-      [1, 16, "N"],
-      [25, 16, null],
-      [26, 16, null],
-      [27, 16, null],
-    ],
-    bow: [
-      [5, 7, "T"],
-      [6, 7, "T"],
-      [7, 7, "T"],
-      [8, 7, "T"],
-      [4, 8, "T"],
-      [6, 8, "T"],
-      [8, 8, "T"],
-      [9, 8, "T"],
-      [10, 8, "T"],
-      [9, 9, "T"],
-      [10, 9, "T"],
-      [11, 9, "T"],
-      [11, 10, "T"],
-      [12, 10, "T"],
-      [12, 11, "T"],
-      [6, 14, "T"],
-      [7, 14, "T"],
-      [6, 15, "T"],
-      [13, 17, "T"],
-      [14, 17, "T"],
-      [15, 17, "P"],
-      [16, 17, "P"],
-      [17, 17, "P"],
-      [18, 17, "T"],
-      [19, 17, "T"],
-    ],
-  },
-  bobcat: {
-    lie: [
-      [12, 9, "T"],
-      [13, 9, "T"],
-      [14, 9, "T"],
-    ],
-    bow: [
-      [8, 11, "P"],
-      [9, 11, "P"],
-      [12, 11, "T"],
-      [13, 11, "T"],
-      [14, 11, "T"],
-    ],
-  },
-  cougar: {
-    bow: [
-      [15, 12, "S"],
-      [15, 13, "S"],
-      [16, 13, "S"],
-      [17, 13, "S"],
-    ],
-  },
-};
-
-// A pose grid with its member's touch-ups applied.
-function felidPatched(kind, pose, grid) {
-  const cells = FELID_PATCHES[kind]?.[pose];
-  if (!cells) return grid;
-  const rows = grid.map((line) => line.split(""));
-  for (const [c, r, letter] of cells) {
-    while (rows[r].length <= c) rows[r].push(".");
-    rows[r][c] = letter ?? ".";
-  }
-  return rows.map((line) => line.join(""));
-}
-
-const felidCache = new Map();
-// A member's pose grid, made once: "arch", "lie" or "bow".
-function felidPose(kind, pose) {
-  const key = `${kind}-${pose}`;
-  if (!felidCache.has(key)) {
-    const s = FELIDS[kind];
-    felidCache.set(key, pose === "arch" ? archOf(s) : pose === "lie" ? lieOf(s) : bowOf(s));
-  }
-  return felidCache.get(key);
-}
 
 // The poses a cat of `kind` rests in, for a walker to choose from when it stops.
 export const felidPoses = (kind) => (FELID_ARCHES.has(kind) ? ["sit", "arch", "lie", "bow"] : ["sit", "lie", "bow"]);
 
-// The house cat's coat names, for a scene to pick from as it loads, and their palettes, keyed
-// housecat-<name>, to spread into the scene's day and night palettes. At night the near-black coats
-// are lifted off the dark page and every cat's eyes stay lit.
-export const HOUSECAT_COAT_NAMES = Object.keys(CAT_COATS);
-export const HOUSECAT_COATS = { light: {}, dark: {} };
-for (const [name, pal] of Object.entries(CAT_COATS)) {
-  HOUSECAT_COATS.light[`housecat-${name}`] = pal;
-  const dark = Object.fromEntries(Object.entries(pal).map(([k, v]) => [k, nightColour(v)]));
-  for (const k of Object.keys(pal)) {
-    if (["#24222a", "#2c2422", "#2a2a30", "#2e2826"].includes(pal[k])) dark[k] = "#3e3c4a";
-  }
-  dark.e = pal.e;
-  HOUSECAT_COATS.dark[`housecat-${name}`] = dark;
+// A member's tones, made once per palette and kind (felidTones, felid.js).
+function tonesOf(kind, pal) {
+  return tonesFor(pal, `felid:${kind}`, () => felidTones(kind, pal));
 }
 
-// A coat colour at night: darkened and cooled toward the scenes' indigo.
-function nightColour(hex) {
-  const n = Number.parseInt(hex.slice(1), 16);
-  const cool = [58, 53, 96];
-  const out = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v, i) => Math.round(v * 0.62 + cool[i] * 0.22));
-  return `#${out.map((v) => Math.min(255, v).toString(16).padStart(2, "0")).join("")}`;
-}
+const EASE = 0.25; // seconds a walk takes to start or stop
+const SETTLE = 0.5; // seconds a cat takes to settle into a rest pose, after it stops
+const RISE = 0.4; // seconds it takes to get up again
+const YAWN_EVERY = 9; // seconds between yawns at rest, the first a few seconds after it settles
 
 // A cat of `kind` (lion, cheetah, cougar, clouded, bobcat or housecat), x at the middle of its body.
-// It walks, stands, or rests in c.pose ("sit" when none is set) while its state is not "walk"; at
-// rest it blinks now and then. A pose a member does not have is drawn standing.
+// It walks, stands, or rests in c.pose ("sit" when none is set) while its state is not "walk",
+// easing between them from c.since (the time its state last changed; see settle in critters.js),
+// out of c.lastPose as it gets up. At rest it breathes, blinks and yawns now and then; while c.roar
+// holds the seconds into a roar, it stands and roars.
 export function felidAt(g, c, time) {
-  const s = FELIDS[c.kind];
-  const pal = g.pal[c.pal ?? c.kind];
-  const y = feet(g, c);
-  const pose = c.state === "walk" ? "walk" : c.state === "stand" ? "stand" : (c.pose ?? "sit");
-  const blink = pose !== "walk" && Math.floor(time * 4 + (c.phase ?? 0) * 3) % 11 === 0;
-  const colours = { L: pal.T, l: pal.S, ...pal };
-  if (blink) colours.e = c.kind === "housecat" ? pal.M : pal.T;
-  const x = Math.round(c.x);
-  const mid = s.walk[0].length >> 1;
-  const px = (colour, dx, dy, w, h) => part(g, colour, x - mid, y, c.dir, dx, dy, w, h);
-  if (pose === "sit") {
-    const w = s.sit[0].length;
-    sprite(g, felidPatched(c.kind, "sit", s.sit), colours, x - (w >> 1), y, c.dir, 0, s.sit.length);
-    return;
-  }
-  if (pose === "lie") {
-    const { grid: lying, shift } = felidPose(c.kind, "lie");
-    const grid = felidPatched(c.kind, "lie", lying);
-    sprite(g, grid, colours, x - mid, y, c.dir, shift, grid.length);
-    return;
-  }
-  if (pose === "bow") {
-    const { grid: bowing, legs } = felidPose(c.kind, "bow");
-    const grid = felidPatched(c.kind, "bow", bowing);
-    const H = grid.length;
-    sprite(g, grid, colours, x - mid, y, c.dir, 0, H);
-    for (const [[dx, w, top], colour] of [
-      [legs[1], colours.l],
-      [legs[0], colours.L],
-    ]) {
-      px(colour, dx, top - H, w, H - top);
-    }
-    return;
-  }
-  const arch = pose === "arch" && FELID_ARCHES.has(c.kind) ? felidPose(c.kind, "arch") : null;
-  const grid = arch ? felidPatched(c.kind, "arch", arch.grid) : felidPatched(c.kind, "walk", s.walk);
-  const legs = arch ? arch.legs : s.legs;
-  const H = grid.length;
-  sprite(g, grid, colours, x - mid, y, c.dir, 0, H);
-  const walking = pose === "walk";
-  const k = walking ? Math.floor(c.phase) % 4 : 1;
-  const leg = (colour, [dx, w, top], phase) => {
-    const p = walking ? phase % 4 : 1;
-    const lower = H - top - s.thigh;
-    px(colour, dx, top - H, w, s.thigh);
-    px(colour, dx + FELID_SWING[p], top - H + s.thigh, w, p === 3 ? lower - 1 : lower);
+  if (g.trace) return g.trace.draw(felidAt, g, c, time);
+  const spec = FELIDS[c.kind];
+  const pal = tonesOf(c.kind, g.pal[c.pal ?? c.kind]);
+  const dir = c.dir;
+  const since = sinceOf(c, time);
+  const walking = c.state === "walk";
+  const resting = !walking && c.state !== "stand" && c.roar == null;
+  const name = felidPoses(c.kind).includes(c.pose) ? c.pose : "sit";
+  let rest = null;
+  if (resting) rest = { from: "stand", to: name, u: (since - EASE * 0.6) / SETTLE };
+  else if (walking && c.lastPose && since < RISE) rest = { from: c.lastPose, to: "stand", u: since / RISE };
+  let act = null;
+  if (c.roar != null) act = roarAt(c.roar);
+  else if (resting && since > 3) act = yawnAt((since - 3) % YAWN_EVERY);
+  const phase = walking ? (c.x * dir) / (spec.stride / STANCE) : 0;
+  const pose = {
+    phase,
+    amp: ease(walking, since, EASE),
+    bodyX: c.x * dir,
+    rest,
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.75 : Math.sin(time * 1.4) * 0.6,
+    breath: breathAt(time, 2.2, !walking),
+    blink: !act && blinkAt(time, c.since ?? 0, 3.3),
+    headUp: 0,
+    ...(act ?? {}),
   };
-  const [hindNear, hindFar, foreFar, foreNear] = legs;
-  leg(colours.l, hindFar, k + 2);
-  leg(colours.l, foreFar, k);
-  leg(colours.L, hindNear, k);
-  leg(colours.L, foreNear, k + 2);
+  // spec.mid is the column at its x. Its shadow covers the columns from s0 up to s1 facing right, and
+  // the same edges mirrored (from s0 + 1 to s1) facing left.
+  const [s0, s1] = spec.shadow;
+  const shadow = { colour: shadowColour(g.pal), span: dir > 0 ? [s0, s1 - 1] : [s0 + 1, s1] };
+  const x = Math.round(c.x) - dir * spec.mid;
+  paintAt(g, x, feet(g, c), dir, (plot) => drawBody(spec, pal, plot, pose), shadow);
 }

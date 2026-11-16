@@ -10,11 +10,12 @@ import {
   cervidAt,
   felidAt,
   felidPoses,
-  flyerAt,
-  HOUSECAT_COAT_NAMES,
-  HOUSECAT_COATS,
-  owlAt,
+  longNeckStep,
+  SWAN_STRIDE,
+  settleCanid,
   swanAt,
+  swanPoses,
+  swanSpeed,
 } from "../kit/animals.js";
 import {
   doing,
@@ -29,10 +30,13 @@ import {
   narrow,
   percher,
   rest,
+  settle,
   walker,
   wander,
 } from "../kit/critters.js";
 import { mistAt, mistBand } from "../kit/effects.js";
+import { HOUSECAT_COAT_NAMES, HOUSECAT_COATS } from "../kit/felid.js";
+import { flyerAt, nesterAt, owlFlyAt } from "../kit/flyers.js";
 import {
   blob,
   clamp,
@@ -40,13 +44,11 @@ import {
   foliage,
   hash,
   makePlant,
-  part,
   rect,
   row,
   scatter,
   smooth,
   sortPlants,
-  sprite,
   stroke,
 } from "../kit/pixel.js";
 import { broadleafTree } from "../kit/trees.js";
@@ -57,7 +59,7 @@ const FALLS_ROWS = 26;
 const STACK_ROWS = 30; // the sea stack's height at scale 1
 const STACK_HALF = 7;
 const STACK_MATURE = 2.5;
-const PUFFINS = [-5, 0, 5]; // where the three nesting puffins stand on the stack, from its centre
+const PUFFINS = [-6, 0, 6]; // where the three nesting puffins stand on the stack, from its centre
 const FJORD_ROWS = 16; // the fjord's height once the water has risen
 const MISTS = 6;
 const STARS = 60;
@@ -86,10 +88,12 @@ const LIGHT = {
   falls: ["#f4fcff", "#bde6f6", "#7cc3e8"],
   bush: ["#86b868", "#64a055", "#4a7f43", "#315c31"],
   birchStem: ["#7a5a42", "#5a4030"],
+  groundShadow: "rgba(60, 50, 20, 0.22)", // the soft shadow every animal, plant and rock casts on the ground
   tussock: ["#dccb7e", "#b9ab58", "#8e8546"],
   stem: "#5d8f4a",
   flowers: ["#8e5cd9", "#a77be8", "#cdb2f5"],
   arctic: ["#7a6450", "#4e3f32", "#d9cbb6", "#1d1a18", "#7a6450"],
+  canid: { R: "#6e2c2c", howl: "#5f6f84", dark: false },
   reindeer: ["#a07a54", "#5e4634", "#efe4d0", "#c9b494"],
   swan: ["#fbfdff", "#b9c4d0", "#f2c230", "#1f2226"],
   owl: ["#c99a5b", "#7a5532", "#efe2c4", "#e8b820", "#2b2620"],
@@ -114,10 +118,12 @@ const DARK = {
   falls: ["#c6e7f6", "#7fb6d4", "#4f86ab"],
   bush: ["#4f7c51", "#3f6a44", "#31563a", "#25432d"],
   birchStem: ["#5a4634", "#463628"],
+  groundShadow: "rgba(0, 0, 0, 0.32)",
   tussock: ["#7b8456", "#646d46", "#4f5837"],
   stem: "#4a6e44",
   flowers: ["#7a52b8", "#9775cf", "#bfa6e6"],
   arctic: ["#e7ecf0", "#9aa5b0", "#ffffff", "#14171b", "#e7ecf0"],
+  canid: { R: "#3a2226", howl: "#e4ecf8", dark: true },
   reindeer: ["#7d634a", "#4a3b2f", "#c9bfae", "#a89878"],
   swan: ["#dfe6ee", "#97a5b5", "#d9ac30", "#111418"],
   owl: ["#a88050", "#6a4a2c", "#d9cdb0", "#e8b820", "#1a1612"],
@@ -240,11 +246,12 @@ function basalt(g, p, s, base) {
   }
 }
 
-// A dwarf birch: a low, round shrub of small leaves.
+// A dwarf birch: a low, round shrub of small leaves, the broadleaf family's build (kit/broadleaf.js)
+// at its smallest and fullest.
 function dwarfBirch(g, p, s, base) {
   const { pal } = g;
   const rows = (5 + (p.seed % 3)) * 1.6;
-  broadleafTree(g, p, s, base, { rows, tones: pal.bush, trunkTones: pal.birchStem, wide: 1.3, lift: -0.2 });
+  broadleafTree(g, p, s, base, { rows, tones: pal.bush, bark: pal.birchStem, from: 0.15, spread: 0.42, airy: 0.05 });
 }
 
 // A grass tussock: a clump of long blades that arch over.
@@ -410,46 +417,15 @@ function soil(pal, x, y, depth, turf) {
 // A puffin in fast flight, its wings whirring and its striped beak bright. Its palette is puffin:
 // [black, white, beak, beak tip, feet].
 function puffinAt(g, p, time) {
+  if (g.trace) return g.trace.draw(puffinAt, g, p, time);
   flyerAt(g, p, time, "puffin");
 }
 
 // A flock of puffins, the leader first and the others trailing behind.
 function flockAt(g, bird, time) {
+  if (g.trace) return g.trace.draw(flockAt, g, bird, time);
   for (const m of bird.members) {
     puffinAt(g, { x: bird.x - bird.dir * m.back, y: bird.y + m.up, dir: bird.dir, phase: m.phase }, time);
-  }
-}
-
-// A puffin standing on the stack, side on: a black cap and back, a white face and belly, the big
-// striped beak and orange feet. Asleep, its head is tucked into its back.
-const PUFFIN_STAND = [".KKK..", "KWWKOO", "KWWWOR", "KKKK..", "KKWW..", "KKWW..", ".KWW..", "..FF.."];
-const PUFFIN_SLEEP = ["......", "......", ".KK...", "KKKK..", "KKWW..", "KKWW..", ".KWW..", "..FF.."];
-
-// One nesting puffin. It blinks, bobs, stretches a wing and turns round; one of them now and then
-// flies off to sea and comes back with sand eels in its beak.
-function nesterAt(g, n, time, night) {
-  const [black, white, beak, tip, foot] = g.pal.puffin;
-  const colours = { K: black, W: white, O: beak, R: tip, F: foot };
-  const x = Math.round(n.x);
-  const y = n.y - (doing(n, "bob", time) >= 0 ? 1 : 0);
-  if (night) {
-    sprite(g, PUFFIN_SLEEP, colours, x, y, n.dir, 2, 8);
-    return;
-  }
-  const trip = doing(n, "fish", time);
-  if (trip >= 0) {
-    // Out over the fjord and back: it leaves the stack, is gone a while, then lands.
-    const away = trip < 0.15 ? trip / 0.15 : trip > 0.85 ? (1 - trip) / 0.15 : -1;
-    if (away < 0) return;
-    puffinAt(g, { x: x + n.dir * away * 40, y: y - 4 - away * 18, dir: trip < 0.5 ? n.dir : -n.dir, phase: 0 }, time);
-    return;
-  }
-  const dir = doing(n, "turn", time) >= 0 ? -n.dir : n.dir;
-  sprite(g, PUFFIN_STAND, colours, x, y, dir, 2, 8);
-  if (doing(n, "blink", time) >= 0) part(g, white, x, y, dir, 1, -7, 1, 1);
-  if (doing(n, "stretch", time) >= 0) part(g, black, x, y, dir, -4, -5, 2, 1);
-  if (time < n.carrying) {
-    for (let i = 0; i < 3; i += 1) part(g, g.pal.eel, x, y, dir, 3 + (i % 2), -6 + i, 1, 1);
   }
 }
 
@@ -704,10 +680,12 @@ const extras = {
       const top = f.groundY + stack.depth - stackHeight(stack);
       x.nesters = PUFFINS.map((dx, i) =>
         percher(f, stack.x + dx, top, i === 0 ? 1 : -1, {
-          blink: { every: [2, 5], lasts: 0.15 },
-          bob: { every: [3, 7], lasts: 0.3 },
-          stretch: { every: [8, 16], lasts: 0.8 },
-          turn: { every: [6, 12], lasts: 2.5 },
+          look: { every: [4, 8], lasts: 1.8 },
+          blink: { every: [2, 5], lasts: 0.3 },
+          bob: { every: [3, 7], lasts: 0.8 },
+          preen: { every: [8, 14], lasts: 2.4 },
+          stretch: { every: [8, 16], lasts: 1.6 },
+          turn: { every: [8, 14], lasts: 2.6 },
           ...(i === 1 ? { fish: { every: [30, 45], lasts: 10 } } : {}),
         }),
       );
@@ -722,14 +700,25 @@ const extras = {
     follow(x.pup, x.fox, dt, 12);
     x.pup.state = x.fox.state;
     x.pup.phase = x.fox.phase;
-    wander(f, x.swan, dt, { speed: 4, stride: 5, sit: [4, 7], walk: [2, 4] });
+    settleCanid(f, x.fox);
+    settleCanid(f, x.pup, x.fox);
+    const swanX = x.swan.x;
+    const mateX = x.mate.x;
+    wander(f, x.swan, dt, { speed: swanSpeed, sit: [4, 7], walk: [2, 4] });
     follow(x.mate, x.swan, dt, 13);
     x.mate.state = x.swan.state;
-    x.mate.phase = x.swan.phase + 1;
+    x.mate.timer = x.swan.timer;
+    rest(f, x.swan, swanPoses(x.swan));
+    rest(f, x.mate, swanPoses(x.mate));
+    longNeckStep(x.swan, swanX, dt, SWAN_STRIDE);
+    longNeckStep(x.mate, mateX, dt, SWAN_STRIDE);
     wander(f, x.stag, dt, { speed: 7, stride: 6, sit: [4, 8], walk: [3, 6] });
     follow(x.hind, x.stag, dt, 16);
     x.hind.state = x.stag.state;
     x.hind.phase = x.stag.phase;
+    x.hind.timer = x.stag.timer;
+    settle(f, x.stag);
+    settle(f, x.hind);
   },
 
   // Behind the plants: the night sky in dark mode, then the fjord with the aurora mirrored in it.
@@ -748,15 +737,15 @@ const extras = {
     if (f.stage >= 1) {
       for (const m of x.mists) mistAt(g, m, f.time, f.cols);
     }
-    if (x.owl.bird) owlAt(g, x.owl.bird, f.time);
+    if (x.owl.bird) owlFlyAt(g, x.owl.bird, f.time, "shortEared", isNight(f));
     if (x.puffins.bird && !isNight(f)) flockAt(g, x.puffins.bird, f.time);
     for (const n of x.nesters ?? []) nesterAt(g, n, f.time, isNight(f));
     for (const s of [x.swan, x.mate]) if (s.active) swanAt(g, s, f.time);
     if (x.flyingSwan.bird && !isNight(f)) swanAt(g, { ...x.flyingSwan.bird, pose: "fly" }, f.time);
-    if (x.stag.active) cervidAt(g, x.stag);
-    if (x.hind.active) cervidAt(g, x.hind);
-    if (x.fox.active) canidAt(g, x.fox);
-    if (x.pup.active) canidAt(g, x.pup);
+    if (x.stag.active) cervidAt(g, x.stag, f.time);
+    if (x.hind.active) cervidAt(g, x.hind, f.time);
+    if (x.fox.active) canidAt(g, x.fox, f.time);
+    if (x.pup.active) canidAt(g, x.pup, f.time);
   },
 };
 

@@ -10,7 +10,8 @@
 import { api } from "../services/api.js";
 import { EditorSession } from "../services/editor-session.js";
 import { ReviewSession } from "../services/review-session.js";
-import { SCENES, SceneModel, sceneById } from "../services/scene-model.js";
+import { SCENES, SceneModel, sceneById, stubProposal } from "../services/scene-model.js";
+import { VerifySession } from "../services/verify-session.js";
 import { watch } from "../services/watch.js";
 import { css, html, LitElement } from "../ui/lit.js";
 import { shared } from "../ui/shared.js";
@@ -37,7 +38,7 @@ export class NurseryApp extends LitElement {
   static properties = {
     sid: { state: true },
     model: { state: true },
-    view: { state: true }, // scene | board | family | icons | editor | review
+    view: { state: true }, // scene | board | family | icons | verify | editor | review
     tab: { state: true }, // elements | inbox | changes | rules
     theme: { state: true },
     selected: { state: true },
@@ -92,7 +93,8 @@ export class NurseryApp extends LitElement {
         ? was.sid
         : recall(localStorage, "scene", SCENES[0].id);
     if (!known(this.sid)) this.sid = SCENES[0].id;
-    this.view = ["scene", "board", "family", "icons"].includes(was.view) ? was.view : "scene";
+    this.view = ["scene", "board", "family", "icons", "verify"].includes(was.view) ? was.view : "scene";
+    this.verify = new VerifySession(); // loads when the Verify view first opens
     this.tab = was.tab ?? "elements";
     this.selected = was.selected ?? null;
     this.family = was.family ?? "dogs";
@@ -155,8 +157,9 @@ export class NurseryApp extends LitElement {
     }
   }
 
-  // Every scene's proposals, for the inbox and the rail's counts: each scene with any is loaded
-  // and its saved work read again.
+  // Every scene's proposals, for the inbox and the rail's counts. A scene already built reads its
+  // saved work again (cheap: only changed proposals are drawn again); a scene not built yet is
+  // listed from the proposals' reviews alone, and built when the browser is idle.
   async loadInbox() {
     let all;
     try {
@@ -165,12 +168,20 @@ export class NurseryApp extends LitElement {
       return;
     }
     const list = [];
+    const unbuilt = [];
     for (const [sid, proposals] of Object.entries(all)) {
-      if (!proposals.length && sid !== this.sid) continue;
-      const model = await SceneModel.load(sid);
-      await model.refresh();
-      list.push(...model.proposals);
+      if (!proposals.length) continue;
+      const model = SceneModel.peek(sid);
+      if (model) {
+        await model.refresh();
+        list.push(...model.proposals);
+      } else {
+        unbuilt.push(sid);
+        list.push(...proposals.map((info) => stubProposal(sid, info)));
+      }
     }
+    this.unbuilt = unbuilt;
+    this.buildIdle();
     this.inbox = list;
     if (this.review) {
       const now = this.review.model.proposals.find((p) => p.name === this.review.proposal.name);
@@ -180,6 +191,22 @@ export class NurseryApp extends LitElement {
       }
     }
     this.version += 1;
+  }
+
+  // Builds the scenes the inbox lists from reviews alone, one at a time while the browser is idle,
+  // so no click waits on them; each built scene replaces its stubs in the inbox.
+  buildIdle() {
+    if (this.idle || !this.unbuilt?.length) return;
+    const later = window.requestIdleCallback ?? ((fn) => setTimeout(fn, 200));
+    this.idle = later(async () => {
+      const sid = this.unbuilt.find((id) => !SceneModel.peek(id));
+      try {
+        if (sid) await SceneModel.load(sid);
+      } finally {
+        this.idle = null;
+      }
+      if (sid) await this.loadInbox();
+    });
   }
 
   // Reloads the page where you are, so new code shows.
@@ -237,6 +264,7 @@ export class NurseryApp extends LitElement {
         this.tab = a.tab;
         if (this.view === "editor") this.view = this.leaveEditor();
         else if (this.view === "review") this.view = this.back ?? "scene";
+        else if (this.view === "verify") this.view = "scene";
         break;
       case "theme":
         this.theme = a.theme;
@@ -310,7 +338,7 @@ export class NurseryApp extends LitElement {
     const waiting = (this.inbox ?? []).filter((p) => p.state === "waiting");
     const counts = {};
     for (const p of waiting) counts[p.sid] = (counts[p.sid] ?? 0) + 1;
-    const mode = this.view === "editor" || this.view === "review" ? this.view : "browse";
+    const mode = ["editor", "review", "verify"].includes(this.view) ? this.view : "browse";
     return html`
       <top-bar .view=${this.view} .heading=${scene.label} .theme=${this.theme} .inbox=${waiting.length} .stale=${this.stale}></top-bar>
       <div class="body">
@@ -326,6 +354,7 @@ export class NurseryApp extends LitElement {
           .proposal=${this.review?.proposal}
           .editor=${this.editor}
           .review=${this.review}
+          .verify=${this.verify}
           .version=${this.version}
         ></side-panel>
       </div>
@@ -342,6 +371,8 @@ export class NurseryApp extends LitElement {
         return html`<family-view .family=${this.family}></family-view>`;
       case "icons":
         return html`<icons-view .sid=${this.sid}></icons-view>`;
+      case "verify":
+        return html`<verify-view .session=${this.verify} .sid=${this.sid}></verify-view>`;
       case "editor":
         return html`<editor-view .session=${this.editor} .leaving=${Boolean(this.pending)}></editor-view>`;
       case "review":

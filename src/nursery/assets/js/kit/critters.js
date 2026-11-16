@@ -63,11 +63,44 @@ export function wander(f, w, dt, { speed, stride = 7, sit = [2, 5], walk = [3, 8
   }
 }
 
+// Notes when a walker's state changes, so it can ease into the new one: w.since is the time it
+// changed, and w.lastPose the pose it rested in, if any, as it gets up to walk. w.sinceX is where
+// it changed, w.prevX where the state before began.
+export function settle(f, w) {
+  if (w.state === w.was) return;
+  w.lastPose = w.state === "walk" && w.was && w.was !== "walk" && w.was !== "stand" ? (w.pose ?? "sit") : null;
+  w.was = w.state;
+  w.since = f.time;
+  w.prevX = w.sinceX ?? w.x; // where the state before began, and where this one did (for a hop's place)
+  w.sinceX = w.x;
+}
+
 // A walker that stops rests in one of `poses` (felidPoses, for a cat) for the whole stop, picked as
 // it stops; walking clears it. Call it after wander().
 export function rest(f, w, poses) {
+  settle(f, w);
   if (w.state === "walk") w.pose = null;
   else if (!w.pose) w.pose = poses[Math.floor(f.rand() * poses.length)];
+}
+
+// Keeps a walker's stride clock w.c, in strides (cycles of its gait): it grows with the ground the walker
+// covers (`px` a stride), so a foot or a belly planted on the sand stays put. `x0` is where the walker
+// was before this step. A walker that has stopped finishes its stride in `cycle` seconds before it
+// rests. w.moving says it is still going and w.still the seconds it has been at rest.
+export function stride(w, x0, dt, px, cycle) {
+  if (!w.active) return;
+  const moved = Math.abs(w.x - x0);
+  w.c ??= 0;
+  w.moving = moved > 0.01;
+  if (w.moving) {
+    w.c += moved / px;
+    w.still = 0;
+  } else if (w.c - Math.floor(w.c) > 1e-6) {
+    w.c = Math.min(Math.ceil(w.c - 1e-9), w.c + dt / cycle);
+    w.still = 0;
+  } else {
+    w.still = (w.still ?? 0) + dt;
+  }
 }
 
 // Crosses the page and, once it is off the far edge, comes back, stepping as it goes.

@@ -32,6 +32,7 @@ sh scripts/check.sh                 # ruff, Biome, import boundaries, brand file
 uv run pytest                       # the end-to-end tests
 uv run nursery brand                # build the mascot and the favicons from the mascot's grid
 uv run nursery catalog              # build docs/scenes/<scene>.md from the code
+uv run nursery verify               # check the art against the design rules
 uv run nursery release --dry-run    # check a release and change nothing
 uv run nursery --help               # every command
 ```

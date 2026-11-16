@@ -109,7 +109,7 @@ export class InboxPanel extends LitElement {
                 <div class="title">${p.spec?.title ?? p.name}</div>
                 <div class="meta">
                   <span class="badge ${s.tone}"><n-icon name=${s.icon} size="12"></n-icon>${revised ? "Revised" : s.label}</span>
-                  ${label(p.sid)} · rev ${p.spec?.revision ?? 1} · ${p.variants.length} variant${p.variants.length > 1 ? "s" : ""}
+                  ${label(p.sid)} · ${p.stub ? "reading…" : html`rev ${p.spec?.revision ?? 1} · ${p.variants.length} variant${p.variants.length > 1 ? "s" : ""}`}
                 </div>
                 ${p.error ? html`<div class="error">${p.error}</div>` : nothing}
               </span>

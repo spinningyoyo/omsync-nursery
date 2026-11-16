@@ -10,6 +10,7 @@ nursery brand [--check]         build the mascot, the favicons and the studio's 
 nursery release [--patch|--minor|--major] [--dry-run]
                                 check the scenes and release them as a new version tag
 nursery preview scene|sheet ... render scenes or a sprite sheet headless (see the skill)
+nursery verify [SCENE ...] [--rule NAME ...]  check the art against the design rules, headless
 """
 
 import argparse
@@ -57,6 +58,7 @@ def parser() -> argparse.ArgumentParser:
         "catalog", help="rebuild docs/scenes/<id>.md, one file per scene", add_help=False
     )
     commands.add_parser("preview", help="render scenes or a sprite sheet", add_help=False)
+    commands.add_parser("verify", help="check the art against the design rules", add_help=False)
     return root
 
 
@@ -84,6 +86,10 @@ def main(argv: list[str] | None = None) -> None:
 
             catalog.main(argv[1:])
             return
+        if argv[:1] == ["verify"]:
+            from nursery.verify import run
+
+            sys.exit(run.main(argv[1:]))
         if argv[:1] == ["preview"]:
             from nursery.preview import render
 

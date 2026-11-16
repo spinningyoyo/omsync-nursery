@@ -9,6 +9,7 @@ const VIEWS = [
   { id: "board", label: "Board", icon: "layout-grid" },
   { id: "family", label: "Families", icon: "users" },
   { id: "icons", label: "Icons", icon: "shapes" },
+  { id: "verify", label: "Verify", icon: "scan-search" },
 ];
 
 const THEMES = [

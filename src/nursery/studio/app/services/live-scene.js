@@ -82,10 +82,10 @@ export class LiveScene {
     this.redraw();
   }
 
-  water() {
+  water(level) {
     const e = this.engine;
     const box = e.ground.getBoundingClientRect();
-    const stage = e.sprinkle(box.left + box.width * 0.5, box.top + box.height * 0.35);
+    const stage = e.sprinkle(box.left + box.width * 0.5, box.top + box.height * 0.35, level);
     this.redraw();
     return stage;
   }

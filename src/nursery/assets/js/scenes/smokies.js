@@ -10,17 +10,18 @@
 // A bobcat, the park's only wild cat, prowls the floor and rests on it now and then.
 import {
   bearAt,
+  bearPoses,
   cervidAt,
   felidAt,
   felidPoses,
-  flyerAt,
   groundBirdAt,
+  groundBirdStep,
+  groundPoses,
+  groundSpeed,
   hareAt,
-  owlAt,
-  raptorAt,
+  harePoses,
 } from "../kit/animals.js";
 import {
-  doing,
   enter,
   enterBehind,
   fidget,
@@ -30,13 +31,15 @@ import {
   narrow,
   percher,
   rest,
-  soarAt,
+  settle,
   soarer,
   stroll,
   walker,
   wander,
 } from "../kit/critters.js";
 import { bandPath, milkyWayCanvas, mistAt, mistBand, onBand, starAt, starField, starFieldAt } from "../kit/effects.js";
+import { circlerAt, eagleFlyAt, flyerAt, OWL_MOVES, owlPerchAt } from "../kit/flyers.js";
+import { flyByPerch, goHome, unhidden } from "../kit/perch.js";
 import {
   blob,
   CLEARING,
@@ -44,16 +47,18 @@ import {
   clearing,
   foliage,
   hash,
-  part,
   rect,
   row,
   scatter,
   sortPlants,
   stroke,
+  wind,
 } from "../kit/pixel.js";
 import { broadleafTree, coniferTree } from "../kit/trees.js";
 
+const MATURE = { tree: 3, ridge: 2, rhodo: 2.5, fern: 1.5, flower: 2, boulder: 1.5, log: 1.5 };
 const TREE_ROWS = 38;
+const HEMLOCK_ROWS = TREE_ROWS * 1.1;
 const MISTS = 7;
 const STARS = 70;
 // Bright stars named by where they sit on the Milky Way: how far along it (0 at the core) and how
@@ -112,6 +117,8 @@ const LIGHT = {
   bark: ["#b8b2a6", "#948e84"],
   bronze: ["#c8a070", "#9a7650"],
   spray: "#f4ecd2",
+  shag: "#68635c", // a hickory's curling bark strips
+  groundShadow: "rgba(60, 44, 20, 0.22)", // the soft shadow every animal, plant and rock casts on the ground
   rhodo: ["#6aa27a", "#4a8660", "#356a4a", "#265239"],
   trunk: ["#a2866f", "#7c6653"],
   fern: ["#dccb82", "#bda55a", "#9b8444"],
@@ -125,10 +132,11 @@ const LIGHT = {
   whitetail: ["#b4865a", "#6e4e33", "#f6ecda", "#d9c8a4"],
   elk: ["#a87648", "#4e3420", "#e6d2ae", "#dccaa2", "#3a2616", "#86592f"],
   bear: ["#2e2724", "#4a3d36", "#bc9d7c", "#141010", "#262020"],
+  bearScent: "#8c8070",
   owl: ["#9a8a78", "#6a5a4a", "#e6dccb", "#2a2220", "#e8c060"],
   groundhog: ["#8a6a4c", "#43321f", "#c4a882"],
   turkey: ["#72502f", "#a97d4d", "#c93c3c", "#3c70ab", "#2e2218"],
-  eagle: ["#4a3426", "#e0a93a", "#4a3426", "#f3eadb", "#7a5a44"],
+  eagleGolden: ["#4a3426", "#e0a93a", "#4a3426", "#f3eadb", "#7a5a44"],
   cardinal: {
     C: "#c8321f",
     H: "#b02a1a",
@@ -174,6 +182,8 @@ const DARK = {
   bark: ["#8e897f", "#6e6a62"],
   bronze: ["#a07e58", "#7c6044"],
   spray: "#d8d0b8",
+  shag: "#4d4a45", // a hickory's curling bark strips
+  groundShadow: "rgba(0, 0, 0, 0.3)",
   rhodo: ["#4f8a62", "#3b7050", "#2d5840", "#204430"],
   trunk: ["#8a705c", "#6a5546"],
   fern: ["#c4b36e", "#a38f4c", "#82703a"],
@@ -187,10 +197,11 @@ const DARK = {
   whitetail: ["#a87c52", "#6a4c32", "#eadfca", "#c8b894"],
   elk: ["#9a6c44", "#4a321e", "#d8c4a0", "#c8b692", "#342316", "#7a5430"],
   bear: ["#4a3e39", "#665650", "#bc9d7c", "#1a1414", "#3a302c"],
+  bearScent: "#d8d0c0",
   owl: ["#8a7c6c", "#5e5042", "#d4cab8", "#1e1816", "#d8b050"],
   groundhog: ["#9c7a58", "#2a1f15", "#d2b898"],
   turkey: ["#8a6440", "#b88a58", "#d84a4a", "#5a90cc", "#3a2c20"],
-  eagle: ["#7a5638", "#f2c25a", "#7a5638", "#f5efe4", "#5a4432"],
+  eagleGolden: ["#7a5638", "#f2c25a", "#7a5638", "#f5efe4", "#5a4432"],
   cardinal: {
     C: "#7c2319",
     H: "#6e1e16",
@@ -230,52 +241,97 @@ const DARK = {
 function tree(g, p, s, base) {
   const { pal } = g;
   const tones = pal[TONES[p.species]];
-  const spec = { rows: TREE_ROWS, tones, trunkTones: pal.bark };
-  const full = { ...spec, lift: -0.06, dome: true };
+  // The broadleaf family's build (kit/broadleaf.js): each species by its height, colour, bark and
+  // how open its crown is.
+  const spec = { rows: TREE_ROWS, tones, bark: pal.bark };
   switch (p.species) {
     case "hemlock":
       return coniferTree(g, p, s, base, {
-        rows: TREE_ROWS * 1.1,
+        rows: HEMLOCK_ROWS,
         tones,
         trunkTones: pal.trunk,
-        tiers: 7,
+        tiers: 9,
         spread: 0.34,
         clear: 0.12,
-        droop: 1,
+        droop: 1.3,
+        hang: 1,
+        nod: 1,
+        taper: 0.5,
+        h: 0.1,
+        u0: 0.2,
+        wide: 1.2,
       });
     case "sugarMaple":
-      return broadleafTree(g, p, s, base, { ...full, wide: 0.9 });
+      return broadleafTree(g, p, s, base, { ...spec, from: 0.3, spread: 0.3, airy: 0.25 });
     case "redMaple":
-      return broadleafTree(g, p, s, base, { ...full, wide: 0.85 });
+      return broadleafTree(g, p, s, base, { ...spec, from: 0.3, spread: 0.28, airy: 0.3 });
+    case "hickory":
+      // Shagbark: strips of bark curling off the trunk.
+      return broadleafTree(g, p, s, base, {
+        ...spec,
+        from: 0.34,
+        spread: 0.3,
+        airy: 0.42,
+        mark: (r, i, _w, seed) => (i > 0 && hash(r >> 1, i, seed) < 0.3 ? pal.shag : null),
+      });
     case "tulip":
-      return broadleafTree(g, p, s, base, { ...spec, rows: TREE_ROWS * 1.35, wide: 0.55, lift: 0.16 });
+      return broadleafTree(g, p, s, base, { ...spec, rows: TREE_ROWS * 1.35, from: 0.52, spread: 0.17, airy: 0.42 });
     case "beech":
-      return broadleafTree(g, p, s, base, { ...full, rows: TREE_ROWS * 0.9, wide: 1.2, lift: -0.1 });
+      return broadleafTree(g, p, s, base, { ...spec, rows: TREE_ROWS * 0.9, from: 0.24, spread: 0.38, airy: 0.28 });
     case "blackGum":
-      return broadleafTree(g, p, s, base, { ...full, lift: -0.04 });
+      return broadleafTree(g, p, s, base, { ...spec, from: 0.32, spread: 0.3, airy: 0.32 });
     case "yellowBirch":
       return broadleafTree(g, p, s, base, {
         ...spec,
-        trunkTones: pal.bronze,
-        wide: 0.7,
-        lift: 0.08,
+        bark: pal.bronze,
         mark: pal.spray,
+        from: 0.42,
+        spread: 0.24,
+        airy: 0.45,
       });
     case "sourwood": {
-      broadleafTree(g, p, s, base, { ...spec, rows: TREE_ROWS * 0.85, wide: 0.9, lean: 4 });
-      if (!p.crown || s < 0.9) return;
-      // A few drooping sprays of seed, short and kept well inside the crown.
-      const { cx, top, half, bottom } = p.crown;
-      for (let i = 0; i < 3; i += 1) {
-        const x = cx - Math.round(half * 0.5) + Math.round((i * half) / 2);
-        const y = top + 3 + Math.round(hash(i, p.seed, 3) * Math.max(1, bottom - top - 7));
+      broadleafTree(g, p, s, base, { ...spec, rows: TREE_ROWS * 0.85, from: 0.36, spread: 0.3, airy: 0.5, lean: 4 });
+      if (s < 0.9) return;
+      // Drooping sprays of cream seed hung under every other clump, so they swing with it.
+      (p.clumps ?? []).forEach((c, k) => {
+        if (k % 2 || c.w < 5) return;
+        const x = c.cx + Math.round((hash(k, p.seed, 3) - 0.5) * c.w * 0.5);
+        const y = Math.round(c.cy + c.h * 0.42);
         rect(g, pal.spray, x, y, 1, 2);
-      }
+        if (c.w >= 7) rect(g, pal.spray, x + 1, y + 2, 1, 1);
+      });
       return;
     }
     default:
-      return broadleafTree(g, p, s, base, { ...full, wide: 1 });
+      return broadleafTree(g, p, s, base, { ...spec, from: 0.32, spread: 0.3, airy: 0.4 });
   }
+}
+
+// The leader of a full-grown hemlock, where the golden eagle's feet go: the conifer build (kit/conifer.js) draws the spire from the
+// same numbers and sways it with the wind at `time`.
+function hemlockTop(p, groundY, time) {
+  const total = Math.max(3, Math.round(HEMLOCK_ROWS * p.scale));
+  return { x: p.x + wind(time, p.x), y: groundY + (p.layer < 1 ? 1 : p.depth) - total + 3 };
+}
+
+// Where the eagle may perch: the full-grown hemlocks.
+// A small bird (`strict`) wants a top that no other tree's crown, drawn earlier or later, surrounds.
+function perchSpots(f, strict = false) {
+  const trees = f.plants.map((p, order) => ({ p, order })).filter(({ p }) => p.kind === "tree");
+  const spots = trees
+    .filter(({ p }) => p.species === "hemlock" && p.shown - p.born >= MATURE.tree)
+    .map(({ p, order }) => ({ x: p.x, order, top: (time) => hemlockTop(p, f.groundY, time) }));
+  // Any tree drawn later may cover a hemlock's top: the tulip tree stands tallest.
+  const covers = trees.map(({ p, order }) => {
+    const rows = TREE_ROWS * (p.species === "hemlock" ? 1.1 : p.species === "tulip" ? 1.35 : 0.9) * p.scale;
+    return {
+      x: p.x,
+      order: strict && p.species !== "hemlock" ? 1e9 : order,
+      y: f.groundY + (p.layer < 1 ? 1 : p.depth) - Math.round(rows),
+      reach: Math.round((strict ? 0.34 : 0.25) * rows),
+    };
+  });
+  return unhidden(spots, covers, f.time);
 }
 
 function rhododendron(g, p, s, base) {
@@ -434,41 +490,17 @@ function soil(pal, x, y, depth, turf) {
 
 // Creatures
 
-// A groundhog, grizzled brown with a darker tail, ears and feet: upright on its hind legs when it
-// sits, and low on all fours when it walks. Its palette is groundhog: [fur, dark, grizzle].
-function groundhogAt(g, h, _time) {
-  const [fur, dark, grizzle] = g.pal.groundhog;
-  const x = Math.round(h.x);
-  const y = g.groundY + 6;
-  if (h.state === "sit") {
-    part(g, dark, x, y, h.dir, 1, -1, 3, 1);
-    part(g, fur, x, y, h.dir, 1, -7, 4, 6);
-    part(g, grizzle, x, y, h.dir, 3, -5, 2, 3);
-    part(g, fur, x, y, h.dir, 2, -10, 4, 3);
-    part(g, dark, x, y, h.dir, 2, -11, 1, 1);
-    part(g, dark, x, y, h.dir, 5, -11, 1, 1);
-    part(g, dark, x, y, h.dir, 6, -8, 1, 1);
-    part(g, dark, x, y, h.dir, 0, -3, 1, 2);
-  } else {
-    hareAt(g, { ...h, kind: "groundhog", pal: "groundhog", y });
-  }
+function turkeyAt(g, t, time) {
+  if (g.trace) return g.trace.draw(turkeyAt, g, t, time);
+  groundBirdAt(g, t, "turkey", time);
 }
 
-function turkeyAt(g, t, _time) {
-  groundBirdAt(g, t, "turkey");
-}
-
-// The cub climbs the nearest tree now and then while its mother forages: up the trunk, a pause
-// clinging to the bark, then back down.
-const CLIMB = { up: 1.6, hold: 3, down: 1.4 };
-
-function climbHeight(c, time) {
-  const t = time - c.climb.start;
-  const top = c.climb.height;
-  if (t < CLIMB.up) return top * (t / CLIMB.up);
-  if (t < CLIMB.up + CLIMB.hold) return top;
-  return top * Math.max(0, 1 - (t - CLIMB.up - CLIMB.hold) / CLIMB.down);
-}
+// The cub climbs the nearest tree now and then while its mother forages: it rears at the trunk
+// (lead), climbs it paw and foot in turn (up), holds there looking round (hold), comes back down the
+// same way (down), and drops to all fours (tail). Seconds.
+const CLIMB = { lead: 1, up: 2.4, hold: 2.3, down: 2.4, tail: 1 };
+const CLIMB_SECONDS = CLIMB.lead + CLIMB.up + CLIMB.hold + CLIMB.down + CLIMB.tail;
+const BARK_COLUMN = 7; // the cub's own columns from where it stands to the bark it climbs
 
 // The Milky Way on an October evening: the core (Sagittarius) is setting, warm and low over the
 // ridges on the left, and the band arches overhead through Cygnus, whose star clouds are its
@@ -497,6 +529,8 @@ function milkyWay(f) {
   };
 }
 
+const HEAR_AFTER = 0.8; // seconds the deer keep listening after the bull's bugle ends
+
 const extras = {
   init(f) {
     return {
@@ -520,7 +554,7 @@ const extras = {
       soarer: soarer(f, 48 + f.rand() * 10, 1),
       cardinal: { next: 6, bird: null },
       swift: { next: 2, bird: null },
-      groundhog: walker(f),
+      groundhog: { ...walker(f), kind: "groundhog" },
       owl: null,
     };
   },
@@ -575,13 +609,30 @@ const extras = {
       doe.state = "run";
       doe.x += doe.dir * 24 * dt;
       doe.phase += dt * 14;
+      for (const d of x.deer) d.hearSince = null;
     } else {
       if (doe.state === "run") doe.state = "sit";
-      wander(f, doe, dt, { speed: 8, sit: [3, 6], walk: [3, 6] });
+      if (x.elk.active && f.time < x.bugle.until + HEAR_AFTER) {
+        // While the bull bugles the deer stop, face him and lift their heads to listen, and carry on
+        // a moment after he finishes (cervidAt reads hearSince and hearUntil).
+        doe.state = "sit";
+        doe.timer = Math.max(doe.timer, 1);
+        doe.dir = x.elk.x > doe.x ? 1 : -1;
+        for (const d of x.deer) {
+          d.hearSince ??= f.time;
+          d.hearUntil = x.bugle.until + HEAR_AFTER;
+        }
+      } else {
+        for (const d of x.deer) d.hearSince = null;
+        wander(f, doe, dt, { speed: 8, sit: [3, 6], walk: [3, 6] });
+      }
     }
     follow(buck, doe, dt, 22);
     buck.state = doe.state;
     buck.phase = doe.phase + 1;
+    buck.timer = doe.timer;
+    settle(f, doe);
+    settle(f, buck);
     // The bull elk bugles in the rut: head up, a breath of mist.
     if (x.elk.active && f.time >= x.bugle.next) {
       x.bugle.until = f.time + 3;
@@ -592,43 +643,76 @@ const extras = {
       if (x.elk.state === "bugle") x.elk.state = "sit";
       wander(f, x.elk, dt, { speed: 5, stride: 5, sit: [4, 8], walk: [3, 6] });
     }
-    // The breath starts with the bugle and repeats every two seconds, 4 frames a second.
-    x.elk.puff = Math.floor((f.time - (x.bugle.until - 3)) * 4) % 8;
-    wander(f, x.turkey, dt, { speed: 7, stride: 9, sit: [2, 4], walk: [2, 5] });
+    // The bugle's pose and breath run from when it starts (cervidAt reads elk.since).
+    settle(f, x.elk);
+    const turkeyX = x.turkey.x;
+    wander(f, x.turkey, dt, { speed: groundSpeed("turkey"), stride: 1, sit: [3.5, 9], walk: [2, 5] });
+    rest(f, x.turkey, groundPoses(x.turkey, "turkey"));
+    groundBirdStep(f, x.turkey, dt, "turkey", turkeyX);
     wander(f, x.groundhog, dt, { speed: 6, stride: 4, sit: [6, 12], walk: [2, 4] });
+    rest(f, x.groundhog, harePoses("groundhog"));
     // The mother bear forages along, and now and then rears up on her hind legs to sniff the air.
     const [mother, cub] = x.bears;
     if (mother.active && f.time >= x.rear.next) {
       x.rear.until = f.time + 3;
       x.rear.next = f.time + 22 + f.rand() * 12;
     }
-    if (f.time < x.rear.until) mother.state = "rear";
-    else {
+    if (f.time < x.rear.until) {
+      mother.state = "rear";
+      mother.timer = x.rear.until - f.time;
+    } else {
       if (mother.state === "rear") mother.state = "walk";
       stroll(f, mother, dt, 5);
     }
+    settle(f, mother);
     if (cub.climb) {
-      if (f.time - cub.climb.start > CLIMB.up + CLIMB.hold + CLIMB.down) cub.climb = null;
+      if (f.time - cub.climb.start > CLIMB_SECONDS) cub.climb = null;
     } else if (cub.active) {
       follow(cub, mother, dt, 22);
       cub.phase = mother.phase + 1;
-      cub.state = "walk";
+      // The cub stands, forages or sits while its mother rears, then follows her on.
+      cub.state = mother.state === "rear" ? "sit" : "walk";
+      cub.timer = mother.timer;
+      rest(f, cub, bearPoses(cub));
       if (f.rand() < dt * 0.04) {
         const near = f.plants.filter(
           (p) => p.kind === "tree" && p.layer === 1 && p.crown && p.species !== "hemlock" && Math.abs(p.x - cub.x) < 20,
         );
         if (near.length) {
           const tree = near[0];
-          cub.climb = { start: f.time, x: tree.x, height: Math.min(18, f.groundY + 7 - tree.crown.bottom) };
+          const dir = tree.x >= cub.x ? 1 : -1;
+          cub.climb = {
+            start: f.time,
+            dir,
+            // Standing beside the trunk, facing it: its bark column lands on the trunk's near edge.
+            x: dir > 0 ? tree.x - 2 - BARK_COLUMN : tree.x + 1 + BARK_COLUMN,
+            height: Math.min(18, f.groundY + 7 - tree.crown.bottom),
+          };
         }
       }
     }
     // The day flyers: a golden eagle crossing slowly, another circling, a cardinal and a chimney swift.
     const day = !isNight(f);
-    if (f.stage >= 2 && day)
-      flyBy(f, x.eagle, dt, { every: [6, 5], speed: 13, spawn: () => ({ y: 22 + f.rand() * 30 }) });
-    if (f.stage >= 3 && day)
-      flyBy(f, x.cardinal, dt, { every: [7, 6], speed: 24, spawn: () => ({ y: f.groundY - 56 - f.rand() * 24 }) });
+    if (f.stage >= 2 && day) {
+      const spawn = () => ({ y: 22 + f.rand() * 30 });
+      flyByPerch(f, x.eagle, dt, { every: [6, 5], speed: 13, spawn, spots: perchSpots, stay: [14, 28] });
+    } else if (x.eagle.bird?.visit) {
+      goHome(f, x.eagle.bird);
+      x.eagle.bird = null;
+    }
+    if (f.stage >= 3 && day) {
+      // Now and then the cardinal stops on a hemlock's leader, then flies on. The swift only clings, so it never does.
+      const spawn = () => ({ y: f.groundY - 56 - f.rand() * 24 });
+      flyByPerch(f, x.cardinal, dt, {
+        every: [7, 6],
+        speed: 24,
+        spawn,
+        spots: (g) => perchSpots(g, true),
+        small: "cardinal",
+        odds: 0.3,
+        stay: [8, 16],
+      });
+    } else if (x.cardinal.bird?.visit) goHome(f, x.cardinal.bird);
     if (f.stage >= 4 && day)
       flyBy(f, x.swift, dt, { every: [6, 8], speed: 46, spawn: () => ({ y: f.groundY - 80 - f.rand() * 24 }) });
     x.soarer.active = f.stage >= 5 && day;
@@ -643,11 +727,9 @@ const extras = {
       );
       if (trees.length) {
         const tree = trees[0];
-        x.owl = percher(f, tree.crown.cx + 3, tree.crown.bottom + 1, 1, {
-          look: { every: [3, 6], lasts: 1.8 },
-          blink: { every: [2, 4], lasts: 0.2 },
-        });
-        x.owl.pose = "perch";
+        x.owl = percher(f, tree.crown.cx + 3, tree.crown.bottom + 1, 1, OWL_MOVES);
+        x.owl.species = "barred";
+        x.owl.look = -1;
         x.owl.branch = tree.crown.cx;
       }
     }
@@ -673,29 +755,21 @@ const extras = {
     const x = f.extra;
     for (const m of x.mists) mistAt(g, m, f.time, f.cols);
     if (x.turkey.active) turkeyAt(g, x.turkey, f.time);
-    for (const d of x.deer) if (d.active) cervidAt(g, d);
-    if (x.elk.active) cervidAt(g, x.elk);
-    if (x.groundhog.active) groundhogAt(g, x.groundhog, f.time);
+    for (const d of x.deer) if (d.active) cervidAt(g, d, f.time);
+    if (x.elk.active) cervidAt(g, x.elk, f.time);
+    if (x.groundhog.active) hareAt(g, x.groundhog, f.time);
     const [mother, cub] = x.bears;
-    if (mother.active) bearAt(g, mother);
+    if (mother.active) bearAt(g, mother, f.time);
     if (cub.climb) {
-      const y = g.groundY + 7 - Math.round(climbHeight(cub, f.time));
-      bearAt(g, { ...cub, cub: false, x: cub.climb.x, y, state: "rear" });
-    } else if (cub.active) bearAt(g, cub);
+      const { start, x: cx, dir, height } = cub.climb;
+      bearAt(g, { ...cub, x: cx, dir, climb: { ...CLIMB, t: f.time - start, height } }, f.time);
+    } else if (cub.active) bearAt(g, cub, f.time);
     if (x.owl && isNight(f)) {
       rect(g, g.pal.trunk[1], x.owl.branch - 2, x.owl.y, 10, 1);
-      const look = doing(x.owl, "look", f.time) >= 0 ? -1 : 0;
-      owlAt(g, x.owl, f.time, { look, blink: doing(x.owl, "blink", f.time) >= 0 });
+      owlPerchAt(g, x.owl, f.time);
     }
-    if (x.eagle.bird && !isNight(f)) {
-      const e = x.eagle.bird;
-      const flap = Math.sin(f.time * 0.9 + e.phase) > 0.75;
-      raptorAt(g, { kind: "eagleSide", pal: "eagle", x: e.x, y: e.y, dir: e.dir }, { bank: flap });
-    }
-    if (x.soarer.active) {
-      const c = soarAt(f.time, x.soarer);
-      raptorAt(g, { kind: "eagle", x: c.x, y: c.y, dir: c.dir }, { bank: c.bank });
-    }
+    if (x.eagle.bird && !isNight(f)) eagleFlyAt(g, "golden", x.eagle.bird, f.time);
+    if (x.soarer.active) circlerAt(g, "golden", x.soarer, f.time);
     if (x.cardinal.bird && !isNight(f)) flyerAt(g, x.cardinal.bird, f.time, "cardinal");
     if (x.swift.bird && !isNight(f)) flyerAt(g, x.swift.bird, f.time, "swift");
     for (const leaf of x.leaves) {
@@ -709,7 +783,7 @@ export default {
   id: "smokies",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.35, 0.55], dark: [0.45, 0.62] },
-  mature: { tree: 3, ridge: 2, rhodo: 2.5, fern: 1.5, flower: 2, boulder: 1.5, log: 1.5 },
+  mature: MATURE,
   paint: { tree, ridge, rhodo: rhododendron, fern, flower: wildflower, boulder, log },
   generate,
   soil,

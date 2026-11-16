@@ -30,13 +30,16 @@ Which path:
    interpretations in `notes`. More variants only when the user asks for choices. Even a small
    tweak to built art is a proposal. Wait for the review before you build, unless the user locked
    the design and said to proceed. Art goes to the studio, never as pictures in chat.
-4. **Build** with the kit. Then `uv run nursery preview scene <scratch> <scene> 1200 520
-   "shots=0,20"` and again at `390 700`, and look at every image, day and night. Done when no
-   frame shows a floating sprite, a perch-less percher, a sprite cut at the page edge, or a
-   `console:` line.
+4. **Build** with the kit. Fast checks, while proposing and building: `sh scripts/biome.sh check`,
+   `python3 -I scripts/check_js_imports.py`, `uv run nursery catalog`, and
+   `uv run nursery preview scene <scratch> <scene> 1200 520 "shots=0,20"` and again at `390 700`.
+   Look at every image, day and night. Done when none shows a floating sprite, a perch-less
+   percher, a sprite cut at the page edge, or a `console:` line.
 5. **Catalogue** ([catalogue.md](catalogue.md)): `ELEMENTS`, `SPRITES` and `families.js` in step,
    then `uv run nursery catalog`.
-6. **Commit** here. A new scene also registers in `nursery.js` (import and `SCENES`),
+6. **Commit** after the final test (`sh scripts/check.sh`, then `uv run pytest`). Run it once, at
+   the end, only when the user says yes, and report any failure with its output. A subagent never
+   runs it; it reports "tests not run". A new scene also registers in `nursery.js` (import and `SCENES`),
    `src/nursery/assets/scenes.json` (id and picker label, in picker order) and
    `src/nursery/assets/css/scenes.css` (tint and backdrop washes, day and night); the omsync
    contract in `docs/overview.md` says what omsync reads.
@@ -63,19 +66,15 @@ Which path:
   it stops. Flyers are fly-across (`flyBy`), circling in place (`soarAt`, as the rainforest eagle
   does, never crossing the whole page), or perched (`percher`). A scene's daytime flyers cover a
   slow (up to 14 px/s), a medium (15 to 30) and a fast (31 and up) flyby and one circler.
-- **Size tiers**, in art px at scale 1. The tiers compress large animals and set a minimum size for
-  small ones, so each stays readable. No animal is wider than the 32-px mascot. A storybook cast
-  stays consistent only within its own scene.
-
-  | Tier | Who | Width | Height |
-  |---|---|---|---|
-  | XS | insects, fireflies, hatchlings | 1–5 | 1–3 |
-  | S | rabbits, rodents, crabs, puffins, kingfishers | 7–11 | 5–10 |
-  | M | foxes, coyotes, monkeys, otters, turkeys, raptors | 12–17 | 7–12 |
-  | L | deer, black bears, wolves, lions, bighorn, swans | 17–23 | 12–17, antlers up to 8 more |
-  | XL | elk, moose, bison, grizzlies, Asian elephants | 23–28 | 18–23 |
-  | XXL | African elephants, giraffes | 28–31 / 18–22 | 24–27 / 34–38 |
-
+- **Scale**, in art px at scale 1. An adult's body (its build's `len`, rump to chest) follows its
+  real head-and-body length, compressed: **11.3 × metres^0.39 px**, within 15% (at least 2 px either
+  way). A 0.5 m cat is 8 px, a 1.2 m wolf 12, a 2 m lion 15, a 6 m elephant 23. Look the length up
+  for a new species and add it to `REAL_LENGTH` in `families.js`. The young scale with their parents;
+  a storybook cast keeps its book's sizes within its own scene. Birds and small animals whose builds
+  have no `len` follow the scale by eye until they get one.
+- **Poses.** A pose moves the parts and adds none: no pose covers more than 1.25 times the pixels the
+  animal covers walking, except one that opens wings or fans a tail. Sitting up, howling and rearing
+  change the outline, not the size.
 - **Colour.** Ration bright accents (flowers, fruit), hardest in open scenes. Give a white animal a
   grey edge so it shows on the light page. Match the palette's maturity to the place (an ancient
   rainforest is deep and dark green, not pastel).
@@ -85,42 +84,69 @@ Which path:
 - **Accuracy.** Species come from that place's own lists (a park's species list, a regional
   wildlife page), in the right season for the palette. Dark mode is night: day birds stay home
   (`isNight(f)` gates both update and draw) and night animals (owls, fireflies) come out.
-- **Style.** Flat colour with one darker shade and no ink outlines; storybook scenes follow the
-  public-domain illustrations (Shepard, Tenniel) unless the user has chosen otherwise.
+- **Style.** Shaded colour, lit from above, and no ink outlines (see Depth); storybook scenes
+  follow the public-domain illustrations (Shepard, Tenniel) unless the user has chosen otherwise.
 - **Families.** Every animal and tree belongs to a family with one shared design, listed in
   `src/nursery/studio/shared/families.js`. Members differ only in size, colour and the traits the
   family names: a tiger would be the lion without the mane, with its own colour and stripes, and a fox, coyote and
   wolf are one design at three sizes. Refresh a whole family at once, never one member alone. When
   something has no family, add one. Storybook characters are listed with their real family to
   compare, but keep their book's look.
-- **Depth.** Lay the darker shade as areas, not lines: the belly, the throat, the far legs, the
-  shaded side of a trunk. The size tiers stand: detail comes from better use of the same pixels.
-- **Whole bodies.** A body is one connected shape, with no gap at a neck, tail or shoulder. A wing
-  stays rooted on the shoulder and changes shape through its beat; it is never a block that jumps.
-  Every walking animal uses the two-frame walk, its diagonal leg pairs lifting in turn (`lifted` in
-  `animals.js`).
-- **Trees.** Show how the tree is built: a lit and shaded trunk, visible boughs, and foliage in
-  separate clumps with sky between them (the Bee Tree, the Scots pine, the sequoia), not a ball or a
-  cone on a stick.
-  Broadleaf trees use `broadleafTree` and conifers `coniferTree` (`trees.js`). A conifer ends in a
-  pointed leader or a flat, round top, never a round blob.
+- **Depth.** Four tones lit from above, laid as areas, never as lines round the shape: a highlight
+  on top, the base, a shade lower down, the darkest underneath. Far legs take a darker tone. Night
+  darkens the same tones. Every animal, tree and rock casts a soft shadow on the ground. Detail
+  comes from better use of today's pixels, never smaller pixels.
+- **Built from parts.** An animal is a body, legs, a tail and a head, drawn by its family's build
+  in the kit; poses come from moving the parts, never frozen frames. A leg 5 px or taller bends at
+  two joints; a shorter one cycles four drawn poses (reaching, under, pushed back, lifted). Every
+  leg has a full thigh above a slimmer lower leg and is filled row by row, never joined only at a
+  corner. A standing leg is straight, the far legs apart from the near ones. Proportions and gaits
+  come from reference photos fetched before drawing. A proposal draws with the kit's build and
+  drafts its changes to it, never with a renderer of its own. The user's pixel edits on a built
+  animal are kept as touch-ups per pose.
+- **Whole bodies.** One connected shape: no gaps, stray pixels or pinholes in any frame. A part
+  moves with what it grows from: mane, ears, horns and antlers with the head, a tail with the hips,
+  a wing rooted on the shoulder and changing shape through its beat.
+- **Walk.** Four beats, the legs a quarter stride apart, each on the ground about two thirds of
+  the stride. Steps follow the ground covered (the kit's `stride` clock), so a planted foot holds
+  its spot and the pace stays natural, about 1 to 2 strides a second. Fore legs bend forward at the
+  wrist, hind legs back at the hock, and legs taper to the paw. The body dips at most a pixel with
+  the step, and the tail sways.
+- **At rest.** Ease into and out of a stop over about a quarter second. A standing animal breathes,
+  blinks and now and then looks about.
+- **Plants.** Show how a plant is built: a lit and shaded trunk, visible boughs, and foliage in
+  separate clumps with sky between (the Bee Tree, the Scots pine, the sequoia), not a ball or a
+  cone on a stick. A conifer ends in a pointed leader or a flat top, never a round blob. A part
+  sways with what it grows from.
 
 ## Kit
 
 Reach for the kit before writing anything scene-local; each export is documented where it is
 defined, so read the file's header and the comment above the function.
 
-- `pixel.js`: placement (`placeLandmarks`, `grove`, `scatter`, `clearing`) and drawing (`part`,
-  `scaledPart`, `sprite`).
+- `pixel.js`: placement (`placeLandmarks`, `grove`, `scatter`, `clearing`), drawing (`part`,
+  `scaledPart`, `sprite`), and `shadowColour(pal)`, the scene palette's one `groundShadow` that every
+  animal, plant and rock casts its ground shadow in.
 - `critters.js`: walkers, flyers (`flyBy`, `drift`, `soarAt`, `circlingPair`, `flock`), perchers and their idle
   moves, `rest` (a stopped walker takes one of its poses), `isNight`, `narrow`.
 - `animals.js`: one design per family, a habitat variant chosen by `kind`. Extend a family with a
-  new `kind` rather than drawing a scene-local copy. The cats (`felidAt`) rest in `felidPoses(kind)`,
-  and the house cat's coats (`HOUSECAT_COATS`) spread into a scene's palettes.
-- `trees.js`: `broadleafTree`, `coniferTree`.
+  new `kind` rather than drawing a scene-local copy. The cats (`felidAt`) rest in `felidPoses(kind)`.
+- `place.js`: what every `...At` driver in `animals.js` shares round its pose: `paintAt` (lays a
+  build's cells on the page facing `dir`, over its ground shadow), `tonesFor`, `sinceOf`, `ease`,
+  `blinkAt`, `breathAt`.
+- `flyers.js`: the birds in the air (`eagleFlyAt`, `circlerAt`, `glideAt`, `hawkAt`, `flyerAt`,
+  `kingfisherAt`), the puffins' `nesterAt` and the owls (`owlPerchAt`, `owlFlyAt`).
+- `perch.js`: birds coming down to perch (`flyByPerch`, `circlerPerch`, `goHome`) on the spots a
+  scene offers (`unhidden`, `blobSpots`), and drawn on their visit (`visitAt`, `smallVisitAt`).
+- `body.js` (`drawBody`) and one build file per family beside it (`bear.js`, `deer.js`,
+  `canid.js`, `felid.js` with the cat specs and the house cat's coats, `HOUSECAT_COATS`, that
+  spread into a scene's palettes, and the rest).
+- `trees.js` and one build file per plant family beside it (`broadleaf.js`, `conifer.js`,
+  `widecanopy.js`, `palms.js`, `desert.js`).
 - `plants.js`: `crossFlower`, `meadowFlower`.
 - `effects.js`: mist, stars, the Milky Way.
 
-A percher stands on a plant whose top you compute from its scale (a painter helper such as
-`graniteTop`), so its feet land on the rock in every frame. Create animals in `update`, never in
-`draw`: the catalogue steps `update` without drawing.
+Anything that stands on or reaches into a plant or rock (a percher, a browser, a climber) reads
+that build's own geometry (`acaciaGeom`, `joshuaGeom`, `graniteTop`), never a copy of its
+formulas, so its feet land in every frame. Create animals in `update`, never in `draw`: the
+catalogue steps `update` without drawing.

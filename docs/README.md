@@ -6,6 +6,7 @@ flowchart TD
     Overview --> Scenes["scenes/<br/>one catalogue file for each scene"]
     Overview --> Adr["adr/<br/>the reasons behind the layout"]
     Overview --> Skill[".claude/skills/nursery-scene/<br/>design rules for agents"]
+    Overview --> VerifySkill[".claude/skills/verify-nursery/<br/>art verification rules"]
     Skill --> Scenes
 ```
 
@@ -19,6 +20,7 @@ flowchart TD
 | [../CONTRIBUTING.md](../CONTRIBUTING.md) | How to report an issue or offer a change. |
 | [../AGENTS.md](../AGENTS.md) | The rules for agents and for people who work in the repository. |
 | [../.claude/skills/nursery-scene/SKILL.md](../.claude/skills/nursery-scene/SKILL.md) | The design rules for scenes, and the steps for new art. |
+| [../.claude/skills/verify-nursery/SKILL.md](../.claude/skills/verify-nursery/SKILL.md) | How to check the art against the design rules. |
 
 ## How the documents are written
 

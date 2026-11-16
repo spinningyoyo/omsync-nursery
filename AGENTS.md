@@ -9,6 +9,7 @@ contract. `docs/adr/` holds the reasons behind the layout and the stack.
 
 - Scene, sprite, palette, saved-edit or studio work: use the `nursery-scene` skill. Before you
   change a scene, read its module and its `docs/scenes/<scene>.md`.
+- Art verification work: use the `verify-nursery` skill.
 - The modules in `src/nursery/assets/js/` import only each other, so the package stays
   self-contained. A scene imports only `kit/`. `sh scripts/check.sh` enforces both.
 - What omsync reads is the contract in `docs/overview.md`. Change it only together with omsync's
@@ -27,6 +28,7 @@ git config core.hooksPath .githooks   # once per clone: pre-commit and commit-ms
 sh scripts/check.sh               # ruff, Biome, import boundaries, brand and catalogue freshness
 uv run pytest                     # the end-to-end tests (needs Chrome); -m "not browser" skips Chrome
 uv run nursery --help
+uv run nursery verify             # check the art against the design rules
 uv run nursery release --patch --dry-run   # or --minor, --major
 uv run nursery catalog            # rebuilds docs/scenes/<scene>.md
 uv run nursery brand              # rebuilds the mascot, favicons and studio mark from the grid

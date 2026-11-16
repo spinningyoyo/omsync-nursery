@@ -7,6 +7,21 @@ export const SOIL_ROWS = CELL;
 
 export const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 export const smooth = (t) => t * t * (3 - 2 * t);
+export const lerp = (a, b, t) => a + (b - a) * t; // the value a fraction t of the way from a to b
+export const frac = (v) => v - Math.floor(v); // the part of v after its whole number, in [0, 1)
+export const TAU = Math.PI * 2; // a whole turn in radians
+export const rad = (deg) => (deg * Math.PI) / 180; // degrees to radians
+
+// A "#rrggbb" colour as a CSS rgba() string with opacity a.
+export const rgba = (hex, a) => {
+  const n = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a.toFixed(3)})`;
+};
+
+// The soft shadow every animal, plant and rock casts on the ground: the scene palette's groundShadow
+// (one colour for the whole scene, day and night each), or GROUND_SHADOW when a palette has none.
+export const GROUND_SHADOW = "rgba(0, 0, 0, 0.25)";
+export const shadowColour = (pal) => pal.groundShadow ?? GROUND_SHADOW;
 
 export function mix(from, to, amount) {
   const a = parseInt(from.slice(1), 16);

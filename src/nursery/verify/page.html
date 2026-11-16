@@ -1,0 +1,14 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>nursery verify</title>
+<body>
+<script type="module">
+import { run } from "./harness.js";
+const query = new URLSearchParams(location.search);
+await new Promise((resolve) => setTimeout(resolve, 0));
+try {
+  window.result = await run(JSON.parse(query.get("job")));
+} catch (error) {
+  window.result = { error: String(error?.stack ?? error) };
+}
+</script>

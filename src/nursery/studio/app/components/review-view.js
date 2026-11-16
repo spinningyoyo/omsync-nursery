@@ -4,7 +4,7 @@
 // path, or standing centred on the soil line). The verdict is in the side panel.
 import { LiveScene } from "../services/live-scene.js";
 import { grow, union } from "../services/pixels.js";
-import { STATES, tierOf } from "../services/scene-model.js";
+import { STATES } from "../services/scene-model.js";
 import { act } from "../ui/action.js";
 import { createRef, css, html, LitElement, nothing, ref } from "../ui/lit.js";
 import { shared } from "../ui/shared.js";
@@ -189,7 +189,7 @@ export class ReviewView extends LitElement {
         <div class="pair">
           ${job.themes.map((t) => html`<n-sprite .job=${job} .crop=${crop} .zoom=${zoom} theme=${t} .f=${s.frameOf(job)}></n-sprite>`)}
         </div>
-        <div class="facts">${w}×${h} · ${tierOf(w, h)} · ${length}${job.same ? " · same by day and night" : ""}</div>
+        <div class="facts">${w}×${h} px · ${length}${job.same ? " · same by day and night" : ""}</div>
       `;
       return choosable
         ? html`<button

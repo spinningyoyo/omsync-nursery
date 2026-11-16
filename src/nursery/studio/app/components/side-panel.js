@@ -1,6 +1,6 @@
 // The right column. It scrolls on its own, so the centre never moves. Browsing, it holds four
 // tabs (Elements, Inbox, Changes, Rules); editing, it holds the palette and Save; reviewing, the
-// verdict.
+// verdict; verifying, the findings of the run on show.
 import { act } from "../ui/action.js";
 import { css, html, LitElement, nothing } from "../ui/lit.js";
 import { shared } from "../ui/shared.js";
@@ -23,6 +23,7 @@ export class SidePanel extends LitElement {
     proposal: { attribute: false },
     editor: { attribute: false },
     review: { attribute: false },
+    verify: { attribute: false },
     version: { type: Number },
   };
 
@@ -91,6 +92,10 @@ export class SidePanel extends LitElement {
     if (this.mode === "review") {
       return html`<div class="mode-head"><n-icon name="message-square"></n-icon>Your review</div>
         <review-panel class="scroll" .session=${this.review}></review-panel>`;
+    }
+    if (this.mode === "verify") {
+      return html`<div class="mode-head"><n-icon name="scan-search"></n-icon>Findings</div>
+        <verify-panel class="scroll" .session=${this.verify}></verify-panel>`;
     }
     const waiting = (this.inbox ?? []).filter((p) => p.state === "waiting").length;
     return html`

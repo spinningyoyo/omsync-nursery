@@ -38,3 +38,11 @@ export function meadowFlower(g, p, s, base) {
   rect(g, colour, x, y, 1, 1);
   rect(g, colour === pal.flowers[2] ? pal.flowers[3] : pal.centre, x, y - 1, 1, 1);
 }
+
+// Where a meadow flower's head tops out, for something that perches on it: the top petal's pixel,
+// swaying with the wind as `meadowFlower` draws it. Same arguments as `meadowFlower`.
+export function meadowFlowerHead(g, p, s, base) {
+  const stem = Math.max(2, Math.round((5 + (p.seed % 5)) * p.scale * s));
+  const sway = stem >= 5 ? wind(g.time, p.x) : 0;
+  return { x: p.x + sway, y: base - stem - (s <= 0.5 ? 1 : 2) };
+}

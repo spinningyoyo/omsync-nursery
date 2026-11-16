@@ -58,6 +58,8 @@ export class NSprite extends LitElement {
   get img() {
     if (this.image) return this.image;
     const job = this.job;
+    // A proposal not yet drawn in full shows its frame 0 (a thumbnail needs no more).
+    if (job?.lazy && !this.f) return job.first.get(this.theme) ?? job.first.get("light");
     if (!job?.renders) return null;
     // A sprite that looks the same by day and night keeps only its day render.
     const theme = job.themes?.includes(this.theme) ? this.theme : "light";
@@ -75,7 +77,8 @@ export class NSprite extends LitElement {
     const canvas = this.canvas.value;
     if (!img || !canvas) return;
     const box = { w: img.width, h: img.height };
-    const crop = this.crop ?? grow(this.job?.bbox ?? bounds(img) ?? { x: 0, y: 0, w: 1, h: 1 }, 1, box);
+    const crop =
+      this.crop ?? grow((this.job?.lazy ? null : this.job?.bbox) ?? bounds(img) ?? { x: 0, y: 0, w: 1, h: 1 }, 1, box);
     const zoom = this.fit ? Math.max(1, Math.floor(this.fit / Math.max(crop.w, crop.h / 1.4))) : this.zoom;
     canvas.width = crop.w * zoom;
     canvas.height = crop.h * zoom;

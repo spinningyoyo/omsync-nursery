@@ -6,9 +6,20 @@
 // the cold air condenses far more of the hot spring's steam, and after each eruption it stacks into
 // a moonlit tower that climbs past the peaks.
 // A cougar slips along the valley and rests on it: sitting, lying or stretching.
-import { bearAt, canidAt, cervidAt, felidAt, felidPoses, flyerAt, raptorAt, sheepAt, swanAt } from "../kit/animals.js";
 import {
-  doing,
+  bearAt,
+  bearPoses,
+  bighornAt,
+  bisonAt,
+  bisonPoses,
+  canidAt,
+  cervidAt,
+  felidAt,
+  felidPoses,
+  settleCanid,
+  swanAt,
+} from "../kit/animals.js";
+import {
   enter,
   enterBehind,
   fidget,
@@ -18,12 +29,14 @@ import {
   narrow,
   percher,
   rest,
-  soarAt,
+  settle,
   soarer,
   walker,
   wander,
 } from "../kit/critters.js";
 import { dithered, starField, starFieldAt } from "../kit/effects.js";
+import { circlerAt, eagleFlyAt, flyerAt } from "../kit/flyers.js";
+import { flyByPerch, goHome, unhidden } from "../kit/perch.js";
 import {
   blob,
   clamp,
@@ -31,20 +44,32 @@ import {
   foliage,
   hash,
   makePlant,
-  part,
   rect,
   row,
   scatter,
   smooth,
   sortPlants,
-  sprite,
+  wind,
 } from "../kit/pixel.js";
 import { broadleafTree, coniferTree } from "../kit/trees.js";
 
+const MATURE = {
+  range: 2.5,
+  lodgepole: 3,
+  aspen: 3,
+  sagebrush: 2,
+  wildflower: 1.5,
+  boulder: 1.5,
+  log: 1.5,
+  geyserCone: 3,
+  hotSpring: 2.5,
+  crag: 2.5,
+};
 const LODGEPOLE_ROWS = 40;
 const ASPEN_ROWS = 30;
 const RANGE_ROWS = 64;
 const CONE_ROWS = 11;
+const BISON_GAP = 17; // from the bison's rump to its calf's: the calf's nose stops short of her tail
 const CRAG_ROWS = 24; // the bighorn's crag at scale 1
 const CONE_DEPTH = 15; // the cone stands in front of every other near plant
 const COLUMN_ROWS = 34; // the eruption's height at full size
@@ -72,6 +97,8 @@ const LIGHT = {
   pineTrunk: ["#7d6250", "#5f4a3c"],
   aspen: ["#c6cf5a", "#a9b64a", "#8c9d3c", "#6e7f2c"],
   aspenTrunk: ["#f2eee4", "#cfc8b6"],
+  aspenMark: "#726e64", // the dark flecks on an aspen's bark
+  groundShadow: "rgba(70, 50, 25, 0.22)", // the soft shadow every animal, plant and rock casts on the ground
   sage: ["#b9c6a8", "#a2b393", "#8a9c7c", "#6f8163"],
   balsam: ["#f7c52e", "#e9a21c", "#b8741a"],
   lupine: ["#9b74e0", "#7550c0", "#5a3c9a"],
@@ -87,15 +114,18 @@ const LIGHT = {
   steam: "#c8dde8",
   steamTones: ["#ffffff", "#d6e0ea", "#96a8bc"],
   fluff: "#9d988a",
-  bison: ["#4a3426", "#b98a5a", "#e7dcc0", "#2a1d15"],
+  bison: ["#4a3426", "#b98a5a", "#e7dcc0", "#2a1d15", "#5a3f28"],
   bisonShade: "#94693f",
+  bisonDust: "#c4a878", // the dust a wallowing bison kicks up
   calf: ["#d28a52", "#8a5a36"],
   bear: ["#6e4a32", "#a88868", "#c9a07c", "#2e221c", "#4e3424"],
+  bearScent: "#8c8070",
   wolf: ["#8a8f96", "#5a5f66", "#c8a878", "#222222", "#4a4f56"],
+  canid: { R: "#6e2c2c", howl: "#5f6f84", dark: false },
   pronghorn: ["#c39a64", "#94744a", "#f5f0e6", "#5a4330", "#5a4330"],
   sheep: ["#7a6a58", "#e4dccb", "#c9b48a", "#4a3c30", "#97845e"],
   elk: ["#a87648", "#4e3420", "#e6d2ae", "#dccaa2", "#3a2616", "#86592f"],
-  eagle: ["#4a3426", "#f6f2ea", "#f6f2ea", "#e2a52e", "#7a5a44"],
+  eagleBald: ["#4a3426", "#f6f2ea", "#f6f2ea", "#e2a52e", "#7a5a44"],
   bluebird: {
     C: "#4a9ae0",
     H: "#4a9ae0",
@@ -124,6 +154,8 @@ const DARK = {
   pineTrunk: ["#6e5848", "#544338"],
   aspen: ["#b7bd62", "#9ea653", "#858f46", "#6b7539"],
   aspenTrunk: ["#c5c1b5", "#9d9a8f"],
+  aspenMark: "#56554f", // the dark flecks on an aspen's bark
+  groundShadow: "rgba(0, 0, 0, 0.3)",
   sage: ["#7d8b72", "#6a7a61", "#56674f", "#43523f"],
   balsam: ["#e3c04a", "#c69a2e", "#a57a22"],
   lupine: ["#8a6cc6", "#6b4fa6", "#533b82"],
@@ -139,15 +171,18 @@ const DARK = {
   steam: "#aebcd0",
   steamTones: ["#e2e9f3", "#aebcd0", "#7a8aa3"],
   fluff: "#e9e6da",
-  bison: ["#4a3426", "#8f6a44", "#cbbf9e", "#1d140e"],
+  bison: ["#4a3426", "#8f6a44", "#cbbf9e", "#1d140e", "#42301f"],
   bisonShade: "#6f5234",
+  bisonDust: "#a08a6c",
   calf: ["#c17a45", "#6e4329"],
   bear: ["#5a3f2c", "#8d7054", "#b08862", "#241c16", "#3e2c20"],
+  bearScent: "#d8d0c0",
   wolf: ["#6f7680", "#464c55", "#a8926a", "#161616", "#3a3f46"],
+  canid: { R: "#3a2226", howl: "#e4ecf8", dark: true },
   pronghorn: ["#a58156", "#7a5f3e", "#d8d0c0", "#42321f", "#42321f"],
   sheep: ["#625347", "#b9ad93", "#b7a57f", "#332a22", "#857552"],
   elk: ["#94683e", "#46301e", "#d2c09c", "#c4b48e", "#342316", "#74502c"],
-  eagle: ["#33241a", "#e6e3d8", "#e6e3d8", "#c99326", "#5a4432"],
+  eagleBald: ["#33241a", "#e6e3d8", "#e6e3d8", "#c99326", "#5a4432"],
   bluebird: {
     C: "#30618d",
     H: "#30618d",
@@ -190,16 +225,59 @@ function mountain(g, p, s, base) {
 // Lodgepole pines: slender conifers on long bare trunks, in dense stands.
 function lodgepole(g, p, s, base) {
   const { pal } = g;
-  const spec = { rows: LODGEPOLE_ROWS, tones: pal.pine, trunkTones: pal.pineTrunk };
-  coniferTree(g, p, s, base, { ...spec, tiers: 6, spread: 0.15, clear: 0.46 });
+  coniferTree(g, p, s, base, {
+    rows: LODGEPOLE_ROWS,
+    tones: pal.pine,
+    trunkTones: pal.pineTrunk,
+    tiers: 5,
+    spread: 0.14,
+    clear: 0.58,
+    top: 0.82,
+    lift: 0.5,
+    h: 0.09,
+    thin: true,
+    taper: 0.8,
+    u0: 0.25,
+  });
 }
 
-// Quaking aspens: slim white trunks under high, narrow, yellow-green crowns.
+// The leader of a full-grown lodgepole, where the bald eagle's feet go: the conifer build (kit/conifer.js) draws the spire from the
+// same numbers and sways it with the wind at `time`.
+function lodgepoleTop(p, groundY, time) {
+  const total = Math.max(3, Math.round(LODGEPOLE_ROWS * p.scale));
+  return { x: p.x + wind(time, p.x), y: groundY + (p.layer < 1 ? 1 : p.depth) - total + 3 };
+}
+
+// Where the eagle may perch: the full-grown lodgepoles.
+function perchSpots(f) {
+  const pines = f.plants.map((p, order) => ({ p, order })).filter(({ p }) => p.kind === "lodgepole");
+  const spots = pines
+    .filter(({ p }) => p.shown - p.born >= MATURE.lodgepole)
+    .map(({ p, order }) => ({ x: p.x, order, top: (time) => lodgepoleTop(p, f.groundY, time) }));
+  const covers = pines.map(({ p, order }) => ({
+    x: p.x,
+    order,
+    y: lodgepoleTop(p, f.groundY, 0).y,
+    reach: Math.round(0.2 * LODGEPOLE_ROWS * p.scale),
+  }));
+  for (const [order, p] of f.plants.entries()) {
+    if (p.kind !== "aspen") continue;
+    covers.push({
+      x: p.x,
+      order,
+      y: f.groundY + (p.layer < 1 ? 1 : p.depth) - Math.round(ASPEN_ROWS * p.scale),
+      reach: Math.round(0.2 * ASPEN_ROWS * p.scale),
+    });
+  }
+  return unhidden(spots, covers, f.time);
+}
+
+// Quaking aspens: slim white trunks flecked dark under high, narrow, yellow-green crowns, on the
+// broadleaf family's build (kit/broadleaf.js).
 function aspen(g, p, s, base) {
   const { pal } = g;
-  const [bark, mark] = pal.aspenTrunk;
-  const spec = { rows: ASPEN_ROWS, tones: pal.aspen, trunkTones: [bark, mark], mark };
-  broadleafTree(g, p, s, base, { ...spec, wide: 0.45, lift: 0.18 });
+  const spec = { rows: ASPEN_ROWS, tones: pal.aspen, bark: pal.aspenTrunk, mark: pal.aspenMark };
+  broadleafTree(g, p, s, base, { ...spec, from: 0.5, spread: 0.16, airy: 0.45 });
 }
 
 // Sagebrush: low, silver-grey-green shrubs that cover the steppe.
@@ -413,90 +491,6 @@ function soil(pal, x, y, depth, turf) {
 
 // Creatures
 
-// An American bison: a high shoulder hump, tan hindquarters with a darker underside, a dark woolly
-// front, and a low head with a beard and short horns. Standing, it grazes, the hump sloping down to its
-// head in the grass. The calf (scale below 1) is all orange-tan, drawn on its own. D is the dark wool,
-// T tan, S its darker shade, H horn and eye, B the beard and far legs. Its palettes are bison: [dark,
-// tan, horn, beard], bisonShade, and calf: [tan, dark].
-const BISON = [
-  "............DDDDD.........",
-  "..........DDDDDDDDD.......",
-  "........DDDDDDDDDDDD......",
-  "......TTDDDDDDDDDDDDD.....",
-  "...TTTTTDDDDDDDDDDDDDD....",
-  ".TTTTTTTDDDDDDDDDDHDDD.H..",
-  "TTTTTTTTDDDDDDDDDDHBBBBH..",
-  "TTTTTTTTDDDDDDDDDDDBBBBBB.",
-  "TTTTTTTTDDDDDDDDDDDDDHDDDD",
-  "TTTTTTTDDDDDDDDDDDDDDDDDDD",
-  "TTTTTTTDDDDDDDDDDDDDDDDDD.",
-  "STTTTTDDDDDDDDDDDDDBBBBB..",
-  ".SSSSSSDDDDDDDDDDDDBBBB...",
-  "..SSSSS...DDDDDDDDD.BB....",
-];
-const BISON_GRAZING = [
-  "........DDDDDDDDD.........",
-  "......TTDDDDDDDDDD........",
-  "...TTTTTDDDDDDDDDDD.......",
-  ".TTTTTTTDDDDDDDDDDDD......",
-  "TTTTTTTTDDDDDDDDDDDDD.....",
-  "TTTTTTTTDDDDDDDDDDDDD.....",
-  "TTTTTTTTDDDDDDDDDDDDDD....",
-  "TTTTTTTDDDDDDDDDDDDDDD....",
-  "TTTTTTTDDDDDDDDDDDDDDD....",
-  "STTTTTDDDDDDDDDDDDHDDD.H..",
-  ".SSSSSSDDDDDDDDDDDHBBBBH..",
-  "..SSSSS...DDDDDDDDDBBBBBB.",
-  ".................DDDDHDDDD",
-  ".................DDDDDDDDD",
-  ".................DDDDDDDD.",
-  ".................DDBBBBB..",
-  ".................DDBBBB...",
-  ".................DD.BB....",
-];
-const BISON_CALF = [
-  ".....TTTTTTT...",
-  "...TTTTTTSTTT..",
-  "TTTTTTTTTTTSSS.",
-  "TTTTTTTTTTTTTTT",
-  "TTTTTTTTTTTTTTT",
-  ".STTTTTTTTTSSST",
-  "..SSSTTTTTTSSS.",
-];
-const BISON_LEG = 6;
-const BISON_LEGS = [2, 5, 13, 16];
-// The calf's legs, [column, width]: near hind, far hind, far fore, near fore.
-const CALF_LEGS = [
-  [1, 2],
-  [3, 1],
-  [7, 2],
-  [9, 1],
-];
-
-function bisonAt(g, b) {
-  const [dark, tan, horn, beard] = g.pal.bison;
-  const [calfTan, calfDark] = g.pal.calf;
-  const x = Math.round(b.x);
-  const y = g.groundY + 7;
-  const px = (colour, dx, dy, w, h) => part(g, colour, x, y, b.dir, dx, dy, w, h);
-  const walking = b.state === "walk";
-  const up = (i) => walking && (Math.floor(b.phase) % 2 === 0) === (i === 0 || i === 3);
-  if (b.scale < 1) {
-    CALF_LEGS.forEach(([dx, w], i) => {
-      px(i === 1 || i === 2 ? calfDark : calfTan, dx, -3, w, up(i) ? 2 : 3);
-    });
-    sprite(g, BISON_CALF, { T: calfTan, S: calfDark }, x, y, b.dir, 1, BISON_CALF.length + 3);
-    return;
-  }
-  const colours = { D: dark, T: tan, S: g.pal.bisonShade, H: horn, B: beard };
-  BISON_LEGS.forEach((dx, i) => {
-    px(i === 1 || i === 2 ? beard : dark, dx, -BISON_LEG, 3, up(i) ? BISON_LEG - 2 : BISON_LEG);
-  });
-  px(dark, -1, -BISON_LEG - 8, 1, 4); // the tail
-  if (walking) sprite(g, BISON, colours, x, y, b.dir, 0, BISON.length + BISON_LEG);
-  else sprite(g, BISON_GRAZING, colours, x, y, b.dir, 0, BISON_GRAZING.length);
-}
-
 // The steam's strength at each pixel round the spring, reused from frame to frame.
 const field = { d: new Float32Array(0), left: 0, top: 0, w: 0, h: 0 };
 
@@ -625,6 +619,10 @@ function columnAt(g, cone, age, length, time) {
   if (rows > 0) blob(g, cone.x + sway, cone.top - rows - 4, 13, 5, () => g.pal.steam);
 }
 
+const HOWL_SECONDS = 3.4; // a howl: 0.4 s to sit up and 3 s of song (canidAt)
+const YEARLING_LAG = 1.5; // seconds after the wolf starts that the yearling answers
+const HOWL_EVERY = [20, 25]; // seconds between howls: 20 plus up to 25
+
 const extras = {
   init(f) {
     const cone = f.plants.find((p) => p.kind === "geyserCone");
@@ -644,6 +642,7 @@ const extras = {
       pronghorn: { ...walker(f), kind: "pronghorn", sex: "m" },
       bison: walker(f),
       calf: walker(f, 0.55),
+      howl: { start: -Infinity, next: 14 + f.rand() * 10 },
       wolves: [
         { ...walker(f), kind: "wolf" },
         { ...walker(f, 0.9), kind: "wolf" },
@@ -675,7 +674,7 @@ const extras = {
       if (!narrow(f)) enterBehind(f, x.elk[1], x.elk[0], 20);
     }
     if (f.stage >= 7) enter(f, x.grizzly);
-    if (f.stage >= 8 && !narrow(f)) enterBehind(f, x.calf, x.bison, 12);
+    if (f.stage >= 8 && !narrow(f)) enterBehind(f, x.calf, x.bison, BISON_GAP);
   },
 
   busy: () => true,
@@ -724,34 +723,64 @@ const extras = {
     x.fluff = x.fluff.filter((d) => d.y < f.groundY + 1 && d.x < f.cols + 2);
 
     wander(f, x.pronghorn, dt, { speed: 16, stride: 12, sit: [1, 2], walk: [3, 6] });
-    wander(f, x.bison, dt, { speed: 4, stride: 3, sit: [5, 9], walk: [3, 6] });
-    follow(x.calf, x.bison, dt, 12);
-    x.calf.phase = x.bison.phase;
-    x.calf.state = x.bison.state;
+    settle(f, x.pronghorn);
+    wander(f, x.bison, dt, { speed: 4, stride: 3, sit: [5, 12], walk: [3, 6] });
+    rest(f, x.bison, bisonPoses(x.bison));
+    follow(x.calf, x.bison, dt, BISON_GAP);
+    for (const k of ["state", "phase", "timer", "pose"]) x.calf[k] = x.bison[k];
+    settle(f, x.calf);
     const [wolf, yearling] = x.wolves;
-    wander(f, wolf, dt, { speed: 11, stride: 9, sit: [2, 4], walk: [3, 6] });
+    // At night the wolf stops and howls now and then (x.howl.next, which the studio's Trigger row
+    // fires); the yearling sits by it, then answers, and the pair walk on together.
+    const howl = x.howl;
+    const night = isNight(f);
+    if (night && wolf.active && f.time >= howl.next) {
+      howl.start = f.time;
+      howl.next = f.time + HOWL_EVERY[0] + f.rand() * HOWL_EVERY[1];
+    }
+    const age = f.time - howl.start;
+    const choir = night && wolf.active && age >= 0 && age < HOWL_SECONDS + YEARLING_LAG;
+    if (choir && age < HOWL_SECONDS) wolf.state = "howl";
+    else {
+      if (wolf.state === "howl") {
+        wolf.state = "sit";
+        wolf.timer = 3;
+      }
+      wander(f, wolf, dt, { speed: 11, stride: 9, sit: [2, 4], walk: [3, 6] });
+    }
     follow(yearling, wolf, dt, 14);
     yearling.phase = wolf.phase;
-    yearling.state = wolf.state;
+    yearling.state = choir ? (age >= YEARLING_LAG ? "howl" : "sit") : wolf.state;
+    settleCanid(f, wolf);
+    settleCanid(f, yearling, wolf);
     const [bull, cow] = x.elk;
     wander(f, bull, dt, { speed: 6, stride: 5, sit: [4, 8], walk: [3, 5] });
     follow(cow, bull, dt, 20);
     cow.phase = bull.phase + 1;
     cow.state = bull.state;
+    cow.timer = bull.timer;
+    settle(f, bull);
+    settle(f, cow);
     wander(f, x.grizzly, dt, { speed: 5, stride: 4, sit: [4, 8], walk: [3, 6] });
+    rest(f, x.grizzly, bearPoses(x.grizzly));
     const rock = f.plants.find((p) => p.kind === "crag");
     if (!x.bighorn && rock && rock.shown - rock.born >= 2.5) {
       const dir = rock.x < f.cols / 2 ? 1 : -1;
       x.bighorn = percher(f, rock.x - dir * 7, cragTop(rock, f.groundY), dir, {
-        look: { every: [4, 8], lasts: 2.5 },
+        look: { every: [5, 10], lasts: 5 },
         chew: { every: [2, 5], lasts: 1.5 },
         stamp: { every: [9, 16], lasts: 0.4 },
+        graze: { every: [10, 18], lasts: 3.6 },
+        lie: { every: [20, 32], lasts: 7 },
       });
     }
     if (x.bighorn) fidget(f, x.bighorn);
     if (f.stage >= 2 && !isNight(f)) {
       const spawn = () => ({ y: f.groundY - 46 - f.rand() * 20 });
-      flyBy(f, x.eagle, dt, { every: [5, 8], speed: 13, spawn });
+      flyByPerch(f, x.eagle, dt, { every: [5, 8], speed: 13, spawn, spots: perchSpots, stay: [14, 28] });
+    } else if (x.eagle.bird?.visit) {
+      goHome(f, x.eagle.bird);
+      x.eagle.bird = null;
     }
     x.soarer.active = f.stage >= 6 && !isNight(f);
     if (f.stage >= 6 && !isNight(f)) {
@@ -760,8 +789,17 @@ const extras = {
     }
     if (f.stage >= 3 && !isNight(f)) {
       const spawn = () => ({ y: f.groundY - 34 - f.rand() * 24 });
-      flyBy(f, x.bluebird, dt, { every: [6, 8], speed: 42, spawn });
-    }
+      // Now and then the bluebird stops on a lodgepole's leader, then flies on.
+      flyByPerch(f, x.bluebird, dt, {
+        every: [6, 8],
+        speed: 42,
+        spawn,
+        spots: perchSpots,
+        small: "bluebird",
+        odds: 0.3,
+        stay: [8, 16],
+      });
+    } else if (x.bluebird.bird?.visit) goHome(f, x.bluebird.bird);
   },
 
   // The night sky: stars that twinkle, behind the plants. Still under reduced motion.
@@ -784,29 +822,15 @@ const extras = {
     for (const d of x.geyser.drops) {
       rect(g, g.pal.spout[1], Math.round(d.x), Math.round(d.y), 1, 1);
     }
-    if (x.bighorn) {
-      sheepAt(g, x.bighorn, {
-        look: doing(x.bighorn, "look", f.time) >= 0,
-        chew: doing(x.bighorn, "chew", f.time) >= 0 && Math.floor(f.time * 6) % 2 === 0,
-        stamp: doing(x.bighorn, "stamp", f.time) >= 0,
-      });
-    }
-    if (x.pronghorn.active) cervidAt(g, x.pronghorn);
-    for (const e of x.elk) if (e.active) cervidAt(g, e);
-    if (x.bison.active) bisonAt(g, x.bison);
-    if (x.calf.active) bisonAt(g, x.calf);
-    for (const w of x.wolves) if (w.active) canidAt(g, w);
-    if (x.grizzly.active) bearAt(g, x.grizzly);
-    if (x.eagle.bird && !night) {
-      const e = x.eagle.bird;
-      const y = e.y + Math.sin(f.time * 1.2 + e.phase) * 2;
-      const flap = Math.sin(f.time * 0.9 + e.phase) > 0.75;
-      raptorAt(g, { kind: "eagleSide", pal: "eagle", x: e.x, y, dir: e.dir }, { bank: flap });
-    }
-    if (x.soarer.active) {
-      const c = soarAt(f.time, x.soarer);
-      raptorAt(g, { kind: "eagle", x: c.x, y: c.y, dir: c.dir }, { bank: c.bank });
-    }
+    if (x.bighorn) bighornAt(g, x.bighorn, f.time);
+    if (x.pronghorn.active) cervidAt(g, x.pronghorn, f.time);
+    for (const e of x.elk) if (e.active) cervidAt(g, e, f.time);
+    if (x.bison.active) bisonAt(g, x.bison, f.time);
+    if (x.calf.active) bisonAt(g, x.calf, f.time);
+    for (const w of x.wolves) if (w.active) canidAt(g, w, f.time);
+    if (x.grizzly.active) bearAt(g, x.grizzly, f.time);
+    if (x.eagle.bird && !night) eagleFlyAt(g, "bald", x.eagle.bird, f.time);
+    if (x.soarer.active) circlerAt(g, "bald", x.soarer, f.time);
     if (x.bluebird.bird && !night) flyerAt(g, x.bluebird.bird, f.time, "bluebird");
     if (x.swan.bird && !night) swanAt(g, { ...x.swan.bird, pose: "fly" }, f.time);
   },
@@ -816,18 +840,7 @@ export default {
   id: "yellowstone",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.35, 0.55], dark: [0.45, 0.62] },
-  mature: {
-    range: 2.5,
-    lodgepole: 3,
-    aspen: 3,
-    sagebrush: 2,
-    wildflower: 1.5,
-    boulder: 1.5,
-    log: 1.5,
-    geyserCone: 3,
-    hotSpring: 2.5,
-    crag: 2.5,
-  },
+  mature: MATURE,
   paint: {
     range: mountain,
     lodgepole,

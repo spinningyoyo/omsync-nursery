@@ -11,15 +11,19 @@
 // Everything is drawn like the other scenes: flat colour and a darker shade, with no ink line. The
 // characters are about the size of a macaque. Pooh wears the red shirt he was given after the
 // books, and Roo a blue one. Owl and the bees come first, then Pooh, with Piglet trotting at his
-// side, Eeyore, Rabbit, Tigger and Roo, who all walk and sit, and last the blue balloon, drifting
+// side, Eeyore, Rabbit, Tigger and Roo, who all walk and rest, and last the blue balloon, drifting
 // loose across the sky. Once the wood is grown, Pooh and Piglet each take a balloon, Pooh's blue and
 // Piglet's red, and float up to the Bee Tree to rob it, until the bees chase them off and the
 // balloons give out. The first flight comes a little after the wood is grown; each one after that
 // waits until Pooh has walked to the far edge of the page, the one opposite where he came in, and
 // then to the other edge, back and forth.
-import { flyerAt, owlAt } from "../kit/animals.js";
-import { drift, enter, flyBy, isNight, walker, wander } from "../kit/critters.js";
+import { drawLooseBalloon, eeyoreAt, pigletAt, poohAt, rabbitAt, rooAt, swarmAt, tiggerAt } from "../kit/animals.js";
+import { broadleafLayout } from "../kit/broadleaf.js";
+import { doing, enter, fidget, flyBy, isNight, percher, settle, walker, wander } from "../kit/critters.js";
 import { starField } from "../kit/effects.js";
+import { OWL_MOVES, owlPerchPose } from "../kit/flyers.js";
+import { fireflyAt as glowAt, glowTones } from "../kit/insect.js";
+import { drawFlight, drawPerch, SPECIES as OWL_SPECIES, flightPose as owlFlight, owlTones } from "../kit/owl.js";
 import {
   blob,
   CLEARING,
@@ -27,17 +31,27 @@ import {
   clearing,
   foliage,
   hash,
+  lerp,
   line,
   makePlant,
   part,
   placeLandmarks,
   rect,
   scatter,
+  smooth,
   sortPlants,
-  sprite,
   stroke,
 } from "../kit/pixel.js";
-import { broadleafTree, coniferTree } from "../kit/trees.js";
+import {
+  footOf,
+  groundOf,
+  movePose,
+  perchedSmall,
+  SMALL_MOVES,
+  SPECIES as SMALL_SPECIES,
+  transitBird,
+} from "../kit/smallbird.js";
+import { bookPine, broadleafTree, coniferTree } from "../kit/trees.js";
 
 const PINE_ROWS = 72;
 const TREE_ROWS = 50;
@@ -69,14 +83,6 @@ const FLIGHT_MARGIN = 14; // art pixels kept clear of the page edge
 const FLIGHT_EDGE = 12; // how close to the page edge Pooh must walk to set off a flight
 const FLIGHT_ARM = 40; // how far from that edge he must have been since the last flight
 const FLIGHT_LEAN = 0.85; // the chance each of his walks heads for that edge, once the first flight is done
-// The balloon as it swells and goes limp: its rows' widths, and the length of the string below it.
-const BALLOON_FRAMES = [
-  { rows: [1, 3, 1], string: 2 },
-  { rows: [3, 5, 5, 3, 1], string: 4 },
-  { rows: [3, 5, 5, 5, 5, 3, 1], string: 7 },
-  { rows: [3, 5, 3, 1], string: 3 },
-];
-
 const LIGHT = {
   haze: "#fbf6ea",
   ink: "#3b2f26",
@@ -98,6 +104,7 @@ const LIGHT = {
   oak: ["#a9b872", "#8a9c58", "#6c7e44", "#4f5f30"],
   trunk: ["#9a7652", "#76583a"],
   bark: ["#b3ada3", "#8d877e", "#665f57"],
+  groundShadow: "rgba(60, 50, 20, 0.22)", // the soft shadow every animal, plant and rock casts on the ground
   wood: ["#d8b98a", "#b08e60", "#7e6040"],
   stick: ["#a88a62", "#86684a", "#64492f"],
   bog: ["#8f8a6a", "#77735a"],
@@ -154,6 +161,7 @@ const DARK = {
   oak: ["#525c38", "#434c2e", "#363e25", "#2a301c"],
   trunk: ["#5a4632", "#463626"],
   bark: ["#5e5a55", "#4a4642", "#36332f"],
+  groundShadow: "rgba(0, 0, 0, 0.32)",
   wood: ["#6e5a42", "#544430", "#3a2e20"],
   stick: ["#5e4c36", "#4a3a28", "#33281c"],
   bog: ["#3a3a2e", "#2e2e24"],
@@ -223,111 +231,71 @@ function clumps(g, cx, top, w, h, tones, seed, count) {
   }
 }
 
-// A broad tree of the wood, a beech or an oak, its full head on spreading boughs.
+// A broad tree of the wood, a beech or an oak, its full head on spreading boughs: the broadleaf
+// family's build (kit/broadleaf.js), the oak wider and lower.
 function tree(g, p, s, base) {
   const { pal } = g;
-  const spec = { rows: TREE_ROWS, tones: pal[p.species], trunkTones: pal.trunk, dome: true };
-  const shape = p.species === "oak" ? { wide: 1.15, lift: -0.06 } : {};
+  const spec = { rows: TREE_ROWS, tones: pal[p.species], bark: pal.trunk };
+  const shape = p.species === "oak" ? { from: 0.28, spread: 0.36, airy: 0.35 } : { from: 0.34, spread: 0.3, airy: 0.3 };
   broadleafTree(g, p, s, base, { ...spec, ...shape });
 }
 
 // A tall, slim tree from the map's edges: a long bare trunk under a narrow crown.
 function slim(g, p, s, base) {
   const { pal } = g;
-  const spec = { rows: SLIM_ROWS, tones: pal[p.species], trunkTones: pal.trunk };
-  broadleafTree(g, p, s, base, { ...spec, wide: 0.45, lift: 0.16 });
+  const spec = { rows: SLIM_ROWS, tones: pal[p.species], bark: pal.trunk };
+  broadleafTree(g, p, s, base, { ...spec, from: 0.52, spread: 0.14, airy: 0.5 });
 }
 
 // How tall a pine stands, grown to s.
 const pineHeight = (p, s) => Math.max(4, Math.round(PINE_ROWS * p.scale * s));
 
-// A Scots pine, as in the Six Pine Trees: a tall, bare, leaning red-brown trunk and a flat,
-// windswept crown of dark needles in tiers, on branches swept the same way.
+// A Scots pine, as in the Six Pine Trees, kept as the book drew it: a tall, bare, leaning red-brown trunk
+// and a flat, windswept crown of dark needles in tiers, on branches swept the same way (kit/conifer.js).
 function pine(g, p, s, base) {
-  const { pal } = g;
-  const height = pineHeight(p, s);
-  const lean = (p.seed % 2 ? 1 : -1) * (0.04 + (p.seed % 4) * 0.02);
-  const sweep = p.seed % 3 === 0 ? -1 : 1;
-  const xAt = (r) => p.x + Math.round(r * lean);
-  for (let r = 0; r < height; r += 1) {
-    const w = r < 3 ? 4 : r < height * 0.5 ? 3 : 2;
-    const x = xAt(r) - (w >> 1);
-    rect(g, pal.pineBark[0], x, base - 1 - r, w, 1);
-    rect(g, pal.pineBark[1], x + w - 1, base - 1 - r, 1, 1);
-  }
-  if (s < 0.3) return;
-  const tiers = [
-    [1.0, 0.1, 0.7],
-    [0.92, -0.4, 1],
-    [0.83, 0.6, 1.1],
-    [0.74, -0.2, 0.85],
-    [0.66, 0.5, 0.6],
-  ];
-  for (const [at, side, size] of tiers) {
-    const r = Math.round(height * at);
-    const cx = xAt(r) + Math.round((side + sweep * 0.5) * 14 * p.scale * s);
-    const cy = base - 1 - r;
-    const w = Math.max(3, Math.round(24 * p.scale * size * s));
-    const h = Math.max(2, Math.round(6 * p.scale * size * s));
-    line(g, pal.pineBark[1], xAt(r), cy + 1, cx, cy + 1);
-    const box = { cx, top: cy - (h >> 1), w, h };
-    blob(g, cx, box.top, w, h, foliage(box, pal.pine, p.seed + r));
-  }
+  bookPine(g, p, s, base, { rows: PINE_ROWS, tones: g.pal.pine, bark: g.pal.pineBark });
 }
 
-// A fir from the map: full and low, its dark tiers tapering to a point.
+// A fir from the map: full and low, a dense spire of wide, drooping dark tiers that nearly meet.
 function fir(g, p, s, base) {
-  const spec = { rows: FIR_ROWS, tones: g.pal.pine, trunkTones: g.pal.trunk };
-  coniferTree(g, p, s, base, { ...spec, tiers: 9, spread: 0.28, clear: 0.08 });
+  coniferTree(g, p, s, base, {
+    rows: FIR_ROWS,
+    tones: g.pal.pine,
+    trunkTones: g.pal.trunk,
+    tiers: 11,
+    spread: 0.26,
+    clear: 0.07,
+    droop: 0.55,
+    dense: true,
+    wide: 1.3,
+    taper: 0.45,
+    h: 0.085,
+  });
 }
 
-// The Bee Tree's branches, each [height along the trunk, side, reach, rise] as shares of the tree.
-const BEE_BRANCHES = [
-  [0.42, 1, 14, -0.25],
-  [0.55, -1, 12, -0.5],
-  [0.68, 1, 11, -0.6],
-  [0.8, -1, 9, -0.7],
-  [0.92, 1, 6, -0.8],
-];
+// The Bee Tree: the broadleaf family's airiest member, a tall, thin, leaning tree with a few long
+// boughs and small clumps strung along them, and a round head. Its nest is the `hive` plant, painted
+// after every other.
+const beeSpec = (pal) => ({
+  rows: BEE_TREE_ROWS,
+  tones: pal.beech,
+  bark: pal.trunk,
+  from: 0.4,
+  spread: 0.26,
+  airy: 0.85,
+  lean: 4,
+});
 
-// Where a branch of the Bee Tree starts and ends, grown to s, on a trunk standing on `base`.
-function branchEnds(p, s, base, [at, dir, reach, rise]) {
-  const height = Math.max(4, Math.round(BEE_TREE_ROWS * p.scale * s));
-  const r = Math.round(height * at);
-  const x0 = p.x + Math.round(r * 0.06);
-  const y0 = base - 1 - r;
-  return [x0, y0, x0 + dir * Math.round(reach * s), y0 + Math.round(rise * reach * s)];
+// The top of the nest, hung 0.6 along the lowest bough at `time`, so it swings with the bough. The
+// hive plant shares the tree's x, scale and seed, so it finds the same bough.
+function hiveSpot(p, s, base, time = 0) {
+  const b = broadleafLayout(p, s, base, beeSpec({}), time).boughs[0];
+  if (!b) return { x: p.x, y: base - Math.round(BEE_TREE_ROWS * p.scale * s * 0.5) };
+  return { x: Math.round(b.x0 + (b.x1 - b.x0) * 0.6), y: Math.round(b.y0 + (b.y1 - b.y0) * 0.6) + 1 };
 }
 
-// The top of the nest, hung from the lowest branch.
-function hiveSpot(p, s, base) {
-  const [x0, y0, x1, y1] = branchEnds(p, s, base, BEE_BRANCHES[0]);
-  return { x: Math.round(x0 + (x1 - x0) * 0.6), y: Math.round(y0 + (y1 - y0) * 0.6) + 1 };
-}
-
-// The Bee Tree: a tall, thin tree with a few long branches and sparse leaves. Its nest is the `hive`
-// plant, painted after every other.
 function beeTree(g, p, s, base) {
-  const { pal } = g;
-  const height = Math.max(4, Math.round(BEE_TREE_ROWS * p.scale * s));
-  const xAt = (r) => p.x + Math.round(r * 0.06);
-  for (let r = 0; r < height; r += 1) {
-    const w = r < 2 ? 4 : r < height * 0.6 ? 2 : 1;
-    rect(g, pal.trunk[0], xAt(r) - (w >> 1), base - 1 - r, w, 1);
-    if (w > 1) rect(g, pal.trunk[1], xAt(r) - (w >> 1) + w - 1, base - 1 - r, 1, 1);
-  }
-  if (s < 0.3) return;
-  for (const branch of BEE_BRANCHES) {
-    const [x0, y0, x1, y1] = branchEnds(p, s, base, branch);
-    line(g, pal.trunk[1], x0, y0, x1, y1);
-    for (let k = 0; k < 3; k += 1) {
-      const t = 0.45 + k * 0.27;
-      const box = { cx: Math.round(x0 + (x1 - x0) * t), top: Math.round(y0 + (y1 - y0) * t) - 2, w: 5, h: 3 };
-      blob(g, box.cx, box.top, 5, 3, foliage(box, pal.beech, p.seed + k + Math.round(branch[0] * 10)));
-    }
-  }
-  const crown = { cx: xAt(height), top: base - height - 3, w: 7, h: 5 };
-  blob(g, crown.cx, crown.top, 7, 5, foliage(crown, pal.beech, p.seed));
+  broadleafTree(g, p, s, base, beeSpec(g.pal));
 }
 
 // The wild bees' nest hanging from the Bee Tree's lowest branch, with honey dripping from it and bees
@@ -335,7 +303,7 @@ function beeTree(g, p, s, base) {
 // every plant, so no tree nearer the page hides it; `tree` is the Bee Tree's depth.
 function hive(g, p, s, base) {
   if (s < 0.9) return;
-  const { x: hx, y: hy } = hiveSpot(p, s, base - p.depth + p.tree);
+  const { x: hx, y: hy } = hiveSpot(p, s, base - p.depth + p.tree, g.time);
   hiveAt(g, hx, hy);
   hiveBeesAt(g, hx, hy + 4, p.seed);
 }
@@ -401,13 +369,21 @@ function houseTrunk(g, x, base, height, width) {
   }
 }
 
+// How big a house tree is at growth s: its height, the rows of its trunk and the trunk's width.
+function houseSize(p, s, rows, width) {
+  const height = Math.max(4, Math.round(rows * p.scale * s));
+  return {
+    height,
+    trunkRows: Math.round(height * 0.5),
+    tw: Math.max(1, Math.round(width * p.scale * Math.max(s, 0.4))),
+  };
+}
+
 // A big tree to live in: the broad trunk forking into limbs under a cloudy crown. Returns the
 // trunk's width and the row its crown starts on.
 function houseTree(g, p, s, base, { rows, width, tones }) {
   const { pal } = g;
-  const height = Math.max(4, Math.round(rows * p.scale * s));
-  const trunkRows = Math.round(height * 0.5);
-  const tw = Math.max(1, Math.round(width * p.scale * Math.max(s, 0.4)));
+  const { height, trunkRows, tw } = houseSize(p, s, rows, width);
   const top = base - height;
   const crownH = height - trunkRows + Math.round(height * 0.15);
   const crownW = Math.round(crownH * 1.6);
@@ -469,14 +445,24 @@ function pigletHouse(g, p, s, base) {
 
 // Owl's house, The Chestnuts: a tall tree with a door high in its trunk, a knocker, and a branch
 // outside to land on.
+const OWL_HOUSE = { rows: 66, width: 7 };
+const LEDGE_AT = 0.8; // the door and its ledge are drawn from this growth on
+
+// The ledge outside Owl's door, where his feet go: its left end and row, from the same numbers as the painter.
+function owlLedge(p, s, base) {
+  const { trunkRows, tw } = houseSize(p, s, OWL_HOUSE.rows, OWL_HOUSE.width);
+  return { x: p.x + (tw >> 1), y: base - trunkRows + 3 + 7 };
+}
+
 function owlHouse(g, p, s, base) {
   const { pal } = g;
-  const { tw, crown } = houseTree(g, p, s, base, { rows: 66, width: 7, tones: pal.oak });
-  if (s < 0.8) return;
+  const { crown } = houseTree(g, p, s, base, { ...OWL_HOUSE, tones: pal.oak });
+  if (s < LEDGE_AT) return;
   const doorY = crown + 3;
   rect(g, pal.bark[2], p.x - 3, doorY - 1, 6, 8);
   rect(g, pal.door, p.x - 2, doorY, 4, 7);
-  rect(g, pal.wood[1], p.x + (tw >> 1), doorY + 7, 6, 1);
+  const ledge = owlLedge(p, s, base);
+  rect(g, pal.wood[1], ledge.x, ledge.y, 6, 1);
   rect(g, pal.honey[3], p.x + 1, doorY + 3, 1, 1);
 }
 
@@ -490,15 +476,22 @@ function honeyPots(g, p, s, base) {
 
 // Eeyore's Gloomy Place: a boggy patch with pools of standing water, and his house of sticks leaned
 // together into a rough tent with a dark way in. The thistles round it are sown on their own.
+const TENT_AT = 0.4; // the tent is drawn from this growth on
+const tentTop = (s, base) => base - 1 - Math.round(19 * Math.min(1, s * 1.2));
+
+// The highest sticks of Eeyore's tent, where Kessie's feet go: two tips stand two rows above its top, at its
+// apex + 2 and apex + 3 (the painter's i % 3 = 2 sticks).
+const tentPerch = (p, s, base) => ({ x: p.x + 2 + 2, y: tentTop(s, base) - 2 });
+
 function gloomyPlace(g, p, s, base) {
   const { pal } = g;
   blob(g, p.x, base - 2, 40, 3, (x, y) => (hash(x, y, p.seed) < 0.3 ? pal.bog[1] : pal.bog[0]));
   rect(g, pal.water[0], p.x - 16, base - 1, 6, 1);
   rect(g, pal.water[1], p.x - 15, base - 1, 3, 1);
   rect(g, pal.water[0], p.x + 13, base - 1, 4, 1);
-  if (s < 0.4) return;
+  if (s < TENT_AT) return;
   const apex = p.x + 2;
-  const top = base - 1 - Math.round(19 * Math.min(1, s * 1.2));
+  const top = tentTop(s, base);
   [-16, -13, -11, -8, -6, -4, 5, 7, 9, 12, 14, 17].forEach((foot, i) => {
     const tip = apex + (foot < 0 ? 2 : -2) + (i % 2);
     line(g, pal.stick[i % 3], apex + foot, base - 1, tip, top - (i % 3));
@@ -687,8 +680,10 @@ function generate(ctx) {
   plants.push(makePlant(rand, "honeyPots", poohX + potSide * 22, { born: 3, depth: 8 }));
   plants.push(makePlant(rand, "pigletHouse", pigletX, { born: 3, depth: 7, scale: clearing(pigletX, cols) }));
   plants.push(makePlant(rand, "gloomyPlace", gloomyX, { born: 4, depth: 5 }));
-  plants.push(makePlant(rand, "beeTree", beeX, { born: 4, depth: 4, scale: clearing(beeX, cols) }));
-  plants.push(makePlant(rand, "hive", beeX, { born: 4, depth: 15, tree: 4, scale: clearing(beeX, cols) }));
+  const bee = makePlant(rand, "beeTree", beeX, { born: 4, depth: 4, scale: clearing(beeX, cols) });
+  plants.push(bee);
+  // The nest takes the tree's seed, so it hangs from the same bough (see hiveSpot).
+  plants.push(makePlant(rand, "hive", beeX, { born: 4, depth: 15, tree: 4, scale: bee.scale, seed: bee.seed }));
   plants.push(makePlant(rand, "pit", spots.pit, { born: 5, depth: 4 }));
   plants.push(makePlant(rand, "tracks", spots.tracks, { born: 5, depth: 1 }));
   sortPlants(plants);
@@ -704,9 +699,9 @@ function soil(pal, x, y, depth, turf) {
   return pal.soil[1];
 }
 
-// Creatures. Like the other scenes' animals, each is a few flat rectangles in its colour, one shade
-// and a dark eye, with no ink line, facing right and mirrored by dir. Walkers stand with their feet
-// on the row above groundY + 8.
+// Creatures. Pooh, Piglet, Tigger, Rabbit and Roo are drawn from parts by the kit (kit/cast.js); Owl,
+// Kessie and Eeyore are the kit's too. What is left here is the honey pots, the loose balloon, and the
+// painters' own helpers. Walkers stand with their feet on the row above groundY + 8.
 
 // Draws a rectangle at (dx, dy) from a creature's anchor at (x, y), mirrored when it faces left.
 function pen(g, x, y, dir) {
@@ -714,17 +709,10 @@ function pen(g, x, y, dir) {
 }
 
 // A honey pot standing with its base on the row above y, dx along from x: a round-bellied jar with a
-// dark rim and foot and a pale label. The small one, in Pooh's lap, shows its honey.
-function potAt(g, x, y, dir, dx, small = false) {
-  const [pot, rim, label, honey] = g.pal.honey;
+// dark rim and foot and a pale label.
+function potAt(g, x, y, dir, dx) {
+  const [pot, rim, label] = g.pal.honey;
   const px = pen(g, x, y, dir);
-  if (small) {
-    px(pot, dx, -4, 4, 3);
-    px(label, dx + 1, -3, 2, 1);
-    px(rim, dx + 1, -5, 2, 1);
-    px(honey, dx + 1, -6, 1, 1);
-    return;
-  }
   px(rim, dx + 1, -1, 3, 1);
   px(pot, dx, -4, 5, 3);
   px(label, dx + 1, -3, 3, 1);
@@ -744,240 +732,13 @@ function tippedPotAt(g, x, y, dir) {
   px(honey, 5, -1, 4, 1);
 }
 
-// Pooh: a round head with two small ears and a short snout, his red shirt riding up over a round
-// tummy, and short legs. Sitting, he has a honey pot in his lap and now and then a paw to his mouth.
-function poohAt(g, b, time) {
-  const [fur, shade, shirt, dark] = g.pal.pooh;
-  const x = Math.round(b.x);
-  const y = g.groundY + 8 - b.lift;
-  const px = pen(g, x, y, b.dir);
-  if (b.state === "sit") {
-    px(fur, 1, -6, 6, 6);
-    px(shade, 1, -6, 1, 6);
-    px(shirt, 1, -6, 6, 2);
-    px(fur, 6, -2, 4, 2);
-    px(shade, 9, -1, 1, 1);
-    potAt(g, x, y, b.dir, 6, true);
-    px(fur, 3, -11, 4, 1);
-    px(fur, 2, -10, 6, 3);
-    px(fur, 8, -8, 1, 1);
-    px(fur, 3, -7, 4, 1);
-    px(dark, 8, -9, 1, 1);
-    px(dark, 6, -10, 1, 1);
-    px(shade, 2, -12, 1, 1);
-    px(shade, 6, -12, 1, 1);
-    if (Math.floor(time * 0.8 + b.phase) % 4 === 0) px(fur, 7, -7, 2, 1);
-    else px(fur, 6, -6, 1, 2);
-    return;
-  }
-  const step = b.state === "walk" ? Math.floor(b.phase) % 2 : 0;
-  px(shade, 2 + step, -2, 2, 2);
-  px(fur, 5 - step, -2, 2, 2);
-  px(fur, 1, -7, 7, 5);
-  px(fur, 8, -5, 1, 2);
-  px(shade, 1, -6, 1, 4);
-  px(shirt, 1, -7, 7, 2);
-  px(fur, 5, -6, 1, 3);
-  px(fur, 3, -12, 4, 1);
-  px(fur, 2, -11, 6, 3);
-  px(fur, 8, -9, 1, 1);
-  px(fur, 3, -8, 4, 1);
-  px(dark, 8, -10, 1, 1);
-  px(dark, 6, -11, 1, 1);
-  px(shade, 2, -13, 1, 1);
-  px(shade, 6, -13, 1, 1);
-  if (b.held) {
-    px(fur, 0, -10, 1, 4);
-    px(g.pal.balloon[2], 0, -12, 1, 2); // the string runs on down into his paw
-    heldBalloon(g, x, y - 13, b.dir, b.held, g.pal.balloon);
-  }
-}
-
-// Piglet: very small and pink, with two upright ears, a pointed snout and a green jumper with a band.
-function pigletAt(g, p) {
-  const [pink, shade, jumper, band, dark] = g.pal.piglet;
-  const x = Math.round(p.x);
-  const y = g.groundY + 8 - p.lift;
-  const px = pen(g, x, y, p.dir);
-  const step = p.state === "walk" ? Math.floor(p.phase) % 2 : 0;
-  px(shade, 1 + step, -1, 1, 1);
-  px(pink, 3 - step, -1, 1, 1);
-  px(jumper, 0, -4, 5, 3);
-  px(band, 0, -3, 5, 1);
-  px(pink, 1, -7, 4, 3);
-  px(shade, 5, -6, 1, 1);
-  px(dark, 3, -6, 1, 1);
-  px(pink, 1, -8, 1, 1);
-  px(shade, 3, -8, 1, 1);
-  if (p.held) {
-    px(pink, 0, -8, 1, 4);
-    heldBalloon(g, x, y - 9, p.dir, p.held, g.pal.balloon2);
-  }
-}
-
-// A balloon held up on its string in a raised paw at (x, y), leaning back from the way its holder faces.
-// It swells and goes limp through BALLOON_FRAMES.
-function heldBalloon(g, x, y, dir, frame, colours) {
-  const { rows, string } = BALLOON_FRAMES[frame];
-  const [body, shine, cord] = colours;
-  const knotX = x - dir;
-  const knotY = y - string;
-  line(g, cord, x, y, knotX, knotY);
-  rows.forEach((w, i) => {
-    rect(g, body, knotX - (w >> 1), knotY - (rows.length - 1 - i), w, 1);
-  });
-  if (rows.length > 5) rect(g, shine, knotX - (rows[2] >> 1) + 1, knotY - rows.length + 4, 1, 2);
-}
-
-// Eeyore: a grey barrel on thin legs, his head hung low on a sloping neck, his long ears laid back,
-// a dark mane, and a thin tail with a dark tuft. He sits back on his haunches, head still down.
-// Eeyore sitting back on his haunches, head hung low and his mane along his neck.
-const EEYORE_SITTING = [
-  "........DDDDDD...",
-  ".......GGGGGGDD..",
-  ".......GGGGGSGDD.",
-  ".....GGGGGGSSGGD.",
-  ".....GGGGGGGGGDG.",
-  "...GGGGGGGGG.GGG.",
-  "...GGGGGGS.S.GGMM",
-  "...GGGGGGS.S...MM",
-  "...GGGGGGS.S.....",
-  "DGGSSSSSSS.S.....",
-];
-const EEYORE_WALKING = [
-  "........DD.....",
-  "......DDDDDD...",
-  ".GGGGGGGGGGGD..",
-  "GGGGGGGGGGSGGD.",
-  "GGGGGGGGGSSGGG.",
-  "GGGGGGGGGGGGDG.",
-  "DGSSSSSSSSSGGG.",
-  "D..........GGMM",
-  ".............MM",
-];
-
-function eeyoreAt(g, e) {
-  const [grey, shade, dark, muzzle] = g.pal.eeyore;
-  if (e.state !== "sit") {
-    const px = pen(g, Math.round(e.x), g.groundY + 8, e.dir);
-    const step = e.state === "walk" ? Math.floor(e.phase) % 2 : 0;
-    const leg = (dx, up) => px(shade, dx, -4, 1, up ? 3 : 4);
-    leg(1, step === 0);
-    leg(3, step === 1);
-    leg(7, step === 1);
-    leg(9, step === 0);
-    const colours = { G: grey, S: shade, D: dark, M: muzzle };
-    sprite(g, EEYORE_WALKING, colours, Math.round(e.x), g.groundY + 8, e.dir, 1, 11);
-    return;
-  }
-  const colours = { G: grey, S: shade, D: dark, M: muzzle };
-  sprite(g, EEYORE_SITTING, colours, Math.round(e.x), g.groundY + 8, e.dir, 3, EEYORE_SITTING.length);
-}
-
-// Tigger: orange with dark stripes, a big round head with a pale muzzle, and a long tail with a dark
-// tip. He walks on all fours and sits up, flicking his tail now and then.
-function tiggerAt(g, t, time) {
-  const [orange, stripe, cream] = g.pal.tigger;
-  const px = pen(g, Math.round(t.x), g.groundY + 8, t.dir);
-  if (t.state === "sit") {
-    const flick = Math.floor(time * 2 + t.phase) % 5 === 0;
-    px(orange, 0, -6, 5, 6);
-    px(cream, 3, -5, 2, 4);
-    px(stripe, 0, -5, 1, 1);
-    px(stripe, 1, -3, 1, 1);
-    px(stripe, 0, -1, 1, 1);
-    px(cream, 3, -1, 3, 1);
-    px(orange, 1, -11, 5, 5);
-    px(stripe, 2, -11, 1, 2);
-    px(stripe, 4, -11, 1, 1);
-    px(cream, 5, -8, 2, 2);
-    px(stripe, 6, -8, 1, 1);
-    px(stripe, 4, -9, 1, 1);
-    px(orange, 1, -12, 1, 1);
-    px(orange, 4, -12, 1, 1);
-    px(orange, -1, -2, 1, 2);
-    px(orange, -2, flick ? -7 : -6, 1, flick ? 5 : 4);
-    px(stripe, -2, flick ? -8 : -7, 1, 1);
-    return;
-  }
-  const step = t.state === "walk" ? Math.floor(t.phase) % 2 : 0;
-  px(orange, 1 + step, -2, 1, 2);
-  px(orange, 3 - step, -2, 1, 2);
-  px(orange, 6 + step, -2, 1, 2);
-  px(orange, 8 - step, -2, 1, 2);
-  px(orange, 0, -6, 9, 4);
-  px(cream, 1, -3, 7, 1);
-  px(stripe, 2, -6, 1, 2);
-  px(stripe, 4, -6, 1, 2);
-  px(stripe, 6, -6, 1, 2);
-  px(orange, 8, -9, 4, 4);
-  px(stripe, 9, -9, 1, 1);
-  px(cream, 11, -7, 2, 2);
-  px(stripe, 12, -7, 1, 1);
-  px(stripe, 10, -8, 1, 1);
-  px(orange, 8, -10, 1, 1);
-  px(orange, 10, -10, 1, 1);
-  px(orange, -1, -7, 1, 3);
-  px(orange, -2, -10, 1, 4);
-  px(stripe, -2, -11, 1, 1);
-}
-
-// Rabbit: upright on long hind feet, two tall ears, and a white scut. He hops as he goes.
-function rabbitAt(g, r) {
-  const [fur, shade, white, dark] = g.pal.rabbit;
-  const hop = r.state === "walk" ? Math.round(Math.abs(Math.sin(r.phase * 0.6)) * 3) : 0;
-  const px = pen(g, Math.round(r.x), g.groundY + 8 - hop, r.dir);
-  px(shade, 1, -1, 4, 1);
-  px(fur, 0, -5, 4, 4);
-  px(white, 3, -4, 1, 2);
-  px(white, -1, -4, 1, 2);
-  px(fur, 1, -8, 4, 3);
-  px(fur, 5, -7, 1, 1);
-  px(dark, 3, -7, 1, 1);
-  px(fur, 1, -12, 1, 4);
-  px(shade, 3, -11, 1, 3);
-}
-
-// Roo: a joey about Piglet's size, in a blue shirt, with long ears, long feet and a thin tail. He
-// hops as he goes.
-function rooAt(g, r) {
-  const [fur, shade, shirt, dark] = g.pal.roo;
-  const air = r.state === "walk" ? Math.max(0, Math.sin(r.phase * 0.9)) : 0;
-  const px = pen(g, Math.round(r.x), g.groundY + 8 - Math.round(air * 3), r.dir);
-  px(shade, -3, -2, 3, 1);
-  px(shade, 0, -1, 4, 1);
-  px(shirt, 0, -4, 4, 3);
-  px(fur, 1, -7, 4, 3);
-  px(fur, 5, -6, 1, 1);
-  px(dark, 3, -6, 1, 1);
-  px(fur, 1, -9, 1, 2);
-  px(shade, 3, -9, 1, 2);
-}
-
 // The blue balloon, loose, drifting across the sky and bobbing, its string swaying below it.
 function balloonAt(g, b, time) {
-  const [blue, shine, string] = g.pal.balloon;
+  if (g.trace) return g.trace.draw(balloonAt, g, b, time);
+  const sway = Math.round(Math.sin(time * 2 + b.phase) * 1.5);
   const x = Math.round(b.x);
   const y = Math.round(b.y + Math.sin(time * 1.3 + b.phase) * 1.5);
-  rect(g, blue, x - 1, y - 7, 3, 1);
-  rect(g, blue, x - 2, y - 6, 5, 4);
-  rect(g, blue, x - 1, y - 2, 3, 1);
-  rect(g, blue, x, y - 1, 1, 1);
-  rect(g, shine, x - 1, y - 5, 1, 2);
-  const sway = Math.round(Math.sin(time * 2 + b.phase) * 1.5);
-  line(g, string, x, y, x + sway, y + 3);
-  line(g, string, x + sway, y + 3, x - sway, y + 6);
-}
-
-// A swarm of bees: five dots, dark and yellow, that buzz about as the swarm crosses the page.
-function beesAt(g, s, time) {
-  const x = Math.round(s.x);
-  const y = Math.round(s.y);
-  for (let i = 0; i < 5; i += 1) {
-    const bx = x - s.dir * i * 4 + Math.round(Math.sin(time * 9 + i * 2.1) * 2);
-    const by = y + Math.round(Math.cos(time * 11 + i * 1.7) * 2);
-    beeAt(g, bx, by, i % 2 === Math.floor(time * 8) % 2);
-  }
+  drawLooseBalloon(g, x, y, g.pal.balloon, g.pal.ink, sway);
 }
 
 // Day: Shepard's little birds, a few ink ticks drifting across the sky. Still under reduced motion.
@@ -1015,16 +776,8 @@ function skyAt(g, f) {
 
 // Fireflies at night, each glowing and fading.
 function firefliesAt(g, f) {
-  for (const m of f.extra.motes) {
-    const x = Math.round(m.x);
-    const y = Math.round(m.y);
-    const glowing = 0.5 + 0.5 * Math.sin(f.time * 2 + m.phase);
-    g.ctx.globalAlpha = 0.2 * glowing;
-    rect(g, g.pal.mote, x - 1, y - 1, 3, 3);
-    g.ctx.globalAlpha = glowing;
-    rect(g, g.pal.mote, x, y, 1, 1);
-  }
-  g.ctx.globalAlpha = 1;
+  const tones = glowTones(g.pal.mote);
+  for (const m of f.extra.motes) glowAt(g, m.x, m.y, f.time, m.phase, tones);
 }
 
 // Piglet keeps close by Pooh's side, a little ahead of him, and walks when he walks.
@@ -1032,6 +785,7 @@ function besidePooh(piglet, pooh, dt) {
   if (!piglet.active) return;
   piglet.dir = pooh.dir;
   piglet.state = pooh.state;
+  piglet.timer = pooh.timer;
   piglet.x += (pooh.x + pooh.dir * PIGLET_GAP - piglet.x) * Math.min(1, dt * 3);
   if (pooh.state === "walk") piglet.phase += dt * 9;
 }
@@ -1196,6 +950,373 @@ function moveSwarm(f, fl, dt, hold, land) {
   bees.y += (dy / dist) * 16 * dt;
 }
 
+const MATURE = {
+  hills: 1.5,
+  pine: 3,
+  fir: 3,
+  tree: 3,
+  slim: 3,
+  beeTree: 3,
+  hive: 3,
+  poohHouse: 3,
+  pigletHouse: 3,
+  owlHouse: 3,
+  tracks: 1,
+  gloomyPlace: 2,
+  heather: 1.5,
+  gorse: 2,
+  bracken: 1.5,
+  thistle: 2,
+  pit: 1.5,
+  honeyPots: 2,
+};
+
+// ---- Owl on his ledge and Kessie on the sticks
+
+// How grown a plant is (the engine's own number) and the row its painter stands it on.
+const growthOf = (p) => smooth(clamp((p.shown - p.born) / MATURE[p.kind], 0, 1));
+const baseOf = (f, p) => f.groundY + (p.layer < 1 ? 1 : p.depth);
+
+// The perches, worked out from the painters' own geometry each frame, so the feet sit on them at every
+// growth stage; null until the door (or the tent) is drawn.
+function ledgeSpot(f) {
+  const p = f.plants.find((q) => q.kind === "owlHouse");
+  const s = p ? growthOf(p) : 0;
+  if (s < LEDGE_AT) return null;
+  const at = owlLedge(p, s, baseOf(f, p));
+  return { x: at.x + 3, toes: at.y - 1 }; // toes on the row above the ledge
+}
+
+function tentSpot(f) {
+  const p = f.plants.find((q) => q.kind === "gloomyPlace");
+  const s = p ? growthOf(p) : 0;
+  return s < TENT_AT ? null : tentPerch(p, s, baseOf(f, p));
+}
+
+// Owl in the Hundred Acre Wood: he perches on the ledge outside his door at The Chestnuts, swivelling,
+// blinking and fluffing; now and then he takes off and glides across the wood. Before his house is grown,
+// he glides across the sky.
+const OWL_SPEED = 14; // flight speed in art px/s
+const OWL_STAY = [16, 26]; // seconds perched on the ledge
+const OWL_AWAY = [14, 24]; // seconds away between flights
+
+function owlStep(f, owl, dt) {
+  if (f.stage < 2) return;
+  owl.active = true;
+  const spot = ledgeSpot(f);
+
+  if (!owl.p) {
+    owl.p = percher(f, spot ? spot.x : 0, spot ? spot.toes : 0, 1, OWL_MOVES);
+    if (spot) {
+      owl.mode = "perch";
+      owl.glide = null;
+      owl.stay = OWL_STAY[0] + f.rand() * (OWL_STAY[1] - OWL_STAY[0]);
+    } else {
+      owl.mode = "away";
+      owl.glide = null;
+      owl.next = f.time + 2 + f.rand() * 4;
+    }
+  }
+
+  // If perched but the ledge is gone (e.g. stage reset or resize), become away
+  if (owl.mode === "perch" && !spot) {
+    owl.mode = "away";
+    owl.glide = null;
+    owl.next = f.time + 3;
+    return;
+  }
+
+  // --- Perched at home on his ledge
+  if (owl.mode === "perch") {
+    owl.t += dt;
+    owl.p.x = spot.x;
+    owl.p.y = spot.toes;
+    owl.p.look = spot.x < f.cols / 2 ? 1 : -1;
+    fidget(f, owl.p);
+    const busy = doing(owl.p, "swivel", f.time) >= 0 || doing(owl.p, "fluff", f.time) >= 0;
+    if (owl.t >= owl.stay && !busy) {
+      // Owl decides to glide! He pushes off in the direction with room
+      const dir = spot.x < f.cols / 2 ? 1 : -1;
+      owl.dir = dir;
+      owl.x = spot.x;
+      owl.y = spot.toes - 6;
+      owl.cruiseY = 24 + f.rand() * 20;
+      owl.t = 0;
+      owl.takeoff = true;
+      owl.landing = false;
+      owl.mode = "glide";
+      owl.glide = { dir };
+      owl.phase = f.rand() * 6;
+    }
+    return;
+  }
+
+  // --- Away in the wider wood
+  if (owl.mode === "away") {
+    owl.glide = null;
+    if (f.time < owl.next) return;
+    if (spot) {
+      const wantLand = f.rand() < 0.75;
+      const fromLeft = spot.x > f.cols / 2;
+      owl.dir = fromLeft ? 1 : -1;
+      owl.x = owl.dir > 0 ? -12 : f.cols + 12;
+      owl.cruiseY = 24 + f.rand() * 20;
+      owl.y = owl.cruiseY;
+      owl.t = 0;
+      owl.takeoff = false;
+      owl.landing = wantLand;
+      owl.mode = "glide";
+      owl.glide = { dir: owl.dir };
+      owl.phase = f.rand() * 6;
+    } else {
+      const dir = f.rand() < 0.5 ? 1 : -1;
+      owl.dir = dir;
+      owl.x = dir > 0 ? -12 : f.cols + 12;
+      owl.cruiseY = 24 + f.rand() * 28;
+      owl.y = owl.cruiseY;
+      owl.t = 0;
+      owl.takeoff = false;
+      owl.landing = false;
+      owl.mode = "glide";
+      owl.glide = { dir };
+      owl.phase = f.rand() * 6;
+    }
+    return;
+  }
+
+  // --- Gliding in flight
+  if (owl.mode === "glide") {
+    owl.t += dt;
+    owl.glide = { dir: owl.dir };
+
+    if (owl.landing && spot) {
+      const dist = (spot.x - owl.x) * owl.dir;
+      if (dist <= 0) {
+        owl.mode = "perch";
+        owl.glide = null;
+        owl.t = 0;
+        owl.stay = OWL_STAY[0] + f.rand() * (OWL_STAY[1] - OWL_STAY[0]);
+        return;
+      }
+      if (dist < 40) {
+        const u = 1 - dist / 40;
+        const targetY = spot.toes - 6;
+        owl.y = lerp(owl.cruiseY, targetY, smooth(u));
+      } else {
+        owl.y = owl.cruiseY + 3 * Math.sin(owl.t * 0.9) + 2 * Math.sin(owl.t * 0.37 + owl.phase);
+      }
+      const slow = dist < 20 ? 0.6 + 0.4 * (dist / 20) : 1;
+      owl.x += owl.dir * OWL_SPEED * slow * dt;
+      return;
+    }
+
+    if (owl.takeoff && spot) {
+      const u = clamp(owl.t / 2.2, 0, 1);
+      const startY = spot.toes - 6;
+      owl.y = lerp(startY, owl.cruiseY, smooth(u)) + 2 * Math.sin(owl.t * 0.9);
+      if (u >= 1) owl.takeoff = false;
+    } else {
+      owl.y = owl.cruiseY + 4 * Math.sin(owl.t * 0.9) + 2 * Math.sin(owl.t * 0.37 + owl.phase);
+    }
+    const accel = owl.takeoff ? smooth(clamp(owl.t / 1.2, 0.3, 1)) : 1;
+    owl.x += owl.dir * OWL_SPEED * accel * dt;
+
+    if (owl.x < -14 || owl.x > f.cols + 14) {
+      owl.mode = "away";
+      owl.glide = null;
+      owl.next = f.time + (spot ? OWL_AWAY[0] + f.rand() * (OWL_AWAY[1] - OWL_AWAY[0]) : 6 + f.rand() * 8);
+    }
+  }
+}
+
+function owlHomeAt(g, f, owl) {
+  if (g.trace) return g.trace.draw(owlHomeAt, g, f, owl);
+  if (!owl.active || owl.mode === "away") return;
+  const tones = owlTones(g.pal.owl, isNight(f) ? "dark" : "light");
+  const sp = OWL_SPECIES.horned;
+  const spot = ledgeSpot(f);
+
+  if (owl.mode === "perch") {
+    if (!spot) return;
+    drawPerch(g, spot.x, spot.toes, 1, tones, sp, owlPerchPose(owl.p, f.time));
+    return;
+  }
+
+  let b;
+  let vel = 0;
+  if (owl.landing && spot) {
+    const dist = (spot.x - owl.x) * owl.dir;
+    if (dist < 18) {
+      const u = clamp(1 - dist / 18, 0, 1);
+      b = sp.glide + (0.95 - sp.glide) * smooth(u);
+    } else {
+      ({ b, vel } = owlFlight(f.time + owl.phase, sp));
+    }
+  } else if (owl.takeoff) {
+    const u = clamp(owl.t / 0.8, 0, 1);
+    b = -1 + (sp.glide + 1) * smooth(u);
+  } else {
+    ({ b, vel } = owlFlight(f.time + owl.phase, sp));
+  }
+
+  drawFlight(g, Math.round(owl.x), Math.round(owl.y), owl.dir, tones, sp, { b, vel });
+}
+
+// Kessie in the Hundred Acre Wood: she flies across the sky by day, and once Eeyore's tent is built,
+// perches on the sticks, sits through her moves (look, blink, bob, preen, stretch, hop-turn) and flies off again.
+const KESSIE_SPEED = 22; // flight speed in art px/s
+const KESSIE_STAY = [14, 26]; // seconds perched on the tent
+const KESSIE_AWAY = [12, 22]; // seconds away between visits
+
+function kessieStep(f, k, dt) {
+  if (f.stage < 2 || isNight(f)) {
+    k.mode = "away";
+    k.next = Math.max(k.next ?? 0, f.time + 3);
+    return;
+  }
+  k.active = true;
+  const spot = tentSpot(f);
+
+  if (!k.p) {
+    k.p = percher(f, spot ? spot.x : 0, spot ? spot.y : 0, 1, SMALL_MOVES);
+    k.mode = "away";
+    k.next = f.time + 3 + f.rand() * 4;
+  }
+
+  // If perched but the tent is gone (e.g. stage reset), become away
+  if (k.mode === "perch" && !spot) {
+    k.mode = "away";
+    k.next = f.time + 3;
+    return;
+  }
+
+  // --- Perched on Eeyore's tent
+  if (k.mode === "perch") {
+    k.t += dt;
+    fidget(f, k.p);
+    const busy = Object.keys(SMALL_MOVES).some((n) => doing(k.p, n, f.time) >= 0);
+    if (k.t >= k.stay && !busy) {
+      // Takes off!
+      const dir = k.p.look ?? (spot.x < f.cols / 2 ? 1 : -1);
+      k.dir = dir;
+      k.x = spot.x;
+      k.y = spot.y + 4;
+      k.cruiseY = f.groundY - 66 - f.rand() * 20;
+      k.t = 0;
+      k.takeoff = true;
+      k.landing = false;
+      k.mode = "fly";
+      k.phase = f.rand() * 6;
+    }
+    return;
+  }
+
+  // --- Away in the wider wood
+  if (k.mode === "away") {
+    if (f.time < k.next) return;
+    if (spot) {
+      const wantLand = f.rand() < 0.75;
+      const fromLeft = spot.x > f.cols / 2;
+      k.dir = fromLeft ? 1 : -1;
+      k.x = k.dir > 0 ? -12 : f.cols + 12;
+      k.cruiseY = f.groundY - 66 - f.rand() * 20;
+      k.y = k.cruiseY;
+      k.t = 0;
+      k.takeoff = false;
+      k.landing = wantLand;
+      k.mode = "fly";
+      k.phase = f.rand() * 6;
+    } else {
+      const dir = f.rand() < 0.5 ? 1 : -1;
+      k.dir = dir;
+      k.x = dir > 0 ? -12 : f.cols + 12;
+      k.cruiseY = f.groundY - 66 - f.rand() * 20;
+      k.y = k.cruiseY;
+      k.t = 0;
+      k.takeoff = false;
+      k.landing = false;
+      k.mode = "fly";
+      k.phase = f.rand() * 6;
+    }
+    return;
+  }
+
+  // --- Flying in flight
+  if (k.mode === "fly") {
+    k.t += dt;
+
+    if (k.landing && spot) {
+      const dist = (spot.x - k.x) * k.dir;
+      if (dist <= 0) {
+        k.mode = "perch";
+        k.t = 0;
+        k.stay = KESSIE_STAY[0] + f.rand() * (KESSIE_STAY[1] - KESSIE_STAY[0]);
+        k.p.look = k.dir;
+        return;
+      }
+      if (dist < 40) {
+        const u = 1 - dist / 40;
+        const targetY = spot.y + 4;
+        k.y = lerp(k.cruiseY, targetY, smooth(u));
+      } else {
+        k.y = k.cruiseY + Math.sin(f.time * 3 + k.phase) * 2;
+      }
+      const slow = dist < 20 ? 0.7 + 0.3 * (dist / 20) : 1;
+      k.x += k.dir * KESSIE_SPEED * slow * dt;
+      return;
+    }
+
+    if (k.takeoff && spot) {
+      const u = clamp(k.t / 1.5, 0, 1);
+      const startY = spot.y + 4;
+      k.y = lerp(startY, k.cruiseY, smooth(u)) + Math.sin(f.time * 3 + k.phase) * 2;
+      if (u >= 1) k.takeoff = false;
+    } else {
+      k.y = k.cruiseY + Math.sin(f.time * 3 + k.phase) * 2;
+    }
+    k.x += k.dir * KESSIE_SPEED * dt;
+
+    if (k.x < -14 || k.x > f.cols + 14) {
+      k.mode = "away";
+      k.next = f.time + (spot ? KESSIE_AWAY[0] + f.rand() * (KESSIE_AWAY[1] - KESSIE_AWAY[0]) : 7 + f.rand() * 7);
+    }
+  }
+}
+
+function kessieAt(g, f, k) {
+  if (g.trace) return g.trace.draw(kessieAt, g, f, k);
+  if (!k.active || k.mode === "away" || isNight(f)) return;
+  const spot = tentSpot(f);
+  const foot = footOf(g, "kessie");
+  const gv = groundOf(SMALL_SPECIES.kessie);
+  const time = f.time;
+
+  if (k.mode === "perch" && spot) {
+    const anchor = (dir) => Math.round(dir > 0 ? spot.x - foot.u : spot.x + foot.u + 1);
+    const m = movePose({
+      look: doing(k.p, "look", time),
+      blink: doing(k.p, "blink", time),
+      bob: doing(k.p, "bob", time),
+      preen: doing(k.p, "preen", time),
+      stretch: doing(k.p, "stretch", time),
+      hop: doing(k.p, "hop", time),
+    });
+    const dir = m.turned ? -k.dir : k.dir;
+    perchedSmall(g, "kessie", anchor(dir), spot.y + foot.v - gv, time, m.pose, { dir });
+    return;
+  }
+
+  let lift = 0;
+  if (k.landing && spot) {
+    const dist = (spot.x - k.x) * k.dir;
+    if (dist < 20) lift = smooth(clamp(1 - dist / 20, 0, 1));
+  } else if (k.takeoff) {
+    lift = 1 - smooth(clamp(k.t / 0.8, 0, 1));
+  }
+
+  transitBird(g, "kessie", Math.round(k.x), Math.round(k.y), k.dir, time, lift, k.phase);
+}
+
 const extras = {
   init(f) {
     return {
@@ -1211,8 +1332,36 @@ const extras = {
         speed: 3 + f.rand() * 3,
         phase: f.rand() * 6.28,
       })),
-      owl: { next: 3, bird: null },
-      kessie: { next: 6, bird: null },
+      owl: {
+        active: false,
+        mode: "away",
+        p: null,
+        t: 0,
+        next: 0,
+        x: 0,
+        y: 0,
+        dir: 1,
+        cruiseY: 32,
+        landing: false,
+        takeoff: false,
+        glide: null,
+        phase: 0,
+      },
+      kessie: {
+        active: false,
+        mode: "away",
+        p: null,
+        t: 0,
+        next: 0,
+        x: 0,
+        y: 0,
+        dir: -1,
+        cruiseY: 32,
+        landing: false,
+        takeoff: false,
+        stay: 14,
+        phase: 0,
+      },
       bees: { next: 5, bird: null },
       balloon: { next: 2, bird: null },
       pooh: { ...walker(f), lift: 0, held: null },
@@ -1225,11 +1374,15 @@ const extras = {
     };
   },
 
-  // Rabbit at stage 1, Owl and the bees from stage 2, then Pooh, Piglet at his side, Eeyore, Tigger
+  // Rabbit at stage 1, Owl, Kessie and the bees from stage 2, then Pooh, Piglet at his side, Eeyore, Tigger
   // and Roo, and last the blue balloon and, a little after it, the first balloon flight.
   onGrow(f) {
     const x = f.extra;
     if (f.stage >= 1) enter(f, x.rabbit);
+    if (f.stage >= 2) {
+      x.owl.active = true;
+      x.kessie.active = true;
+    }
     if (f.stage >= 3) enter(f, x.pooh);
     if (x.pooh.active && !x.flight.goal) x.flight.goal = x.pooh.x < f.cols / 2 ? 1 : -1;
     if (f.stage >= 4 && x.pooh.active && !x.piglet.active) {
@@ -1248,11 +1401,9 @@ const extras = {
 
   update(f, dt) {
     const x = f.extra;
+    owlStep(f, x.owl, dt);
+    kessieStep(f, x.kessie, dt);
     if (f.stage >= 2) {
-      drift(f, x.owl, dt, { every: [5, 7], speed: 14, spawn: () => ({ y: 24 + f.rand() * 28 }) });
-      if (!isNight(f)) {
-        flyBy(f, x.kessie, dt, { every: [7, 7], speed: 22, spawn: () => ({ y: f.groundY - 66 - f.rand() * 24 }) });
-      }
       flyBy(f, x.bees, dt, { every: [5, 6], speed: 9, spawn: () => ({ y: 40 + f.rand() * 40 }) });
     }
     if (f.stage >= 8) {
@@ -1264,9 +1415,11 @@ const extras = {
       besidePooh(x.piglet, x.pooh, dt);
     }
     wander(f, x.eeyore, dt, { speed: 3, stride: 3, sit: [5, 9], walk: [3, 5] });
-    wander(f, x.rabbit, dt, { speed: 12, stride: 10, sit: [2, 4], walk: [1.5, 3] });
-    wander(f, x.tigger, dt, { speed: 10 });
-    wander(f, x.roo, dt, { speed: 9, stride: 9, sit: [2, 5], walk: [2, 4] });
+    settle(f, x.eeyore);
+    wander(f, x.rabbit, dt, { speed: 12, stride: 10, sit: [3, 6], walk: [1.5, 3] });
+    wander(f, x.tigger, dt, { speed: 10, sit: [3, 7] });
+    wander(f, x.roo, dt, { speed: 9, stride: 9, sit: [3, 6], walk: [2, 4] });
+    for (const w of [x.pooh, x.piglet, x.rabbit, x.tigger, x.roo]) settle(f, w);
     if (f.theme === "dark") {
       for (const m of x.motes) {
         m.x += Math.sin(f.time * 0.9 + m.phase) * 5 * dt;
@@ -1284,17 +1437,17 @@ const extras = {
 
   draw(g, f) {
     const x = f.extra;
-    if (x.owl.bird) owlAt(g, x.owl.bird, f.time);
-    if (x.kessie.bird && !isNight(f)) flyerAt(g, x.kessie.bird, f.time, "kessie");
-    if (x.bees.bird) beesAt(g, x.bees.bird, f.time);
+    if (x.owl.active) owlHomeAt(g, f, x.owl);
+    if (x.kessie.active && !isNight(f)) kessieAt(g, f, x.kessie);
+    if (x.bees.bird) swarmAt(g, x.bees.bird, f.time);
     if (x.balloon.bird) balloonAt(g, x.balloon.bird, f.time);
-    if (x.flight.bees) beesAt(g, x.flight.bees, f.time);
-    if (x.eeyore.active) eeyoreAt(g, x.eeyore);
-    if (x.rabbit.active) rabbitAt(g, x.rabbit);
+    if (x.flight.bees) swarmAt(g, x.flight.bees, f.time);
+    if (x.eeyore.active) eeyoreAt(g, x.eeyore, f.time);
+    if (x.rabbit.active) rabbitAt(g, x.rabbit, f.time);
     if (x.tigger.active) tiggerAt(g, x.tigger, f.time);
-    if (x.roo.active) rooAt(g, x.roo);
+    if (x.roo.active) rooAt(g, x.roo, f.time);
     if (x.pooh.active) poohAt(g, x.pooh, f.time);
-    if (x.piglet.active) pigletAt(g, x.piglet);
+    if (x.piglet.active) pigletAt(g, x.piglet, f.time);
     if (f.theme === "dark") firefliesAt(g, f);
   },
 };
@@ -1303,26 +1456,7 @@ export default {
   id: "hundredacre",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.45, 0.65], dark: [0.45, 0.62] },
-  mature: {
-    hills: 1.5,
-    pine: 3,
-    fir: 3,
-    tree: 3,
-    slim: 3,
-    beeTree: 3,
-    hive: 3,
-    poohHouse: 3,
-    pigletHouse: 3,
-    owlHouse: 3,
-    tracks: 1,
-    gloomyPlace: 2,
-    heather: 1.5,
-    gorse: 2,
-    bracken: 1.5,
-    thistle: 2,
-    pit: 1.5,
-    honeyPots: 2,
-  },
+  mature: MATURE,
   paint: {
     hills,
     pine,

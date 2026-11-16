@@ -15,6 +15,8 @@ export class SceneView extends LitElement {
     paused: { state: true },
     onPage: { state: true },
     triggers: { state: true },
+    holding: { state: true },
+    holdLevel: { state: true },
   };
 
   static styles = [
@@ -129,13 +131,15 @@ export class SceneView extends LitElement {
     this.paused = false;
     this.onPage = [];
     this.triggers = [];
+    this.holding = false;
+    this.holdLevel = 0;
   }
 
   render() {
     return html`
       <div class="viewport" ${ref(this.viewport)}>
         <div class="backdrop"><div class="wash"></div><div class="grid"></div></div>
-        <div class="stage" ${ref(this.stageBox)} @click=${this.water} title="Click to water">
+        <div class="stage" ${ref(this.stageBox)} @click=${() => this.water()} title="Click to water">
           <canvas ${ref(this.groundCanvas)}></canvas><canvas ${ref(this.waterCanvas)}></canvas>
         </div>
       </div>
@@ -152,7 +156,25 @@ export class SceneView extends LitElement {
             />
             <span class="value">${this.stage}/${MAX_STAGE}</span>
           </label>
-          <button class="btn" @click=${this.water}><n-icon name="droplets"></n-icon>Water</button>
+          <button class="btn" @click=${() => this.water()}><n-icon name="droplets"></n-icon>Water</button>
+          <button
+            class="btn ${this.holding ? "primary" : ""}"
+            @pointerdown=${this.startHold}
+            @pointerup=${this.endHold}
+            @pointercancel=${this.cancelHold}
+            @keydown=${this.onHoldKeydown}
+            @keyup=${this.onHoldKeyup}
+            title="Press and hold to charge, release to spray"
+          >
+            <n-icon name="faucet"></n-icon>${this.holding ? `Hold (${this.holdLevel})` : "Hold Water"}
+          </button>
+          <button
+            class="btn"
+            @click=${() => this.water(MAX_STAGE)}
+            title="Trigger full charged fountain and finale"
+          >
+            <n-icon name="party-popper"></n-icon>Finale
+          </button>
           <button class="btn" @click=${() => this.live.replant()}>
             <n-icon name="rotate-ccw"></n-icon>Replant
           </button>
@@ -219,6 +241,7 @@ export class SceneView extends LitElement {
   disconnectedCallback() {
     super.disconnectedCallback();
     clearInterval(this.ticker);
+    clearInterval(this.holdInterval);
     if (running.live === this.live) running.live = null;
     this.observer?.disconnect();
     this.live?.destroy();
@@ -246,8 +269,56 @@ export class SceneView extends LitElement {
     this.fit();
   }
 
-  water() {
-    this.stage = this.live.water();
+  startHold = (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {}
+    this.holding = true;
+    this.holdLevel = 1;
+    this.holdStart = performance.now();
+    clearInterval(this.holdInterval);
+    this.holdInterval = setInterval(() => {
+      if (!this.holding) return;
+      const elapsed = performance.now() - this.holdStart;
+      const lvl = Math.min(MAX_STAGE, 1 + Math.floor(elapsed / 400));
+      if (lvl !== this.holdLevel) {
+        this.holdLevel = lvl;
+      }
+    }, 50);
+  };
+
+  endHold = () => {
+    if (!this.holding) return;
+    clearInterval(this.holdInterval);
+    const level = this.holdLevel || 1;
+    this.holding = false;
+    this.holdLevel = 0;
+    this.water(level);
+  };
+
+  cancelHold = () => {
+    if (!this.holding) return;
+    clearInterval(this.holdInterval);
+    this.holding = false;
+    this.holdLevel = 0;
+  };
+
+  onHoldKeydown = (e) => {
+    if (e.key !== " " && e.key !== "Enter") return;
+    if (e.repeat) return;
+    e.preventDefault();
+    this.startHold(e);
+  };
+
+  onHoldKeyup = (e) => {
+    if (e.key !== " " && e.key !== "Enter") return;
+    e.preventDefault();
+    this.endHold();
+  };
+
+  water(level) {
+    this.stage = this.live.water(level);
   }
 
   togglePause() {

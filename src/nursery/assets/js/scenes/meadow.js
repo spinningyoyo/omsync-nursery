@@ -8,29 +8,32 @@
 // A bobcat hunts the meadow edge and rests in the grass: sitting, lying, arching or stretching.
 import {
   bearAt,
+  bearPoses,
   canidAt,
   cervidAt,
   felidAt,
   felidPoses,
-  flyerAt,
   hareAt,
-  kingfisherAt,
-  raptorAt,
+  harePoses,
+  settleCanid,
 } from "../kit/animals.js";
+import { sequoiaTop as kitSequoiaTop } from "../kit/conifer.js";
 import {
   enter,
   enterBehind,
-  flyBy,
   follow,
   isNight,
   narrow,
   rest,
-  soarAt,
+  settle,
   soarer,
   stroll,
   walker,
   wander,
 } from "../kit/critters.js";
+import { circlerAt, eagleFlyAt, flyerAt, kingfisherAt } from "../kit/flyers.js";
+import { butterflyAt, butterflyPick } from "../kit/insect.js";
+import { blobSpots, flyByPerch, goHome, unhidden } from "../kit/perch.js";
 import {
   blob,
   CLEARING,
@@ -39,7 +42,6 @@ import {
   foliage,
   grove,
   hash,
-  line,
   makePlant,
   NARROW_COLS,
   placeLandmarks,
@@ -50,9 +52,10 @@ import {
   sortPlants,
   wind,
 } from "../kit/pixel.js";
-import { meadowFlower } from "../kit/plants.js";
-import { broadleafTree, clump, coniferTree } from "../kit/trees.js";
+import { meadowFlower, meadowFlowerHead } from "../kit/plants.js";
+import { broadleafTree, coniferTree, sequoiaTree } from "../kit/trees.js";
 
+const MATURE = { tuft: 1.5, flower: 2, bush: 2.5, tree: 3, sequoia: 4, mushroom: 1, hill: 2.5, elcap: 2.5 };
 const TREE_ROWS = 34; // a full-grown tree at scale 1
 const BUTTERFLY_MAX = 4;
 const TREES = ["round", "round", "round", "pine", "pine", "pine", "birch", "dogwood"];
@@ -72,6 +75,7 @@ const LIGHT = {
   trunk: ["#b58f6a", "#93714f"],
   birch: ["#f6f2ea", "#d4cdbf"],
   birchMark: "#7d746a",
+  groundShadow: "rgba(60, 44, 20, 0.22)", // the soft shadow every animal, plant and rock casts on the ground
   sequoia: ["#4f8a5e", "#3a7450", "#2c6042", "#1f4a34"],
   sequoiaBark: ["#b1643f", "#8a4a2d"],
   sequoiaDepth: ["#d08a5e", "#5c3020"],
@@ -89,8 +93,10 @@ const LIGHT = {
   hill: ["#c8e69a", "#acda7a", "#92c866"],
   rabbit: ["#b89a78", "#8c7355", "#fdf6ea"],
   red: ["#e8742a", "#2b2420", "#fdf6ea", "#2b2420", "#fdf6ea"],
+  canid: { R: "#6e2c2c", howl: "#5f6f84", dark: false },
   elk: ["#a07048", "#6b4a2e", "#e8d6b4", "#d9c29a", "#4a3220", "#7f5836"],
   bear: ["#322a27", "#4e4039", "#bc9d7c", "#141010", "#262020"],
+  bearScent: "#8c8070",
   jay: {
     C: "#1f2a40",
     H: "#2a3a5a",
@@ -105,7 +111,7 @@ const LIGHT = {
     d: "#1f3560",
   },
   kingfisher: ["#5b82a8", "#c8653a", "#2c2c34", "#f6f2ea"],
-  eagle: ["#4a3426", "#e0a93a", "#4a3426", "#f3eadb", "#7a5a44"],
+  eagleGolden: ["#4a3426", "#e0a93a", "#4a3426", "#f3eadb", "#7a5a44"],
   granite: ["#a99f8e", "#958c7d", "#7d766b", "#615c55"],
   snow: "#ffffff",
   // An object, not a list, so the distance fade leaves the water at full strength.
@@ -122,6 +128,7 @@ const DARK = {
   trunk: ["#8a6a4d", "#6a4f39"],
   birch: ["#d9d4c8", "#a8a194"],
   birchMark: "#4b463f",
+  groundShadow: "rgba(0, 0, 0, 0.3)",
   sequoia: ["#5f9d70", "#4a8660", "#356a4a", "#265239"],
   sequoiaBark: ["#8f5a40", "#6e4330"],
   sequoiaDepth: ["#b0785a", "#46291c"],
@@ -139,8 +146,10 @@ const DARK = {
   hill: ["#52814a", "#437040", "#355e35"],
   rabbit: ["#b89a78", "#8c7355", "#f0e8da"],
   red: ["#ee7c30", "#2b2420", "#f0e8da", "#2b2420", "#f0e8da"],
+  canid: { R: "#3a2226", howl: "#e4ecf8", dark: true },
   elk: ["#b07c50", "#7a5636", "#e0cdaa", "#d9c29a", "#543924", "#8c6240"],
   bear: ["#5a4c46", "#76645a", "#bc9d7c", "#1a1414", "#3a302c"],
+  bearScent: "#d8d0c0",
   jay: {
     C: "#171e2d",
     H: "#1d283c",
@@ -155,7 +164,7 @@ const DARK = {
     d: "#172540",
   },
   kingfisher: ["#6a90b8", "#c8653a", "#52525e", "#f0ece4"],
-  eagle: ["#7a5638", "#f2c25a", "#7a5638", "#f5efe4", "#5a4432"],
+  eagleGolden: ["#7a5638", "#f2c25a", "#7a5638", "#f5efe4", "#5a4432"],
   granite: ["#77726b", "#68635d", "#4a4642", "#3a3734"],
   snow: "#b9bdc4",
   horsetail: { water: ["#fff4c4", "#ffb444", "#f07a28"], wash: "#ff8a32", lamp: "#fff3d2" },
@@ -181,6 +190,17 @@ function flower(g, p, s, base) {
   meadowFlower(g, p, s, base);
 }
 
+// How grown a flower is, as the engine paints it (0..1).
+function flowerSize(p) {
+  return smooth(clamp((p.shown - p.born) / MATURE.flower, 0, 1));
+}
+
+// The top of a butterfly's flower as it is drawn this frame, or null while there is none.
+function flowerHead(g, f, p) {
+  const s = p ? flowerSize(p) : 0;
+  return s > 0.5 ? meadowFlowerHead(g, p, s, f.groundY + (p.layer < 1 ? 1 : p.depth)) : null;
+}
+
 function bush(g, p, s, base) {
   const { pal } = g;
   const h = Math.max(2, Math.round((5 + (p.seed % 3)) * p.scale * s));
@@ -199,98 +219,91 @@ function tree(g, p, s, base) {
   const { pal } = g;
   const spec = { rows: TREE_ROWS, tones: pal.leaf, trunkTones: pal.trunk };
   if (p.species === "pine") {
-    return coniferTree(g, p, s, base, { ...spec, tones: pal.pine, tiers: 8, spread: 0.3, clear: 0.14 });
+    // The conifer family's build (kit/conifer.js): a loose, pointed young pine.
+    return coniferTree(g, p, s, base, {
+      ...spec,
+      tones: pal.pine,
+      tiers: 8,
+      spread: 0.3,
+      clear: 0.14,
+      droop: 0.5,
+      wide: 1.25,
+      h: 0.115,
+      u0: 0.2,
+    });
   }
+  // The broadleaf family's build (kit/broadleaf.js): the round tree, the birch and the dogwood, a
+  // smaller understory tree whose white bracts open over the last stages.
   if (p.species === "birch") {
-    const bark = { trunkTones: pal.birch, mark: pal.birchMark };
-    return broadleafTree(g, p, s, base, { ...spec, ...bark, wide: 0.55, lift: 0.14 });
+    return broadleafTree(g, p, s, base, {
+      ...spec,
+      bark: pal.birch,
+      mark: pal.birchMark,
+      from: 0.48,
+      spread: 0.18,
+      airy: 0.45,
+    });
   }
-  const bloom = p.species === "dogwood" ? clamp((p.shown - 5) / 3, 0, 1) : 0;
-  return broadleafTree(g, p, s, base, {
-    ...spec,
-    extra: (dx, dy) => {
-      if (bloom <= 0 || hash(dx, dy, p.seed + 7) >= bloom * 0.9) return null;
-      return hash(dx, dy, p.seed + 8) < 0.25 ? pal.bloomCentre : pal.bloom;
-    },
-  });
+  if (p.species === "dogwood") {
+    const bloom = clamp((p.shown - 5) / 3, 0, 1);
+    return broadleafTree(g, p, s, base, {
+      ...spec,
+      rows: TREE_ROWS * (28 / 34),
+      from: 0.3,
+      spread: 0.36,
+      airy: 0.55,
+      extra: (dx, dy, tone) => {
+        if (tone >= 3 || hash(dx, dy, p.seed + 7) >= bloom * 0.6) return null;
+        return hash(dx, dy, p.seed + 8) < 0.1 ? pal.bloomCentre : pal.bloom;
+      },
+    });
+  }
+  return broadleafTree(g, p, s, base, { ...spec, from: 0.36, spread: 0.3, airy: 0.35 });
 }
 
-// A sequoia's boughs, low to high, on alternating sides: [height on the tree, side, reach, clump
-// width, clump height], the last four as fractions of the tree's height.
-const SEQUOIA_BOUGHS = [
-  [0.46, -1, 0.09, 0.15, 0.07],
-  [0.5, 1, 0.1, 0.16, 0.07],
-  [0.57, -1, 0.11, 0.18, 0.09],
-  [0.62, 1, 0.11, 0.18, 0.09],
-  [0.69, -1, 0.1, 0.18, 0.09],
-  [0.74, 1, 0.1, 0.17, 0.09],
-  [0.81, -1, 0.08, 0.16, 0.09],
-  [0.86, 1, 0.07, 0.15, 0.08],
-  [0.91, -1, 0.04, 0.13, 0.08],
-];
-const SEQUOIA_GIRTH = 0.13; // the trunk's width at the foot, as a fraction of the tree's height
-
-// One row of furrowed bark, lit on the left and shaded on the right. Its grooves are set from the
-// tree's centre line, so they run on unbroken as the trunk tapers.
-function sequoiaBark(g, cx, left, width, y, seed) {
-  const [mid, shade] = g.pal.sequoiaBark;
-  const [lit, deep] = g.pal.sequoiaDepth;
-  for (let i = 0; i < width; i += 1) {
-    const u = i / Math.max(1, width - 1);
-    const off = left + i - cx;
-    const groove = Math.round(Math.sin(y * 0.2 + off * 1.3 + seed) * 0.9);
-    const furrow = (off + groove + 60) % 3 === 0 && width >= 5;
-    const tone = u < 0.3 ? lit : u < 0.7 ? mid : shade;
-    rect(g, furrow ? (u < 0.3 ? mid : deep) : tone, left + i, y, 1, 1);
-  }
-}
-
-// A giant sequoia: a flared foot and a tapering cinnamon trunk, short elbow boughs high up, and a
-// narrow crown of foliage clumps with slits of sky between them.
+// A giant sequoia, from the conifer family's build (kit/conifer.js): a flared, fluted cinnamon trunk,
+// short elbow boughs high up, and a narrow crown of foliage clumps with slits of sky between them.
 function sequoia(g, p, s, base) {
   const { pal } = g;
-  const total = Math.max(8, Math.round(TREE_ROWS * p.scale * s));
-  const foot = Math.max(3, Math.round(total * SEQUOIA_GIRTH));
-  const widthAt = (r) => Math.max(3, Math.round(foot * (1 - 0.6 * (r / total))));
-  const flare = (r) => Math.round(Math.max(0, 1 - r / (total * 0.07)) ** 2 * foot * 0.35);
-  for (let r = 0; r < Math.round(total * 0.9); r += 1) {
-    const w = widthAt(r) + flare(r) * 2;
-    sequoiaBark(g, p.x, p.x - (w >> 1), w, base - 1 - r, p.seed);
-  }
-  if (s < 0.3) return;
-  const sway = wind(g.time, p.x);
-  const boughs = SEQUOIA_BOUGHS.map(([at, side, reach, cw, ch], i) => {
-    const r = Math.round(total * at);
-    const trunkX = p.x + side * (widthAt(r) >> 1);
-    const cx = trunkX + side * Math.round(total * reach) + sway;
-    const cy = base - 1 - r - Math.round(total * reach * 0.5);
+  sequoiaTree(g, p, s, base, { rows: TREE_ROWS, tones: pal.sequoia, bark: pal.sequoiaBark, depth: pal.sequoiaDepth });
+}
+
+// The top of a full-grown sequoia's crown, where the golden eagle's feet go: the kit draws the crown's clump
+// from the same numbers, and it sways with the wind at `time`.
+function sequoiaTop(p, groundY, time) {
+  return kitSequoiaTop(p, 1, groundY + 1, TREE_ROWS, time);
+}
+
+// Where the eagle may perch: the full-grown sequoias.
+function perchSpots(f) {
+  const sequoias = f.plants.map((p, order) => ({ p, order })).filter(({ p }) => p.kind === "sequoia");
+  const spots = sequoias
+    .filter(({ p }) => p.shown - p.born >= MATURE.sequoia)
+    .map(({ p, order }) => ({ x: p.x, order, top: (time) => sequoiaTop(p, f.groundY, time) }));
+  const covers = sequoias.map(({ p, order }) => ({
+    x: p.x,
+    order,
+    y: sequoiaTop(p, f.groundY, 0).y,
+    reach: Math.round(0.3 * TREE_ROWS * p.scale),
+  }));
+  return unhidden(spots, covers, f.time);
+}
+
+// Where the small birds may perch: the tops of the full-grown bushes (the kingfisher), drawn in bush() from the
+// same numbers. The jay takes the sequoias' crowns (perchSpots).
+function bushSpots(f) {
+  return blobSpots(f, "bush", MATURE.bush, (p) => {
+    const h = Math.max(2, Math.round((5 + (p.seed % 3)) * p.scale));
+    const w = Math.round(h * 2.3);
+    const hump = Math.round(h * 0.3);
+    const base = f.groundY + (p.layer < 1 ? 1 : p.depth);
     return {
-      trunkX,
-      y: base - 1 - r,
-      cx,
-      cy,
-      w: Math.round(total * cw),
-      h: Math.max(3, Math.round(total * ch * 1.35)),
-      i,
+      cx: p.x + Math.round(w * 0.12),
+      top: base - h - hump,
+      w: Math.round(w * 0.55),
+      h: Math.round(h * 0.7) + hump,
     };
   });
-  for (const b of boughs) {
-    const thick = total >= 50 ? 2 : 1;
-    for (let i = 0; i < thick; i += 1) {
-      line(g, i === thick - 1 ? pal.sequoiaDepth[1] : pal.sequoiaBark[0], b.trunkX, b.y + i, b.cx, b.cy + 1 + i);
-    }
-  }
-  // The crown closes over the tip, a little off centre, as an old tree's does.
-  clump(
-    g,
-    p.x + sway + 1,
-    base - total + Math.round(total * 0.06),
-    Math.round(total * 0.22),
-    Math.round(total * 0.12),
-    pal.sequoia,
-    p.seed + 99,
-  );
-  for (const b of boughs) clump(g, b.cx, b.cy, b.w, b.h, pal.sequoia, p.seed + b.i * 7);
 }
 
 function mushroom(g, p, s, base) {
@@ -516,22 +529,6 @@ function soil(pal, x, y, depth, turf) {
   return pal.soil[1];
 }
 
-// Wonderland borrows this butterfly; it reads pal.flowers and pal.body.
-export function butterflyAt(g, b, time) {
-  const { pal } = g;
-  const x = Math.round(b.homeX + Math.sin(time * b.speed + b.phase) * 30 + Math.sin(time * 1.9 + b.phase) * 6);
-  const y = Math.round(b.homeY + Math.sin(time * b.speed * 1.3 + b.phase * 2) * 10 + Math.sin(time * 3.1) * 2);
-  const wings = pal.flowers[b.colour];
-  rect(g, pal.body, x, y, 1, 2);
-  if (Math.floor(time * 6 + b.phase) % 2) {
-    rect(g, wings, x - 2, y - 1, 2, 2);
-    rect(g, wings, x + 1, y - 1, 2, 2);
-  } else {
-    rect(g, wings, x - 1, y, 1, 2);
-    rect(g, wings, x + 1, y, 1, 2);
-  }
-}
-
 // Creatures
 
 // The red fox hunts mice in the grass: it stops, listens, then leaps high and comes down nose
@@ -566,7 +563,11 @@ const extras = {
         phase: f.rand() * 6.28,
         speed: 0.5 + f.rand() * 0.4,
         colour: colours[i % colours.length],
+        cycle: 15 + f.rand() * 6,
         from: Infinity,
+        at: Infinity,
+        n: null,
+        flower: null,
       })),
     };
   },
@@ -587,7 +588,10 @@ const extras = {
     if (f.stage >= 5) enter(f, f.extra.fox);
     if (f.stage >= 7) enter(f, f.extra.elk);
     f.extra.flies.forEach((fly, i) => {
-      if (i < f.stage - 4 && fly.from === Infinity) fly.from = f.time + (f.reduced ? 0 : 2.2);
+      if (i < f.stage - 4 && fly.from === Infinity) {
+        fly.from = f.time + (f.reduced ? 0 : 2.2);
+        fly.at = fly.from - fly.cycle * 0.6; // it arrives in flight, and lands a little later
+      }
     });
   },
 
@@ -619,6 +623,7 @@ const extras = {
     const age = f.time - firefall.start;
     cliff.flare = smooth(clamp(age / 1.5, 0, 1)) * smooth(clamp((FIREFALL_SECONDS - age) / 2.5, 0, 1));
     wander(f, rabbit, dt, { speed: 14, stride: 10, sit: [2, 5], walk: [1.5, 3] });
+    rest(f, rabbit, harePoses("cottontail"));
     if (fox.active && f.time >= pounce.next && fox.x > 16 && fox.x < f.cols - 16) {
       pounce.start = f.time;
       pounce.next = f.time + 20 + f.rand() * 10;
@@ -633,7 +638,9 @@ const extras = {
       if (fox.state === "pounce") fox.state = "sit";
       wander(f, fox, dt, { speed: 12, stride: 8, sit: [2, 4], walk: [3, 6] });
     }
+    settleCanid(f, fox);
     wander(f, elk, dt, { speed: 6, stride: 5, sit: [4, 8], walk: [4, 8] });
+    settle(f, elk);
     // The mother bear forages along, and now and then rears up on her hind legs to sniff the air.
     const [bear, cub] = bears;
     const { rear } = f.extra;
@@ -641,21 +648,54 @@ const extras = {
       rear.until = f.time + 3;
       rear.next = f.time + 22 + f.rand() * 12;
     }
-    if (f.time < rear.until) bear.state = "rear";
-    else {
+    if (f.time < rear.until) {
+      bear.state = "rear";
+      bear.timer = rear.until - f.time;
+    } else {
       if (bear.state === "rear") bear.state = "walk";
       stroll(f, bear, dt, 5);
     }
+    settle(f, bear);
     follow(cub, bear, dt, 16);
     cub.phase = bear.phase + 1;
+    // The cub stands, forages or sits while its mother rears, then follows her on.
+    cub.state = bear.state === "rear" ? "sit" : "walk";
+    cub.timer = bear.timer;
+    rest(f, cub, bearPoses(cub));
     const day = !isNight(f);
-    if (f.stage >= 2 && day)
-      flyBy(f, kingfisher, dt, { every: [4, 5], speed: 62, spawn: () => ({ y: f.groundY - 14 - f.rand() * 34 }) });
-    if (f.stage >= 4 && day)
-      flyBy(f, jay, dt, { every: [7, 5], speed: 24, spawn: () => ({ y: f.groundY - 50 - f.rand() * 30 }) });
+    // Now and then the kingfisher stops on a bush and the jay on a sequoia, then flies on.
+    if (f.stage >= 2 && day) {
+      const spawn = () => ({ y: f.groundY - 14 - f.rand() * 34 });
+      flyByPerch(f, kingfisher, dt, {
+        every: [4, 5],
+        speed: 62,
+        spawn,
+        spots: bushSpots,
+        small: "kingfisher",
+        odds: 0.3,
+        stay: [8, 16],
+      });
+    } else if (kingfisher.bird?.visit) goHome(f, kingfisher.bird);
+    if (f.stage >= 4 && day) {
+      const spawn = () => ({ y: f.groundY - 50 - f.rand() * 30 });
+      flyByPerch(f, jay, dt, {
+        every: [7, 5],
+        speed: 24,
+        spawn,
+        spots: perchSpots,
+        small: "jay",
+        odds: 0.3,
+        stay: [8, 16],
+      });
+    } else if (jay.bird?.visit) goHome(f, jay.bird);
     // The golden eagle crosses slowly; a second one circles over the meadow.
-    if (f.stage >= 6 && day)
-      flyBy(f, eagle, dt, { every: [8, 4], speed: 13, spawn: () => ({ y: 20 + f.rand() * 28 }) });
+    if (f.stage >= 6 && day) {
+      const spawn = () => ({ y: 20 + f.rand() * 28 });
+      flyByPerch(f, eagle, dt, { every: [8, 4], speed: 13, spawn, spots: perchSpots, stay: [14, 28] });
+    } else if (eagle.bird?.visit) {
+      goHome(f, eagle.bird);
+      eagle.bird = null;
+    }
     circler.active = f.stage >= 7 && day;
     if (f.stage >= 7) {
       for (const p of f.plants) {
@@ -670,6 +710,17 @@ const extras = {
         });
       }
     }
+    // Each butterfly picks a full-grown flower near where it will land.
+    const spots = f.plants.filter((p) => p.kind === "flower" && flowerSize(p) >= 0.9);
+    for (const fly of f.extra.flies) {
+      if (fly.at !== Infinity)
+        butterflyPick(
+          fly,
+          f.time,
+          spots,
+          f.extra.flies.map((o) => o.flower).filter((o) => o && o !== fly.flower),
+        );
+    }
     for (const petal of petals) {
       petal.y += petal.vy * dt;
       petal.x += Math.sin(f.time * 2 + petal.phase) * 5 * dt;
@@ -681,25 +732,18 @@ const extras = {
     if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "bobcat" }, f.time);
     const day = !isNight(f);
     for (const fly of f.extra.flies) {
-      if (day && f.time >= fly.from) butterflyAt(g, fly, f.time);
+      if (day && f.time >= fly.from) butterflyAt(g, fly, f.time, flowerHead(g, f, fly.flower));
     }
     for (const petal of f.extra.petals) rect(g, g.pal.petal, Math.round(petal.x), Math.round(petal.y), 1, 1);
     const { rabbit, fox, elk, bears, kingfisher, eagle, jay, soarer: circler } = f.extra;
-    for (const b of bears) if (b.active) bearAt(g, b);
-    if (eagle.bird && day) {
-      const e = eagle.bird;
-      const flap = Math.sin(f.time * 0.9 + e.phase) > 0.75;
-      raptorAt(g, { kind: "eagleSide", pal: "eagle", x: e.x, y: e.y, dir: e.dir }, { bank: flap });
-    }
-    if (circler.active) {
-      const c = soarAt(f.time, circler);
-      raptorAt(g, { kind: "eagle", x: c.x, y: c.y, dir: c.dir }, { bank: c.bank });
-    }
+    for (const b of bears) if (b.active) bearAt(g, b, f.time);
+    if (eagle.bird && day) eagleFlyAt(g, "golden", eagle.bird, f.time);
+    if (circler.active) circlerAt(g, "golden", circler, f.time);
     if (jay.bird && day) flyerAt(g, jay.bird, f.time, "jay");
     if (kingfisher.bird && day) kingfisherAt(g, kingfisher.bird, f.time);
-    if (elk.active) cervidAt(g, elk);
-    if (fox.active) canidAt(g, fox);
-    if (rabbit.active) hareAt(g, rabbit);
+    if (elk.active) cervidAt(g, elk, f.time);
+    if (fox.active) canidAt(g, fox, f.time);
+    if (rabbit.active) hareAt(g, rabbit, f.time);
   },
 };
 
@@ -707,7 +751,7 @@ export default {
   id: "meadow",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.5], dark: [0.55] },
-  mature: { tuft: 1.5, flower: 2, bush: 2.5, tree: 3, sequoia: 4, mushroom: 1, hill: 2.5, elcap: 2.5 },
+  mature: MATURE,
   paint: { tuft, flower, bush, tree, sequoia, mushroom, hill, elcap },
   generate,
   soil,

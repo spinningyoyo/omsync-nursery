@@ -6,7 +6,7 @@
 //   ?render=SCENE/NAME  a proposal's variants and a sheet of their frames
 import { describeColour } from "./palette.js";
 import { bounds, colourAt, differences, drawZoomed, grow, sheet, union } from "./pixels.js";
-import { SceneModel, tierOf } from "./scene-model.js";
+import { ensureRendered, SceneModel } from "./scene-model.js";
 
 const PAD = 2;
 
@@ -113,6 +113,8 @@ async function runRender(target) {
   const p = model.proposals.find((x) => x.name === name);
   if (!p) throw new Error(`no proposal ${name} in ${sid}`);
   if (p.error) return { errors: [p.error] };
+  // The sheet and the variants' lengths need every frame, not the frame 0 an approved proposal loads with.
+  for (const job of p.variants) ensureRendered(job);
   return {
     errors: [
       ...(p.warning ? [p.warning] : []),
@@ -125,7 +127,6 @@ async function runRender(target) {
         frames: j.count,
         seconds: j.seconds,
         size: j.size,
-        tier: tierOf(...j.size),
         sameInBothThemes: j.same,
       })),
     sheet: proposalSheet(model, p),

@@ -10,6 +10,19 @@ with "Contract change".
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-17
+
+### Added
+
+- The Nursery Studio's Verify view checks scenes against the design rules and replays failures frame by frame.
+
+### Changed
+
+- The whole cast comes to life: every animal, bird, insect and tree in every scene has been
+  redrawn on revised design rules, with shading lit from above, soft ground shadows, natural walks,
+  and animals that breathe, blink, rest and play between moves.
+- The Nursery Studio is quicker to open and review proposals in.
+
 ## [0.2.0] - 2026-11-13
 
 ### Added
@@ -69,7 +82,8 @@ with "Contract change".
 - `scenes.css` sets `--landing-cell`, the size of one backdrop grid cell, so that omsync does not
   need to know the art's pixel size.
 
-[Unreleased]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/spinningyoyo/omsync-nursery/releases/tag/v0.1.0

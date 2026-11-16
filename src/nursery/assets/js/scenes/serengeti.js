@@ -5,7 +5,21 @@
 // plain, and by day a cheetah stalks through the grass and rests in it; a roller and a flamingo fly
 // over. At night it is an indigo savanna under a moon.
 // When a cub strays to an edge of the page, the lion roars from his ledge and calls it home.
-import { elephantAt, felidAt, felidPoses, flamingoAt, flyerAt, groundBirdAt, raptorAt } from "../kit/animals.js";
+import {
+  elephantAt,
+  felidAt,
+  felidPoses,
+  flamingoAt,
+  giraffeAt,
+  giraffeMuzzle,
+  groundBirdAt,
+  groundBirdStep,
+  groundPoses,
+  groundSpeed,
+  zebraAt,
+  zebraPoses,
+} from "../kit/animals.js";
+import { drawBody, STANCE } from "../kit/body.js";
 import {
   circlingPair,
   enter,
@@ -15,31 +29,33 @@ import {
   isNight,
   narrow,
   rest,
-  soarAt,
+  settle,
+  stride,
   walker,
   wander,
 } from "../kit/critters.js";
 import { mistAt, mistBand } from "../kit/effects.js";
+import { LION_CUB, LION_CUB_UP } from "../kit/felid.js";
+import { circlerAt, flyerAt } from "../kit/flyers.js";
+import { circlerPerch, flyByPerch, goHome, unhidden } from "../kit/perch.js";
 import {
   blob,
   clamp,
   clearing,
   foliage,
+  frac,
   hash,
-  line,
   makePlant,
-  part,
   rect,
   row,
   scatter,
+  smooth,
   sortPlants,
-  sprite,
   stroke,
-  wind,
 } from "../kit/pixel.js";
 import { crossFlower } from "../kit/plants.js";
+import { acaciaGeom, acaciaTree } from "../kit/widecanopy.js";
 
-const ACACIA_ROWS = 30;
 const KOPJE_ROWS = 20;
 const PRIDE_ROWS = 56; // taller than any acacia (30 rows at scale 1, 39 at the most)
 const PRIDE_TIP = 40; // how far the pride rock's ledge juts out in front of its face
@@ -55,12 +71,25 @@ const CUB_ARM = 30; // after it has been this far from both edges since it was l
 const CUB_HOME = 32; // where a called cub sits, out from the rock's x, under the ledge's tip
 const CUB_BOUND = 26; // art px a second, bounding home, or faster so it takes at most 6 s
 const QUIET = [50, 20]; // with no cub straying, the lion calls the farthest cub after 50-70 s
+const CUB_STRIDE = [LION_CUB.stride / STANCE, 0.7]; // px a stride, seconds a stride to finish it
+const BOUND_LEN = 14; // px a bound covers: one gather and one flight
+const BOUND_GROUND = 0.25; // the share of a bound spent gathered on the ground
+const BOUND_AIR = 2; // rows the cub rises at the top of a bound
+const POUNCE = [0.5, 1.3, 2.2, 2.8]; // seconds: bow, wiggle, spring and land, stand again
+const CUB_RISE = 0.4; // seconds a cub takes to get up out of a rest
+const CUB_EASE = 0.25; // seconds a cub takes to ease into a stop
+const CUB_RESTS = ["sit", "pounce"]; // what a stopped cub does: sit, or play
+const ACACIA_MATURE = 3.5; // stages an acacia takes to reach full size
+const ZEBRA_GAP = 17; // from the zebra's rump to its foal's: the foal's nose stops short of her tail
+const BROWSE_REACH = 2; // rows above or below the leaves that the muzzle and its tongue still meet
+const PUDDLE_FADE = 4; // seconds the giraffe's pool takes to dry after it walks away
 const MISTS = 5;
 const MOTES = 18;
 
 const LIGHT = {
   acacia: ["#dcd47e", "#b8b25c", "#8d9440", "#66702e"],
   trunk: ["#6e5038", "#543a28"],
+  groundShadow: "rgba(70, 50, 25, 0.22)", // the soft shadow every animal, plant and rock casts on the ground
   thorn: "#4a3420",
   scrub: ["#aaa25c", "#8d8646", "#6f6837", "#524e29"],
   hill: ["#b4c4d6", "#9bb1c8", "#8399b5"],
@@ -72,17 +101,36 @@ const LIGHT = {
   flower: ["#fff8e6", "#ffd23f", "#f08aa8", "#b78cf0"],
   stem: "#7d8a3a",
   elephant: ["#9a9089", "#746b65", "#d7a196", "#f6eedc", "#2b2623"],
+  elephantRoar: "#6a5e56",
+  elephantDust: "#c8a070",
   giraffe: ["#eab25c", "#b8762e", "#6d4520", "#fbeccb"],
+  leaf: "#9aa648",
   zebra: ["#e9e4d8", "#262220", "#b3a998"],
+  horseDust: "#d8bd8c",
   wildebeest: ["#5d524d", "#382f2b", "#cdbfae"],
-  lion: { T: "#d9a25a", S: "#b9803f", M: "#8e5a2b", N: "#6e4220", P: "#f2d59c", D: "#4e2d17", e: "#4e2d17" },
+  // The lion's four coat tones (H, T, S, U), far legs (F), pale, dark, the mane's four (g to k) and
+  // his roar's rings of sound.
+  lion: {
+    H: "#eec078",
+    T: "#d9a25a",
+    S: "#bd7f44",
+    U: "#96593a",
+    F: "#a86a40",
+    P: "#f4dcae",
+    D: "#3a2014",
+    E: "#8e5a2b",
+    g: "#c4853a",
+    m: "#9c5c28",
+    n: "#6a3b1d",
+    k: "#432519",
+    roar: "#8e5a2b",
+  },
   cheetah: { T: "#e2b464", S: "#bf8d48", P: "#f6e6c4", D: "#2e2218", e: "#2e2218" },
-  roar: "#8e5a2b",
   secretary: ["#8f97a0", "#2b2f36", "#f08a3c", "#f6f2ea"],
   roller: ["#b9a0e8", "#2aa3a0", "#2f4fa6", "#1f2a3c"],
   rollerDepth: ["#7fd6cf", "#27306e", "#9c9a62"],
   flamingo: ["#f4a0bc", "#e56b8f", "#2a2630"],
-  vulture: ["#3a2f2a", "#000000", "#000000", "#c8a8a0", "#a89a90"],
+  vultureAfrica: ["#3a2f2a", "#000000", "#000000", "#c8a8a0", "#a89a90"],
   dust: ["#fbe3a2", "#f2c46a"],
   sun: ["#ffd15a", "#ffe9a6"],
   mist: "#ffd98a",
@@ -96,6 +144,7 @@ const LIGHT = {
 const DARK = {
   acacia: ["#7c8a5a", "#606f4a", "#4a5a3c", "#34412c"],
   trunk: ["#5a4234", "#42302a"],
+  groundShadow: "rgba(0, 0, 0, 0.3)",
   thorn: "#1e1610",
   scrub: ["#6a7048", "#525a38", "#3e4530", "#2e3424"],
   hill: ["#48577a", "#3c4a6a", "#2f3c58"],
@@ -107,17 +156,34 @@ const DARK = {
   flower: ["#e8e4f0", "#c9a84a", "#a87090", "#7e6cb0"],
   stem: "#4a5a3a",
   elephant: ["#4f4a5c", "#3a3646", "#8a6f7a", "#c9c2b0", "#15131c"],
+  elephantRoar: "#e6dcc6",
+  elephantDust: "#6a5a4c",
   giraffe: ["#9a7440", "#6a4a2a", "#3a2818", "#b8a478"],
+  leaf: "#4a5a3c",
   zebra: ["#a9a7b4", "#1a1820", "#7c7a88"],
+  horseDust: "#6a5a48",
   wildebeest: ["#3a3642", "#24212a", "#7c7a88"],
-  lion: { T: "#9c7a52", S: "#7e6040", M: "#5e4330", N: "#46311f", P: "#c8b08a", D: "#2a1f18", e: "#2a1f18" },
+  lion: {
+    H: "#b08e62",
+    T: "#9c7a52",
+    S: "#7e6040",
+    U: "#5a4234",
+    F: "#6a503a",
+    P: "#c8b08a",
+    D: "#221a16",
+    E: "#5e4330",
+    g: "#84633e",
+    m: "#654830",
+    n: "#463224",
+    k: "#2e211c",
+    roar: "#e8d4a8",
+  },
   cheetah: { T: "#9e8058", S: "#866844", P: "#b8aa9a", D: "#2a2224", e: "#2a2224" },
-  roar: "#e8d4a8",
   secretary: ["#5b6270", "#1e2026", "#c57532", "#b9bcc6"],
   roller: ["#7e6aa6", "#1f6e72", "#22346e", "#141a2a"],
   rollerDepth: ["#4a9c98", "#1a2150", "#6e6c48"],
   flamingo: ["#c77c98", "#a85a78", "#1c1a22"],
-  vulture: ["#241d1a", "#000000", "#000000", "#8a6e68", "#6e645c"],
+  vultureAfrica: ["#241d1a", "#000000", "#000000", "#8a6e68", "#6e645c"],
   dust: ["#6c6a92", "#55557e"],
   sun: ["#e4e4f6", "#5a5f9a"],
   mist: "#3a3560",
@@ -128,47 +194,33 @@ const DARK = {
   haze: "#0d0c18",
 };
 
-// An umbrella thorn, the wide-canopy family's build: short and very wide. A thick dark trunk forks
-// low into three heavy limbs that rise to one canopy, flat beneath and semi-flat on top, with a
-// feathery edge. Its canopy spans 62 to 92 percent of its height and twice its height across.
+// An umbrella thorn, on the wide-canopy family's build (kit/widecanopy.js): a thin trunk that forks into a
+// fan of branches under a flat roof of leaf clumps, twice its height across. The kit's acaciaGeom gives
+// the roof's rows and centre, which the giraffe's browse and the perches below read too.
 function acacia(g, p, s, base) {
-  const { pal } = g;
-  const total = Math.max(5, Math.round(ACACIA_ROWS * p.scale * s));
-  const lean = p.seed & 1 ? 1 : -1;
-  const fork = Math.round(total * 0.32);
-  const foot = total >= 24 ? 3 : 2;
-  for (let r = 0; r < fork; r += 1) {
-    const x = p.x + Math.round(lean * (r / fork)) - (foot >> 1);
-    // The original's bark: the lighter brown, with the darker one only on every third row.
-    rect(g, pal.trunk[r % 3 === 0 ? 1 : 0], x, base - 1 - r, foot, 1);
-  }
-  const sway = wind(g.time, p.x);
-  const forkX = p.x + lean;
-  const forkY = base - fork;
-  const under = base - Math.round(total * 0.62);
-  const half = Math.round(total * 0.95);
-  const cx = forkX + sway + lean;
-  for (const f of [-0.6, 0, 0.55]) {
-    const ex = cx + Math.round(half * f);
-    const side = f > 0 ? 1 : -1;
-    line(g, pal.trunk[0], forkX, forkY, ex, under);
-    line(g, pal.trunk[0], forkX + side, forkY, ex + side, under); // two wide all the way up
-  }
-  // The canopy: a superellipse, flat beneath and flattened on top, its edge thinned to look feathery.
-  const H = Math.max(3, Math.round(total * 0.3));
-  const top = under - H + 1;
-  // Lit from above across the whole canopy: only its lowest rows take the darker tones, as today's
-  // thin crown did, so a canopy this wide keeps the pale, sunlit green of the savanna.
-  const shade = foliage({ cx, top, w: half * 2, h: H * 3 }, pal.acacia, p.seed);
-  for (let r = 0; r < H; r += 1) {
-    const u = (H - r) / H;
-    const w = Math.round(half * Math.max(0, 1 - u ** 3) ** (1 / 3));
-    for (let x = cx - w; x <= cx + w; x += 1) {
-      const edge = x - (cx - w) < 2 || cx + w - x < 2 || r === 0;
-      if (edge && hash(x, r, p.seed) < 0.35) continue;
-      rect(g, shade(x, top + r), x, top + r, 1, 1);
-    }
-  }
+  acaciaTree(g, p, s, base);
+}
+
+// The top of a full-grown umbrella thorn's canopy, where a vulture's feet go: the roof's top row (acaciaGeom),
+// swayed with the wind at `time`.
+function acaciaTop(p, groundY, time) {
+  const geom = acaciaGeom(p, 1, groundY + (p.layer < 1 ? 1 : p.depth), time);
+  return { x: geom.cx, y: geom.top + 1 };
+}
+
+// Where a vulture may perch: the full-grown acacias.
+function perchSpots(f) {
+  const trees = f.plants.map((p, order) => ({ p, order })).filter(({ p }) => p.kind === "acacia");
+  const spots = trees
+    .filter(({ p }) => p.shown - p.born >= ACACIA_MATURE)
+    .map(({ p, order }) => ({ x: p.x, order, top: (time) => acaciaTop(p, f.groundY, time) }));
+  const covers = trees.map(({ p, order }) => ({
+    x: p.x,
+    order,
+    y: acaciaTop(p, f.groundY, 0).y,
+    reach: acaciaGeom(p, 1, 0, 0).half,
+  }));
+  return unhidden(spots, covers, f.time);
 }
 
 function kopjeRows(p, s) {
@@ -386,7 +438,7 @@ function generate(ctx) {
     }
   }
   // Nothing stands in front of the pride rock, and no crown overhangs it or its shoulder.
-  const crown = (p) => (p.kind === "acacia" ? Math.round(ACACIA_ROWS * p.scale * 0.95) + 4 : 3);
+  const crown = (p) => (p.kind === "acacia" ? acaciaGeom(p, 1, 0, 0).half + 4 : 3);
   const clear = ["kopje", "acacia", "scrub", "mound", "dead"];
   const out = prideDir(prideX, cols);
   const lo = prideX - (out > 0 ? PRIDE_BACK : PRIDE_TIP);
@@ -407,279 +459,109 @@ function soil(pal, x, y, depth, turf) {
 
 // Creatures
 
-// The standing lion's legs, for the roar: each leg's column and thigh width.
-const LION_LEGS = { hindNear: [1, 3], hindFar: [5, 2], foreFar: [9, 2], foreNear: [12, 3] };
-// Roaring, the standing lion lifts his head a row, the jaw starting to drop, then opens it wide. An
-// ear shows in the mane behind his face.
-const LION_RAISED = [
-  "..............NNNN.....",
-  ".............NMMMMMN...",
-  "............NMMTMMMMN..",
-  "...........NMMMTMTTTTT.",
-  "...........NMMMMMTeTTTD",
-  "...........NMMMMMTTTPPP",
-  "...........NMMMMMTTPPP.",
-  ".....TTTTTTNMMMMMSSDDD.",
-  "...TTTTTTTTNMMMMMMPDD..",
-  "..TTTTTTTTTNMMMMMMMPP..",
-  ".TTTTTTTTTTTNMMMMMMN...",
-  ".TTTTTTTTTTTTNMMMMN....",
-  ".TSSSSSSSSSSSPPPTT.....",
-];
-const LION_ROAR = [
-  ".............NNNNN.....",
-  "............NMMMMMMN...",
-  "...........NMMMTMMTTT..",
-  "...........NMMMTMTTTTTD",
-  "...........NMMMMMTeTTPP",
-  "...........NMMMMMTTTPPP",
-  "...........NMMMMMTTDDD.",
-  ".....TTTTTTNMMMMMTDDDD.",
-  "...TTTTTTTTNMMMMMMSPPP.",
-  "..TTTTTTTTTNMMMMMMMNN..",
-  ".TTTTTTTTTTTNMMMMMMN...",
-  ".TTTTTTTTTTTTNMMMMN....",
-  ".TSSSSSSSSSSSPPPTT.....",
-];
-// The mane bristling round its edge, every other beat of the roar.
-const LION_BRISTLE = [
-  "............N.....N....",
-  "...........N...........",
-  "..........N............",
-  ".......................",
-  "..........N............",
-  ".......................",
-  "..........N............",
-];
-const ROAR_RINGS = [0.3, 0.8, 1.3]; // when each ring leaves his mouth, in seconds into the roar
-
-// A maned lion, drawn by the cat family's felidAt, or roaring. He paces his ledge and rests on it:
-// his feet stand on the rock at row y. While l.roar holds the seconds into a roar, he stands and roars.
+// A maned lion, drawn by the cat family's felidAt: he paces his ledge and rests on it, his feet on the
+// rock at row y. While l.roar holds the seconds into a roar, he stands and roars, his mane bristling
+// and rings of sound leaving his mouth.
 function lionAt(g, l, y, time) {
-  if (l.roar != null) {
-    roaringLionAt(g, l, y, g.pal.lion);
-    return;
-  }
+  if (g.trace) return g.trace.draw(lionAt, g, l, y, time);
   felidAt(g, { ...l, kind: "lion", x: l.x + l.dir * LION_FELID, y }, time);
 }
 
-// The lion standing four-square and roaring, l.roar seconds in: his head lifts, his mouth opens wide
-// and his mane bristles while rings of sound spread from it, fading. His tail hangs at the rump.
-function roaringLionAt(g, l, y, colours) {
-  const x = Math.round(l.x);
-  const r = l.roar;
-  const px = (colour, dx, dy, w, h) => part(g, colour, x - 4, y, l.dir, dx, dy, w, h);
-  px(colours.S, 0, -8, 1, 2);
-  px(colours.N, -2, -7, 2, 2);
-  const open = r >= 0.25 && r < 1.75;
-  sprite(g, open ? LION_ROAR : LION_RAISED, colours, x - 4, y - 5, l.dir, 0, LION_ROAR.length);
-  if (open && Math.floor(r * 4) % 2 === 0) {
-    sprite(g, LION_BRISTLE, colours, x - 4, y - 5, l.dir, 0, LION_ROAR.length);
-  }
-  for (const [[dx, w], colour] of [
-    [LION_LEGS.hindFar, colours.S],
-    [LION_LEGS.foreFar, colours.S],
-    [LION_LEGS.hindNear, colours.T],
-    [LION_LEGS.foreNear, colours.T],
-  ]) {
-    px(colour, dx, -5, w, 2);
-    px(colour, dx, -3, Math.max(2, w - 1), 3);
-  }
-  const mouth = x - 4 + l.dir * 23 + (l.dir > 0 ? 0 : 1);
-  for (const start of ROAR_RINGS) {
-    const u = (r - start) / 0.9;
-    if (u >= 0 && u < 1) ringAt(g, mouth, y - 13, l.dir, 3 + u * 12, 0.9 * (1 - u));
-  }
+// What the cub is doing: "bound", "walk" (feet moving, including a stride it is finishing), "stand",
+// "sit" or "pounce" (the stopped poses).
+function cubMode(c) {
+  if (c.pose === "bound") return "bound";
+  if (c.moving || (c.c ?? 0) - Math.floor(c.c ?? 0) > 1e-6) return "walk";
+  if (c.pose === "stand" || c.pose === "up") return "stand";
+  if (c.state === "sit") return c.pose === "pounce" ? "pounce" : "sit";
+  return "stand";
 }
 
-// One ring of the roar: an arc ahead of the mouth at (mx, my), tilted up a little.
-function ringAt(g, mx, my, dir, radius, alpha) {
-  const seen = new Set();
-  g.ctx.globalAlpha = alpha;
-  for (let a = -60; a <= 50; a += 4) {
-    const rad = ((a - 15) * Math.PI) / 180;
-    const x = mx + dir * Math.round(Math.cos(rad) * radius);
-    const y = my + Math.round(Math.sin(rad) * radius);
-    if (seen.has(`${x},${y}`)) continue;
-    seen.add(`${x},${y}`);
-    rect(g, g.pal.roar, x, y, 1, 1);
-  }
-  g.ctx.globalAlpha = 1;
-}
+const CUB_SHADOW = "rgba(40, 25, 10, 0.2)";
 
-// A lion cub, facing right as written, in the lion's palette: T tawny, S tawny shade, P pale, D dark,
-// e eye. A big round head with big ears held above a short body. Rows 0 to 5 stand on legs that
-// CUB_LEGS gives as each leg's column and width.
-const CUB_WALK = [".....SS.SS.", ".....STTTT.", ".....TTTeTT", "TTTTTTTTTPD", "TTTTTTTTPPP", ".SSSSSPPP.."];
-const CUB_LEGS = { hindNear: [1, 2], hindFar: [3, 1], foreFar: [6, 1], foreNear: [7, 2] };
-const CUB_SWING = [-1, 0, 1, 0];
-// Standing and looking up, as the lion roars: the muzzle tilts up and the ears lie back.
-const CUB_STAND_UP = ["........TPD", "....STTTTPP", "....SSTeTT.", "TTTTTTTTTT.", "TTTTTTTTPP.", ".SSSSSPPP.."];
-// Sitting on its haunches, forepaws together in front; and sitting, looking up.
-const CUB_SIT = [
-  "..SS.SS..",
-  "..STTTT..",
-  "..TTTeTT.",
-  "..TTTTPD.",
-  ".TTTTPP..",
-  "TTTTTPP..",
-  "TTTTTPT..",
-  "SSTTSPTP.",
-];
-const CUB_SIT_UP = [
-  ".....TPD.",
-  ".STTTTPP.",
-  ".SSTeTT..",
-  "..TTTTP..",
-  ".TTTTPP..",
-  "TTTTTPP..",
-  "TTTTTPT..",
-  "SSTTSPTP.",
-];
-// Bounding home: stretched out in the air with the legs reaching, then gathered on the ground with
-// the back arched. Legs included; the tail runs back and its tip flicks up.
-const CUB_BOUND_OUT = [
-  "......SS.SS.",
-  "......STTTT.",
-  "D.....TTTeTT",
-  "SSTTTTTTTTPD",
-  "..TTTTTTTPPP",
-  ".TT.SSSPP.TT",
-  "TT.........T",
-];
-const CUB_BOUND_IN = [
-  "......SS.SS.",
-  "......STTTT.",
-  "D..TTTTTTeTT",
-  "SSTTTTTTTTPD",
-  "..TTTTTTTPP.",
-  "...STTSPT...",
-  "....TT.TT...",
-];
+// A shape the build knows, for a rest pose name the scene uses.
+const shapeOf = (name) =>
+  name === "pounce" ? "bow" : ["stand", "sit", "lie", "bow", "arch"].includes(name) ? name : "sit";
 
-// A lion cub on the plain, its middle at c.x. It walks, or sits when it stops, blinking now and
-// then. While the lion calls, c.pose takes over: "stand", "up" (standing, looking up), "sitUp" or
-// "bound".
+// A lion cub, x at the middle of its body, in the lion's palette (g.pal.lion). Walking, standing, sitting,
+// looking up, pouncing (c.pose "pounce", picked by rest() as a stop's pose) and bounding.
 function cubAt(g, c, time) {
-  const { T: tawny, S: shade, D: dark, P: pale } = g.pal.lion;
-  const y = g.groundY + 7;
-  const x = Math.round(c.x) - c.dir * 5;
-  const pose = c.pose ?? (c.state === "walk" ? "walk" : "sit");
-  const blink = pose === "sit" && Math.floor(time * 4 + c.phase * 3) % 14 === 0;
-  const colours = { T: tawny, S: shade, P: pale, D: dark, e: blink ? tawny : dark };
-  const px = (colour, dx, dy, w, h) => part(g, colour, x, y, c.dir, dx, dy, w, h);
-  if (pose === "sit" || pose === "sitUp") {
-    px(shade, -1, -1, 1, 1);
-    px(dark, -2, -1, 1, 1);
-    sprite(g, pose === "sit" ? CUB_SIT : CUB_SIT_UP, colours, x, y, c.dir, 0, CUB_SIT.length);
-    return;
-  }
-  if (pose === "bound") {
-    const out = Math.floor(c.phase) % 2 === 0;
-    const grid = out ? CUB_BOUND_OUT : CUB_BOUND_IN;
-    sprite(g, grid, colours, x, y - (out ? 1 : 0), c.dir, out ? 0 : 1, grid.length);
-    return;
-  }
-  px(shade, -2, -5, 2, 1);
-  px(dark, -2, -6, 1, 1);
-  sprite(g, pose === "up" ? CUB_STAND_UP : CUB_WALK, colours, x, y - 2, c.dir, 0, CUB_WALK.length);
-  const walking = pose === "walk";
-  const k = walking ? Math.floor(c.phase) % 4 : 0;
-  const leg = (colour, [dx, w], phase) => {
-    const foot = walking ? CUB_SWING[phase % 4] : 0;
-    px(colour, dx, -2, w, 1);
-    px(colour, dx + foot, -1, w, 1);
+  if (g.trace) return g.trace.draw(cubAt, g, c, time);
+  const pal = g.pal.lion;
+  const dir = c.dir;
+  const x = Math.round(c.x);
+  const y = c.y ?? g.groundY + 7;
+  const mode = cubMode(c);
+  const spec = c.pose === "up" || c.pose === "sitUp" ? LION_CUB_UP : LION_CUB;
+  const since = c.since == null ? 100 : time - c.since;
+  const still = c.still ?? 0;
+  let pose = {
+    phase: 0,
+    amp: 0,
+    bodyX: c.x * dir,
+    sway: Math.sin(time * 1.4 + (c.seed ?? 0) * 6) * 0.6,
+    breath: Math.sin(time * 2.2) > 0.2 ? 1 : 0,
+    blink: ((time + (c.seed ?? 0) * 7) / 3.3) % 1 < 0.04,
+    headUp: c.look ?? 0,
+    rest: null,
   };
-  leg(shade, CUB_LEGS.hindFar, k + 2);
-  leg(shade, CUB_LEGS.foreFar, k);
-  leg(tawny, CUB_LEGS.hindNear, k);
-  leg(tawny, CUB_LEGS.foreNear, k + 2);
-}
-
-// A giraffe, a head taller than anything else on the plain: long legs, a body sloping down to the
-// rump, and a long neck rising at a steep slant with a dark mane, up to the ossicones. When it
-// stops it browses, its head dipping into the acacia leaves. Its palette is giraffe: [fur, patch,
-// dark, muzzle].
-function giraffeAt(g, n, time) {
-  const [fur, patch, dark, muzzle] = g.pal.giraffe;
-  const x = Math.round(n.x);
-  const y = g.groundY + 7;
-  const step = Math.floor(n.phase) % 2;
-  const walking = n.state === "walk";
-  const px = (colour, dx, dy, w, h) => part(g, colour, x, y, n.dir, dx, dy, w, h);
-  const leg = (dx, lift) => px(dark, dx, -12, 1, lift ? 10 : 12);
-  leg(3, walking && step === 0);
-  leg(5, walking && step === 1);
-  leg(11, walking && step === 1);
-  leg(13, walking && step === 0);
-  px(fur, 2, -17, 13, 5);
-  px(fur, 8, -18, 7, 1);
-  px(fur, 11, -19, 4, 1);
-  px(patch, 4, -16, 2, 2);
-  px(patch, 8, -15, 2, 2);
-  px(patch, 11, -17, 2, 2);
-  px(patch, 6, -14, 1, 1);
-  px(dark, 1, -16, 1, 5);
-  const dip = !walking && Math.sin(time * 0.8 + n.phase) > 0.3 ? 1 : 0;
-  for (let i = 0; i < 12; i += 1) {
-    const nx = 12 + Math.round(i * 0.42);
-    px(fur, nx, -20 - i, 3, 1);
-    px(patch, nx - 1, -20 - i, 1, 1);
-    if (i % 4 === 2) px(patch, nx + 1, -20 - i, 1, 1);
+  let air = 0;
+  if (mode === "walk") {
+    const phase = frac(c.c ?? 0);
+    pose = { ...pose, phase, amp: c.amp ?? 1, sway: Math.sin(phase * 2 * Math.PI) * 0.75, breath: 0 };
+    // Getting up out of a rest: the sit eases back to standing as the first step starts.
+    if (c.lastPose && since < CUB_RISE) pose.rest = { from: shapeOf(c.lastPose), to: "stand", u: since / CUB_RISE };
+  } else if (mode === "sit") {
+    const from = c.wasPose === "pounce" ? POUNCE[3] : 0.1;
+    pose.amp = Math.max(0, 1 - still / CUB_EASE);
+    pose.rest = { from: "stand", to: "sit", u: (still - from) / 0.5 };
+  } else if (mode === "stand") {
+    pose.amp = Math.max(0, 1 - still / CUB_EASE);
+  } else if (mode === "pounce") {
+    const t = time - (c.poseAt ?? time);
+    const [bow, wiggle, spring, land] = POUNCE;
+    pose.amp = 0;
+    if (t < bow) pose.rest = { from: "stand", to: "bow", u: t / bow };
+    else if (t < wiggle) {
+      pose.rest = { from: "stand", to: "bow", u: 1 };
+      pose.sway = Math.sin((t - bow) * 22) * 0.9;
+    } else if (t < spring) {
+      const s = (t - wiggle) / (spring - wiggle);
+      air = Math.round(BOUND_AIR * 1.5 * Math.sin(Math.PI * clamp(s * 1.6, 0, 1)));
+      pose.amp = s < 0.65 ? 1 : 0;
+      pose.phase = 0.85;
+      pose.rest = { from: "bow", to: "stand", u: s < 0.65 ? s : 1 };
+    } else if (t < land) pose.rest = { from: "bow", to: "stand", u: (t - spring) / (land - spring) };
+  } else if (mode === "bound") {
+    const u = frac(c.bd ?? 0);
+    pose.sway = 1.2;
+    pose.headUp = 0;
+    if (u < BOUND_GROUND) {
+      // Gathered: the back arched, the feet drawn in under it.
+      pose.rest = { from: "stand", to: "arch", u: 1 };
+    } else {
+      // In the air: stretched, the forelegs reaching and the hind pushed back, rising and falling.
+      const s = (u - BOUND_GROUND) / (1 - BOUND_GROUND);
+      air = Math.round(BOUND_AIR * Math.sin(Math.PI * s));
+      pose.amp = 1;
+      pose.phase = 0.85;
+      pose.rest = { from: "arch", to: "stand", u: clamp(s * 1.4, 0, 1) };
+    }
   }
-  const hy = -34 + dip;
-  px(fur, 16, hy, 4, 3);
-  px(muzzle, 19, hy + 1, 2, 2);
-  px(dark, 17, hy - 2, 1, 2);
-  px(dark, 19, hy - 2, 1, 2);
-  px(dark, 18, hy + 1, 1, 1);
-}
-
-// A plains zebra on the deer family's build, heavier: a thick neck with an upright black mane, a long
-// head with a dark muzzle, chevron stripes that follow the body, a grey belly, banded near legs and
-// grey far legs. The foal (scale below 1) is drawn on its own. W white, K black, S the belly's grey.
-const ZEBRA = [
-  "..............KK....",
-  "............KKWWWW..",
-  "...........KWKWKWW..",
-  "..........KKWWWWWWWK",
-  ".........KWWKWW..WKK",
-  "........KWKWWKW.....",
-  ".WWWWKWKWKWKWW......",
-  "KKKKKKWKWKWWKW......",
-  "KWWWWKWKWWKWKW......",
-  "KWKKKWWWWWWWWW......",
-  ".SSSSSSSSSSSSS......",
-];
-const ZEBRA_FOAL = [
-  "........KK..",
-  ".......KWWWK",
-  "......KWKWWW",
-  ".....KKWWW..",
-  ".WWKWKWKW...",
-  "KKWKWKWKW...",
-  "KWWKWWWWW...",
-  ".SSSSSSS....",
-];
-// Its palette is zebra: [white, black, belly].
-function zebraAt(g, z, _time) {
-  const [white, black, belly] = g.pal.zebra;
-  const foal = z.scale < 1;
-  const grid = foal ? ZEBRA_FOAL : ZEBRA;
-  const tall = foal ? 4 : 6;
-  const w = foal ? 1 : 2;
-  const x = Math.round(z.x);
-  const y = g.groundY + 7;
-  const walking = z.state === "walk";
-  (foal ? [2, 3, 6, 7] : [2, 4, 10, 12]).forEach((dx, i) => {
-    const up = walking && (Math.floor(z.phase) % 2 === 0) === (i === 0 || i === 3);
-    const h = up ? tall - 1 : tall;
-    const far = i === 1 || i === 2;
-    part(g, far ? belly : white, x, y, z.dir, dx, -tall, w, h);
-    if (!far) for (let r = 1; r < h - 1; r += 2) part(g, black, x, y, z.dir, dx, -tall + r, w, 1);
-    part(g, black, x, y, z.dir, dx, -tall + h - 1, w, 1);
-  });
-  sprite(g, grid, { W: white, K: black, S: belly }, x, y - tall, z.dir, 0, grid.length);
+  const at = (dx) => (dir > 0 ? x - spec.mid + dx : x + spec.mid - dx);
+  const [s0, s1] = spec.shadow;
+  const lift = air > 0 ? 1 : 0;
+  g.ctx.fillStyle = CUB_SHADOW;
+  g.ctx.fillRect(Math.min(at(s0 + lift), at(s1 - lift)), y, Math.abs(s1 - s0) - 2 * lift, 1);
+  drawBody(
+    spec,
+    pal,
+    (dx, h, colour) => {
+      g.ctx.fillStyle = colour;
+      g.ctx.fillRect(at(dx), y - 1 - h - air, 1, 1);
+    },
+    pose,
+  );
 }
 
 // The great migration, far off along the horizon: a long file of wildebeest, each a few pixels of
@@ -702,14 +584,17 @@ function migration(g, p, s, base) {
   }
 }
 
-// A secretary bird, long-legged and crested, walking. Its palette is secretary: [grey, black,
-// face, white].
-function secretaryAt(g, b, _time) {
-  groundBirdAt(g, b, "secretary");
+// A secretary bird, long-legged and crested, built from parts (kit/groundbird.js): it walks, and
+// stopped it stamps its prey, preens or stretches a wing. Its palette is secretary: [grey, black,
+// face, white], with groundShadow beside it.
+function secretaryAt(g, b, time) {
+  if (g.trace) return g.trace.draw(secretaryAt, g, b, time);
+  groundBirdAt(g, b, "secretary", time);
 }
 
 // A lilac-breasted roller in flight, the small flyers' design in its own colours.
 function rollerAt(g, r, time) {
+  if (g.trace) return g.trace.draw(rollerAt, g, r, time);
   flyerAt(g, r, time, "roller");
 }
 
@@ -771,6 +656,40 @@ function strayed(f, cub) {
   const gap = Math.min(cub.x, f.cols - cub.x);
   if (gap > CUB_ARM) cub.armed = true;
   return cub.armed && gap <= CUB_EDGE;
+}
+
+// Keeps a cub's clocks once a step: call it after wander() or call(), with x0 where the cub stood before
+// them. c.c is the stride clock (critters.js stride): a foot planted on the ground stays put, and a
+// cub that stops finishes its stride in CUB_STRIDE[1] s. c.amp eases the walk in and out. c.bd counts
+// bounds as the cub covers ground (a bound is BOUND_LEN px, not a stride). c.look eases the head up.
+function cubStep(f, c, x0, dt) {
+  const bounding = c.pose === "bound";
+  if (bounding) {
+    c.c = Math.round(c.c ?? 0);
+    c.moving = true;
+    c.still = 0;
+    c.bd = (c.bd ?? 0) + Math.abs(c.x - x0) / BOUND_LEN;
+  } else {
+    stride(c, x0, dt, CUB_STRIDE[0], CUB_STRIDE[1]);
+  }
+  const held = (c.c ?? 0) - Math.floor(c.c ?? 0) > 1e-6;
+  const go = c.moving || held ? 1 : 0;
+  c.amp ??= go;
+  c.amp += (go - c.amp) * Math.min(1, dt / (go ? 0.08 : 0.12));
+  if (Math.abs(go - c.amp) < 0.01) c.amp = go;
+  settle(f, c);
+  if (c.pose !== c.wasPose) {
+    c.wasPose = c.pose;
+    c.poseAt = f.time;
+  }
+  // The head: up while the lion roars (pose "up" or "sitUp"), and a glance up now and then when it
+  // is stopped, a pixel or two, so a standing or sitting cub is never still.
+  const stopped = !c.moving && !held;
+  const glance = stopped && frac(f.time / 4.7 + (c.seed ?? 0)) < 0.17 ? 0.5 : 0;
+  const goal = c.pose === "up" || c.pose === "sitUp" ? 1 : glance;
+  c.look ??= goal;
+  c.look += (goal - c.look) * Math.min(1, dt * 9);
+  if (Math.abs(goal - c.look) < 0.02) c.look = goal;
 }
 
 // The lion calls a cub home. A cub straying to an edge sets it off, or, when the lion has been quiet
@@ -838,6 +757,66 @@ function call(f, dt) {
   return looking ? [lion, cub, ...others] : [lion, cub];
 }
 
+// The pool: it starts under the muzzle as the giraffe lowers its head to drink, and is left to dry once
+// the giraffe walks on.
+function drink(f, giraffe) {
+  const x = f.extra;
+  const drinking = giraffe.active && giraffe.state !== "walk" && giraffe.pose === "drink";
+  if (drinking && !(x.puddle && x.puddle.end === null)) {
+    const [reach] = giraffeMuzzle("drink");
+    x.puddle = { x: Math.round(giraffe.x + giraffe.dir * reach), start: f.time, end: null };
+  } else if (!drinking && x.puddle) {
+    if (x.puddle.end === null) x.puddle.end = f.time;
+    else if (f.time - x.puddle.end > PUDDLE_FADE) x.puddle = null;
+  }
+}
+
+// Whether the browsing giraffe's head would be in an acacia's leaves where it stands, facing the way it
+// goes: the muzzle has to be under the roof's width and at the height of its leaves, in the rows and on the
+// centre acaciaGeom gives, which the painter draws from, at the tree's size now and in this frame's wind.
+// Plants not yet grown draw smaller, as they do on the page.
+function browsable(f, giraffe) {
+  const [reach, high] = giraffeMuzzle("browse");
+  const mx = giraffe.x + giraffe.dir * reach;
+  const my = f.groundY + 7 - 1 - high;
+  return f.plants.some((p) => {
+    if (p.kind !== "acacia") return false;
+    const s = smooth(clamp((p.shown - p.born) / ACACIA_MATURE, 0, 1));
+    const geom = acaciaGeom(p, s, f.groundY + p.depth, f.time);
+    if (geom.total < 20) return false;
+    return (
+      Math.abs(mx - geom.cx) <= geom.half * 0.7 && my <= geom.under + BROWSE_REACH && my >= geom.top - BROWSE_REACH
+    );
+  });
+}
+
+// What the giraffe does when it stops: browse if an acacia crown is in reach of its head, otherwise
+// drink or stand chewing.
+function giraffeStop(f, giraffe) {
+  return browsable(f, giraffe) ? ["browse"] : ["drink", "chew"];
+}
+
+// The pool the giraffe drinks from, a little water on the ground under its muzzle. It appears as the
+// giraffe starts to drink and dries after it has gone, with rings spreading from where it sips.
+function puddleAt(g, p, time) {
+  const [deep, light, white] = g.pal.water;
+  const grow = smooth(clamp((time - p.start) / 1.2, 0, 1));
+  const dry = p.end === null ? 1 : 1 - clamp((time - p.end) / PUDDLE_FADE, 0, 1);
+  if (dry <= 0) return;
+  const y = g.groundY + 7;
+  g.ctx.globalAlpha = grow * dry * 0.9;
+  rect(g, deep, p.x - 6, y, 13, 1);
+  rect(g, deep, p.x - 5, y + 1, 11, 1);
+  rect(g, light, p.x - 3, y, 7, 1);
+  if (p.end === null) {
+    const r = Math.floor(((time * 1.5) % 1) * 3);
+    g.ctx.globalAlpha = grow * 0.75;
+    rect(g, white, p.x - 1 - r, y, 1, 1);
+    rect(g, white, p.x + 1 + r, y, 1, 1);
+  }
+  g.ctx.globalAlpha = 1;
+}
+
 const extras = {
   init(f) {
     return {
@@ -847,12 +826,13 @@ const extras = {
       zebra: walker(f),
       foal: walker(f, 0.6),
       giraffe: walker(f),
+      puddle: null,
       secretary: walker(f),
       elephant: walker(f),
       calf: walker(f, 0.5),
       lion: walker(f),
       cheetah: walker(f),
-      cubs: Array.from({ length: 3 }, () => ({ ...walker(f), pose: null, armed: false })),
+      cubs: Array.from({ length: 3 }, () => ({ ...walker(f), pose: null, armed: false, seed: f.rand() })),
       call: null,
       roar: { next: Infinity },
       roller: { next: 3, bird: null },
@@ -870,7 +850,7 @@ const extras = {
     if (f.stage >= 2) enter(f, x.zebra);
     if (f.stage >= 4) {
       enter(f, x.giraffe);
-      if (!narrow(f)) enterBehind(f, x.foal, x.zebra, 9);
+      if (!narrow(f)) enterBehind(f, x.foal, x.zebra, ZEBRA_GAP);
     }
     if (f.stage >= 6 && !narrow(f)) enter(f, x.cheetah);
     if (f.stage >= 7) {
@@ -898,18 +878,30 @@ const extras = {
         m.y = f.groundY - 4 - f.rand() * 46;
       }
     }
-    wander(f, x.zebra, dt, { speed: 7, stride: 8, sit: [2, 5], walk: [3, 7] });
-    follow(x.foal, x.zebra, dt, 9);
-    x.foal.state = x.zebra.state;
-    x.foal.phase = x.zebra.phase;
-    wander(f, x.giraffe, dt, { speed: 5, stride: 5, sit: [4, 8], walk: [3, 6] });
-    wander(f, x.secretary, dt, { speed: 6, stride: 8, sit: [2, 4], walk: [2, 4] });
+    wander(f, x.zebra, dt, { speed: 7, stride: 8, sit: [4, 10], walk: [3, 7] });
+    rest(f, x.zebra, zebraPoses(x.zebra));
+    follow(x.foal, x.zebra, dt, ZEBRA_GAP);
+    for (const k of ["state", "phase", "timer", "pose"]) x.foal[k] = x.zebra[k];
+    settle(f, x.foal);
+    const giraffe = x.giraffe;
+    wander(f, giraffe, dt, { speed: 5, stride: 5, sit: [5, 9], walk: [3, 6] });
+    rest(f, giraffe, giraffe.state !== "walk" && !giraffe.pose ? giraffeStop(f, giraffe) : []);
+    drink(f, giraffe);
+    const secretaryX = x.secretary.x;
+    wander(f, x.secretary, dt, { speed: groundSpeed("secretary"), stride: 1, sit: [3.2, 8], walk: [2, 4] });
+    rest(f, x.secretary, groundPoses(x.secretary, "secretary"));
+    groundBirdStep(f, x.secretary, dt, "secretary", secretaryX);
     wander(f, x.elephant, dt, { speed: 4, stride: 4, sit: [4, 8], walk: [4, 8] });
+    settle(f, x.elephant);
     follow(x.calf, x.elephant, dt, 12);
     x.calf.state = x.elephant.state;
     x.calf.phase = x.elephant.phase;
+    x.calf.timer = x.elephant.timer;
+    settle(f, x.calf);
+    const before = new Map(x.cubs.map((c) => [c, c.x]));
     const called = call(f, dt);
-    if (!called.includes(x.lion)) {
+    if (called.includes(x.lion)) settle(f, x.lion);
+    else {
       pace(f, x.lion, dt);
       rest(f, x.lion, felidPoses("lion"));
     }
@@ -919,17 +911,36 @@ const extras = {
       rest(f, x.cheetah, felidPoses("cheetah"));
     }
     for (const cub of x.cubs) {
-      if (!called.includes(cub)) wander(f, cub, dt, { speed: 6, stride: 8, sit: [2, 6], walk: [2, 5] });
+      if (!cub.active) continue;
+      if (!called.includes(cub)) {
+        wander(f, cub, dt, { speed: 6, stride: 8, sit: [2, 6], walk: [2, 5] });
+        rest(f, cub, CUB_RESTS);
+      }
+      cubStep(f, cub, before.get(cub), dt);
     }
     if (f.stage >= 3 && !isNight(f)) {
+      // Now and then the roller stops on an acacia's crown, then flies on.
       const spawn = () => ({ y: 26 + f.rand() * 36 });
-      flyBy(f, x.roller, dt, { every: [5, 6], speed: 20, spawn });
-    }
+      flyByPerch(f, x.roller, dt, {
+        every: [5, 6],
+        speed: 20,
+        spawn,
+        spots: perchSpots,
+        small: "roller",
+        drop: 2,
+        odds: 0.3,
+        stay: [8, 16],
+      });
+    } else if (x.roller.bird?.visit) goHome(f, x.roller.bird);
     if (f.stage >= 6 && !isNight(f)) {
       const spawn = () => ({ y: 22 + f.rand() * 30 });
       flyBy(f, x.flamingo, dt, { every: [8, 9], speed: 13, spawn });
     }
-    for (const v of x.vultures) v.active = f.stage >= 5 && !isNight(f);
+    for (const v of x.vultures) {
+      v.active = f.stage >= 5 && !isNight(f);
+      if (v.active) circlerPerch(f, v, dt, { first: [15, 25], every: [50, 40], stay: [14, 26], spots: perchSpots });
+      else goHome(f, v);
+    }
   },
 
   // A low sun, or the moon at night, is in the sky behind everything.
@@ -951,9 +962,9 @@ const extras = {
     if (x.flamingo.bird && !isNight(f)) flamingoAt(g, x.flamingo.bird, f.time);
     for (const v of x.vultures) {
       if (!v.active) continue;
-      const c = soarAt(f.time, v);
-      raptorAt(g, { kind: "vulture", x: c.x, y: c.y, dir: c.dir }, { bank: c.bank });
+      circlerAt(g, "vultureAf", v, f.time);
     }
+    if (x.puddle) puddleAt(g, x.puddle, f.time);
     if (x.zebra.active) zebraAt(g, x.zebra, f.time);
     if (x.foal.active) zebraAt(g, x.foal, f.time);
     if (x.giraffe.active) giraffeAt(g, x.giraffe, f.time);
@@ -974,7 +985,7 @@ export default {
     hills: 2,
     kopje: 2.5,
     pride: 2.5,
-    acacia: 3.5,
+    acacia: ACACIA_MATURE,
     scrub: 2,
     mound: 2,
     dead: 1.5,

@@ -7,7 +7,7 @@ variant over the live scene. Import with absolute paths: `/js/kit/animals.js`, `
 `/copies/<scene>.js` for the scene's own painters and `...At` functions.
 
 ```js
-import { raptorAt } from "/js/kit/animals.js";
+import { hawkAt } from "/js/kit/flyers.js";
 
 export default {
   title: "Hawk climbs back after a stoop",
@@ -22,15 +22,16 @@ export default {
   variants: [
     {
       name: "A",
-      notes: "Flaps on every other frame.",
+      notes: "Beats its wings as it climbs.",
       // Draws at time t in the sprite box: x 40 is the pose x, walkers' feet stand on row 53.
       draw(g, t) {
-        raptorAt(g, { kind: "hawk", x: 40, y: 30 - t * 6, dir: 1 }, { bank: Math.floor(t * 8) % 2 === 0 });
+        // hawkAt draws the stoop t seconds in: from 1.2 s it opens its wings and beats back up.
+        hawkAt(g, { x: 40, y: 30 - t * 6, stoop: { t: 1.2 + t } }, t);
       },
       // Optional: the sequence in the live scene's coordinates (f.cols, f.groundY, f.plants).
       // Without it the sprite stands at the scene's centre, its box ground on the soil line.
       scene(g, t, f) {
-        raptorAt(g, { kind: "hawk", x: f.cols * 0.4 + t * 20, y: f.groundY - 8 - t * 40, dir: 1 });
+        hawkAt(g, { x: f.cols * 0.4 + t * 20, y: f.groundY - 8 - t * 40, stoop: { t: 1.2 + t } }, t);
       },
     },
   ],
@@ -47,15 +48,16 @@ another scene's palettes from `/copies/<scene>.js` (its default export's `palett
 
 ## The loop
 
-1. Post the module, then `uv run nursery render <scene> <name>`: it prints each variant's size,
-   tier and frames, writes `<name>.sheet.png` beside the module, and exits 1 when anything fails
+1. Post the module, then `uv run nursery render <scene> <name>`: it prints each variant's size
+   and frames, writes `<name>.sheet.png` beside the module, and exits 1 when anything fails
    to draw. Look at the sheet, then tell the user the proposal is waiting in the studio.
 2. When the user says they reviewed it, `uv run nursery proposals <scene>` prints the verdict (the
    chosen variant, or changes asked), their notes, whether the module changed since, and any
    pixel edits they saved on its frames.
 3. Changes asked: edit the module in place and raise `revision`; it shows as waiting again.
 4. Approved: build the chosen variant into the scene (SKILL.md steps 4 to 6), applying the user's
-   pixel edits on its frames exactly ([studio-edits.md](studio-edits.md)). The Inbox then shows it
-   as built; the user removes it there.
+   pixel edits on its frames exactly ([studio-edits.md](studio-edits.md)). Then move its files,
+   and any proposal that imports it, to `.nursery/<scene>/archive/`, so the Inbox holds only open
+   work.
 
 For a timed event, point the user to the scene view's Trigger row, which fires it now.

@@ -30,6 +30,10 @@
 // bow, mist and fireflies go on the ground canvas, behind the page; the drops stay in front.
 // Reduced motion grows the plants and draws none of it.
 //
+// Probe: `nursery verify` sets nursery.trace to an observer, and each animal driver in the kit then
+// starts with `if (g.trace) return g.trace.draw(driver, g, ...its arguments)`, which lets the observer see which
+// pixels it drew. On a page trace is undefined, so the line is skipped and nothing is drawn differently.
+//
 // Nothing here is stored: a reload plants a new random scene at stage 0.
 
 import { CELL, clamp, fade, P, rng, SOIL_ROWS, smooth } from "./kit/pixel.js";
@@ -490,7 +494,8 @@ export class Nursery {
     ctx.globalAlpha = 1;
 
     const time = this.reduced ? 0 : Math.floor(this.time * 8) / 8;
-    const g = { ctx, pal: this.pal.near, time, groundY: this.groundY, cols: this.cols };
+    // trace is the verification probe (nursery verify): undefined on a page, so nothing changes.
+    const g = { ctx, pal: this.pal.near, time, groundY: this.groundY, cols: this.cols, trace: this.trace };
     const extras = this.scene.extras;
     const paint = (p) => {
       const s = smooth(clamp((p.shown - p.born) / this.scene.mature[p.kind], 0, 1));

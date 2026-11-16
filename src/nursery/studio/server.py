@@ -19,6 +19,10 @@ for review. The user's choice and notes are saved as <name>.review.json, and pix
 proposal frame in <name>.edits/. `render` draws a proposal headless into <name>.sheet.png for its
 author to check, and `proposals` prints the reviews and edits.
 
+The Verify view lists the runs of `nursery verify` (.nursery/verify/<run>/findings.json), starts a
+new run, replays a finding with the checker's own harness (served from nursery/verify/), and saves
+the owner's triage marks to .nursery/verify/triage.json.
+
 Pages are served with no caching, so a reload shows the code as it is on disk. The modules come
 from js/; the scene copies (painters exported) and the poses in studio/shared/sprites.js are shared
 with nursery.catalog.
@@ -33,6 +37,7 @@ import json
 import re
 import shutil
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -53,8 +58,10 @@ from nursery.paths import (
     STUDIO,
     module_path,
 )
+from nursery.verify import run as verify
 
 NAME = re.compile(r"^[\w.-]+$")
+RUN_ID = re.compile(r"^\d{8}-\d{6}$")
 PROPOSAL = re.compile(r"^[\w-]+$")
 TYPES = {
     ".js": "text/javascript",
@@ -247,6 +254,112 @@ def edit_folder(parts: list[str]) -> tuple[Path, str] | None:
     return None
 
 
+def verify_runs() -> list[dict]:
+    """The runs with a findings.json, newest first, each with its counts by rule."""
+    out = []
+    for folder in sorted(verify.RUNS.glob("*/findings.json"), reverse=True):
+        if not RUN_ID.match(folder.parent.name):
+            continue
+        try:
+            record = json.loads(folder.read_text())
+        except ValueError:
+            continue
+        by_rule: dict[str, int] = {}
+        for f in record["findings"]:
+            by_rule[f["rule"]] = by_rule.get(f["rule"], 0) + 1
+        out.append(
+            {
+                "id": record["id"],
+                "started": record["started"],
+                "seconds": record["seconds"],
+                "scenes": record["scenes"],
+                "rules": record["rules"],
+                "fingerprint": record["fingerprint"],
+                "count": len(record["findings"]),
+                "byRule": by_rule,
+            }
+        )
+    return out
+
+
+class VerifyRunner:
+    """One `nursery verify` at a time, started from the studio, with its progress as it goes."""
+
+    def __init__(self) -> None:
+        self.lock = threading.Lock()
+        self.state: dict = {"running": False, "done": 0, "total": 0, "run": None, "exit": None}
+        self.lines: list[str] = []
+
+    def start(self, scenes: list[str], rules: list[str]) -> bool:
+        with self.lock:
+            if self.state["running"]:
+                return False
+            args = [sys.executable, "-m", "nursery", "verify", "--progress", *scenes]
+            for rule in rules:
+                args += ["--rule", rule]
+            process = subprocess.Popen(
+                args,
+                cwd=ROOT,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            self.state = {
+                "running": True,
+                "done": 0,
+                "total": 0,
+                "run": None,
+                "exit": None,
+                "scenes": scenes,
+                "started": time.time(),
+            }
+            self.lines = []
+        threading.Thread(target=self.follow, args=(process,), daemon=True).start()
+        return True
+
+    def follow(self, process: subprocess.Popen) -> None:
+        for raw in process.stderr or ():
+            line = raw.rstrip()
+            with self.lock:
+                if line.startswith("verify-progress: "):
+                    done, total = line.split(": ", 1)[1].split("/")
+                    self.state.update(done=int(done), total=int(total))
+                elif line.startswith("verify-run: "):
+                    self.state["run"] = line.split(": ", 1)[1]
+                elif line:
+                    self.lines = [*self.lines[-19:], line]
+        code = process.wait()
+        with self.lock:
+            self.state.update(running=False, exit=code)
+
+    def status(self) -> dict:
+        with self.lock:
+            return {**self.state, "lines": list(self.lines)}
+
+
+RUNNER = VerifyRunner()
+
+
+def save_triage(body: dict) -> None:
+    """Sets or clears one mark: {key, verdict: bug | strict | ignore | null, notes}."""
+    key = str(body["key"])
+    marks = verify.read_triage()
+    verdict = body.get("verdict")
+    if verdict is None:
+        marks.pop(key, None)
+    elif verdict in verify.VERDICTS:
+        marks[key] = {
+            "verdict": verdict,
+            "notes": str(body.get("notes") or "").strip(),
+            "run": body.get("run"),
+            "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+    else:
+        raise KeyError(verdict)
+    verify.RUNS.mkdir(parents=True, exist_ok=True)
+    verify.TRIAGE.write_text(json.dumps(marks, indent=1, sort_keys=True) + "\n")
+
+
 class Studio(http.server.BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
@@ -321,6 +434,10 @@ class Studio(http.server.BaseHTTPRequestHandler):
             self.send_file(BRAND_DIR / parts[1], BRAND_DIR)
         elif parts == ["scenes.json"]:
             self.send_file(SCENES_JSON, ROOT)
+        elif len(parts) == 2 and parts[0] == "verify" and parts[1].endswith((".js", ".html")):
+            self.send_file(verify.HERE / parts[1], verify.HERE)
+        elif len(parts) == 2 and parts[0] == "shared":
+            self.send_file(SHARED / parts[1], SHARED)
         else:
             return False
         return True
@@ -337,6 +454,30 @@ class Studio(http.server.BaseHTTPRequestHandler):
             self.send_json(saved(parts[2]))
         elif parts == ["api", "proposals"]:
             self.send_json({sid: proposals(sid, False) for sid in catalog.SCENE_IDS})
+        elif parts[:2] == ["api", "verify"]:
+            return self.send_verify(parts[2:])
+        else:
+            return False
+        return True
+
+    def send_verify(self, parts: list[str]) -> bool:
+        """/api/verify/runs, /run/ID, /evidence/ID/NAME.png, /status and /triage."""
+        if parts == ["runs"]:
+            self.send_json({"runs": verify_runs(), "fingerprint": verify.code_fingerprint()})
+        elif len(parts) == 2 and parts[0] == "run" and RUN_ID.match(parts[1]):
+            self.send_file(verify.RUNS / parts[1] / "findings.json", verify.RUNS)
+        elif (
+            len(parts) == 3
+            and parts[0] == "evidence"
+            and RUN_ID.match(parts[1])
+            and NAME.match(parts[2])
+            and parts[2].endswith(".png")
+        ):
+            self.send_file(verify.RUNS / parts[1] / parts[2], verify.RUNS)
+        elif parts == ["status"]:
+            self.send_json(RUNNER.status())
+        elif parts == ["triage"]:
+            self.send_json(verify.read_triage())
         else:
             return False
         return True
@@ -373,6 +514,15 @@ class Studio(http.server.BaseHTTPRequestHandler):
                 folder = scene_dir(parts[2]) / "proposals"
                 review = json.dumps(self.body(), indent=1) + "\n"
                 (folder / f"{parts[3]}.review.json").write_text(review)
+            elif parts == ["api", "verify", "start"]:
+                body = self.body() or {}
+                scenes = [str(x) for x in body.get("scenes") or [] if x in catalog.SCENE_IDS]
+                rules = [str(x) for x in body.get("rules") or [] if x in verify.RULE_NAMES]
+                if not RUNNER.start(scenes, rules):
+                    self.send(409)
+                    return
+            elif parts == ["api", "verify", "triage"]:
+                save_triage(self.body())
             elif len(parts) == 3 and parts[:2] == ["api", "baseline"]:
                 folder = scene_dir(parts[2])
                 folder.mkdir(parents=True, exist_ok=True)
@@ -494,7 +644,7 @@ def render(sid: str, name: str) -> int:
             if variant["frames"] > 1
             else "still"
         )
-        print(f"  {variant['name']}: {w}x{h} ({variant['tier']}), {motion}")
+        print(f"  {variant['name']}: {w}x{h} px, {motion}")
     if result.get("sheet"):
         path = STORE / sid / "proposals" / f"{name}.sheet.png"
         write_png(path, result["sheet"])

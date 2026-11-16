@@ -23,12 +23,14 @@ flowchart LR
         Studio
         Catalogue
         Preview
+        Verify
         Release
         BrandBuild["Brand build"]
     end
     Studio --> Package
     Catalogue --> Package
     Preview --> Package
+    Verify --> Package
     Release --> Package
     BrandBuild -- writes --> Files
     Catalogue -- writes --> Docs["docs/scenes/"]
@@ -45,10 +47,10 @@ imports scenes and the kit. A scene imports only the kit. A kit module imports o
 | Engine, scenes and kit | `src/nursery/assets/js/` | The code that omsync runs on its sign-in page. |
 | Mascot | `src/nursery/assets/brand/` | The grid of omsync's pixel mascot, and the files that `nursery brand` builds from it. |
 | Studio | `uv run nursery` | Shows each scene and each sprite from the code on disk. You edit pixels and review proposals here. |
-| Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `brand`, `preview` and `release`. Agents use most of them. |
+| Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `brand`, `preview`, `verify` and `release`. Agents use most of them. |
 | Working folder | `.nursery/<scene>/` | Your saved edits, the proposals and your reviews. Git ignores this folder. |
 | Catalogue | `docs/scenes/<scene>.md` | One file for each scene. It lists each element and the line of code that draws it. |
-| Skill | `.claude/skills/nursery-scene/` | The design rules and the steps that agents follow. |
+| Skills | `.claude/skills/` | The design rules (`nursery-scene`) and verification rules (`verify-nursery`). |
 
 ## Workflow 1: you edit pixels
 
@@ -114,6 +116,15 @@ sequenceDiagram
 6. Click Approve or Ask for changes.
 7. Tell the agent that you reviewed the proposal.
 8. When the Inbox shows the proposal as Built, click Clear built.
+
+### Check the art against the rules
+
+1. Open the Verify view and click Run verify (every scene, about 75 s) or This scene.
+2. Pick a finding on the right. It plays back the frames around the failure, zoomed on the animal,
+   with what the rule measured drawn over it. The red cells on the strip are the frames that fail.
+3. Mark the group Real bug, Rule too strict or Ignore, and add a note. The mark applies to that
+   animal and fault in every scene, and stays for later runs.
+4. Tell the agent you marked findings. It reads them with `uv run nursery verify --triage`.
 
 ## Release
 

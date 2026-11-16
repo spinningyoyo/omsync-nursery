@@ -2,50 +2,74 @@
 // cliffs behind. Watering brings the tide in. By day white-tailed tropicbirds (koaʻe kea) fly over,
 // trailing their long streamers; a pale ghost crab (ʻōhiki) scuttles on the sand, a moa (feral
 // chicken) pecks, a Hawaiian monk seal and her pup haul out and shuffle along, a honu swims with its
-// hatchling, a pua'a (feral pig) roots about, and a humpback whale spouts offshore. Where the waves
+// hatchling (and now and then hauls out to bask on the sand), a pua'a (feral pig) trots, roots and now and then wallows in the mud, and a humpback whale spouts offshore. Where the waves
 // break on the sand, spray flies up.
 
 // A feral cat (pōpoki) prowls the sand; its coat is one of eleven, picked as the scene loads.
 import {
+  CRAWL,
   crabAt,
+  crabPoses,
+  crawlX,
   felidAt,
   felidPoses,
-  flyerAt,
   groundBirdAt,
-  HOUSECAT_COAT_NAMES,
-  HOUSECAT_COATS,
+  groundBirdStep,
+  groundPoses,
+  groundSpeed,
+  honuAshoreAt,
   honuShellAt,
+  PUP_STRIDE,
+  puaaAt,
+  puaaPoses,
+  SEAL_STRIDE,
+  sealAt,
+  sealPoses,
+  whaleAt,
 } from "../kit/animals.js";
-import { enter, enterBehind, flyBy, follow, isNight, narrow, rest, walker, wander } from "../kit/critters.js";
+import { enter, enterBehind, follow, isNight, narrow, rest, settle, stride, walker, wander } from "../kit/critters.js";
+import { HOUSECAT_COAT_NAMES, HOUSECAT_COATS } from "../kit/felid.js";
+import { flyerAt } from "../kit/flyers.js";
+import { coconutPalm } from "../kit/palms.js";
+import { blobSpots, flyByPerch, goHome, unhidden } from "../kit/perch.js";
 import {
   blob,
   clamp,
   clearing,
   foliage,
   hash,
-  part,
   rect,
   row,
   scatter,
   smooth,
   sortPlants,
-  sprite,
   stroke,
   wind,
 } from "../kit/pixel.js";
 import { broadleafTree } from "../kit/trees.js";
 
-const PALM_ROWS = 40;
 const RIDGE_ROWS = 56;
+const MATURE = { tree: 3, ridge: 3, hibiscus: 2, taro: 1.5, dune: 1.5, paradise: 2, shell: 1, surfboard: 1 };
 const SEA_ROWS = 12; // the sea's height at full tide
 const CRABS = 1;
-// Small plants are sown at this share of their old number, so more sand shows and the animals stand
+// Small plants are sown at this share of the usual number, so more sand shows and the animals stand
 // out. The trees are not counted among them.
 const SMALL_PLANTS = 0.6;
 const SPRAY_MAX = 60; // droplets at most
 const GRAVITY = 60; // art pixels per second squared: a drop is in the air for up to 0.8 s
+// The honu hauls out by day every 40 to 70 s: it swims to the shore end of the sea, crawls up the sand
+// in two heaves, basks for 10 to 15 s, then crawls back down and swims off. While it is ashore the
+// scene would hold six ground animals, so the pua'a walks off the page and returns after.
+const HAUL_EVERY = [40, 30]; // seconds between hauls: 40 plus up to 30
+const HAUL_BASK = [10, 5]; // seconds basking: 10 plus up to 5
+const HAUL_HEAVES = 2; // heaves up the sand, and the same back down
+const HAUL_DEPTH = 6; // rows down the sand it settles
+const HAUL_SWIM = 6; // px/s on its way to the shore end
+const HAUL_ROOM = 14; // px kept clear of other ground animals when it settles
+const HAUL_SHY = 9; // an animal this close sends it back to the sea
 
 const LIGHT = {
+  groundShadow: "rgba(60, 50, 20, 0.22)", // the soft shadow every animal, plant and rock casts on the ground
   ...HOUSECAT_COATS.light,
   leaf: ["#bfe6a0", "#8bd070", "#58b45e", "#3a9150"],
   trunk: ["#b99672", "#957452"],
@@ -76,6 +100,8 @@ const LIGHT = {
   seal: ["#6e767e", "#e6dcc6", "#1f2328"],
   moa: ["#c9501c", "#23403a", "#e0242b", "#d9a62b"],
   pig: ["#4a3b32", "#2a211c", "#b98f7f"],
+  puaaMud: "#5a4231",
+  puaaDust: "#d8c08a",
   soil: ["#f7e8c4", "#eed7a8", "#dfc28c"],
   line: "rgba(255, 255, 255, 0.4)",
   wet: "#8a6a3c",
@@ -84,6 +110,7 @@ const LIGHT = {
 };
 
 const DARK = {
+  groundShadow: "rgba(0, 0, 0, 0.3)",
   ...HOUSECAT_COATS.dark,
   leaf: ["#8cc278", "#66a85a", "#478844", "#336b36"],
   trunk: ["#8f7352", "#6e563d"],
@@ -114,6 +141,8 @@ const DARK = {
   seal: ["#7d8790", "#cfc6b2", "#15181c"],
   moa: ["#d9622a", "#3f7566", "#ff4a4a", "#e8c04a"],
   pig: ["#a37c62", "#6a4a38", "#e8bfa8"],
+  puaaMud: "#4a362b",
+  puaaDust: "#8a7466",
   soil: ["#6a5a3c", "#5c4d33", "#4c3f2a"],
   line: "rgba(255, 255, 255, 0.1)",
   wet: "#1c1408",
@@ -121,46 +150,27 @@ const DARK = {
   haze: "#0b0b0b",
 };
 
+// A coconut palm: the palm-like family's build in kit/palms.js.
 function coconut(g, p, s, base) {
-  const { pal } = g;
-  const total = Math.max(5, Math.round(PALM_ROWS * p.scale * s));
-  const lean = p.seed & 1 ? 1 : -1;
-  const reach = Math.round(total * 0.2) * lean;
-  const sway = wind(g.time, p.x);
-  const width = total >= 22 ? 2 : 1;
-  for (let i = 0; i < total; i += 1) {
-    const bend = Math.round(reach * (i / total) ** 1.7 + sway * (i / total) ** 2);
-    rect(g, pal.trunk[i % 3 === 0 ? 1 : 0], p.x + bend - (width >> 1), base - 1 - i, width, 1);
-  }
-  const tx = p.x + reach + sway;
-  const ty = base - total;
-  const length = Math.max(3, Math.round(total * 0.42));
-  const wide = total >= 22 ? 3 : total >= 12 ? 2 : 1;
-  for (const [dx, dy, droop] of [
-    [1, -0.9, 0.45],
-    [1, -0.4, 0.7],
-    [1, 0.05, 0.9],
-    [1, 0.4, 1],
-  ]) {
-    stroke(g, tx, ty, dx, dy, length, droop, wide, [pal.leaf[2], pal.leaf[0]]);
-    stroke(g, tx, ty, -dx, dy, length, droop, wide, [pal.leaf[2], pal.leaf[0]]);
-  }
-  stroke(g, tx, ty, 0, -1, Math.max(2, length >> 1), 0, 1, [pal.leaf[1], pal.leaf[0]]);
-  if (total >= 14) {
-    rect(g, pal.coconut, tx - 1, ty + 1, 2, 2);
-    rect(g, pal.coconut, tx + 1, ty + 2, 2, 2);
-  }
+  coconutPalm(g, p, s, base);
 }
 
 function plumeria(g, p, s, base) {
   const { pal } = g;
+  // The broadleaf family's build (kit/broadleaf.js): thick boughs forking low, with white and pink
+  // flowers on the sunlit side of its clumps.
   broadleafTree(g, p, s, base, {
     rows: 22,
     tones: pal.leaf,
-    trunkTones: pal.trunk,
-    extra: (dx, dy) => {
+    bark: pal.trunk,
+    from: 0.3,
+    spread: 0.42,
+    airy: 0.45,
+    thick: true,
+    extra: (dx, dy, tone) => {
+      if (tone > 1) return null;
       const n = hash(dx, dy, p.seed + 4);
-      return n > 0.9 ? pal.flowers[2] : n > 0.86 ? pal.flowers[3] : null;
+      return n > 0.82 ? pal.flowers[2] : n > 0.74 ? pal.flowers[3] : null;
     },
   });
 }
@@ -374,115 +384,215 @@ function soil(pal, x, y, depth, turf) {
 // Creatures
 
 // A white-tailed tropicbird, the koaʻe kea: white, with a black bar through the eye and another
-// across the wing, a yellow bill, and two long tail streamers that wave behind it. The body is the
-// kit's tropicbird flyer; the streamers are drawn here. Its palette is
-// tropicbird: [white, black, bill, shade].
+// across the wing, a yellow bill, and two long tail streamers that wave behind it (the kit's small flyer,
+// smallbird.js). Its palette is tropicbird: [white, black, bill, shade].
 function tropicbirdAt(g, b, time) {
-  const [white, , , shade] = g.pal.tropicbird;
+  if (g.trace) return g.trace.draw(tropicbirdAt, g, b, time);
   flyerAt(g, b, time, "tropicbird");
-  const x = Math.round(b.x) - b.dir * 5;
-  const y = Math.round(b.y + Math.sin(time * 1.4 + b.phase) * 3);
-  for (let i = 1; i <= 6; i += 1) {
-    const wave = Math.round(Math.sin(time * 5 + b.phase - i * 0.7));
-    part(g, i > 4 ? shade : white, x, y, b.dir, -i, wave, 1, 1);
+}
+
+// The top of a full-grown sea cliff, where a tropicbird alights: ridge() draws the spire from the same numbers,
+// so this is its highest row that is still five cells wide.
+function cliffTop(p, groundY) {
+  const height = Math.max(4, Math.round(RIDGE_ROWS * p.scale));
+  const width = Math.round(height * 0.7) + 6;
+  let top = 0;
+  for (let r = 0; r < height; r += 1) {
+    const half = Math.round((width / 2) * (1 - r / height) ** 0.8 + (hash(r, p.seed, 1) - 0.5) * 1.2);
+    if (half < 1) break;
+    if (half >= 2) top = r;
   }
+  return { x: p.x, y: groundY - top };
+}
+
+// Where a tropicbird may perch: the full-grown sea cliffs.
+function cliffSpots(f) {
+  const cliffs = f.plants.map((p, order) => ({ p, order })).filter(({ p }) => p.kind === "ridge");
+  const spots = cliffs
+    .filter(({ p }) => p.shown - p.born >= MATURE.ridge)
+    .map(({ p, order }) => {
+      const at = cliffTop(p, f.groundY);
+      return { x: p.x, order, top: () => at };
+    });
+  const covers = cliffs.map(({ p, order }) => ({
+    x: p.x,
+    order,
+    y: cliffTop(p, f.groundY).y,
+    reach: Math.round((Math.round(RIDGE_ROWS * p.scale) * 0.7 + 6) / 4),
+  }));
+  return unhidden(spots, covers, f.time);
+}
+
+// Where the ʻiʻiwi may perch: the tops of the full-grown hibiscus, drawn in hibiscus() from the same numbers.
+function hibiscusSpots(f) {
+  return blobSpots(f, "hibiscus", MATURE.hibiscus, (p) => {
+    const h = Math.max(2, Math.round((6 + (p.seed % 3)) * p.scale));
+    return { cx: p.x, top: f.groundY + (p.layer < 1 ? 1 : p.depth) - h, w: Math.round(h * 2.2), h };
+  });
 }
 
 // An ʻōhiki, the pale ghost crab of the sand, up on its legs with its stalked eyes raised. Its
 // palette is crab: [shell, dark].
 
 // A sea turtle, or its hatchling when its scale is below 1.
+// `t.land` (0 to 1) brings it down to the shore end of the sea band.
 function honuAt(g, t, time, seaTop, seaBottom) {
-  const y = Math.round(
-    clamp(seaTop + (seaBottom - seaTop) * 0.55, seaTop + 3, seaBottom - 3) + Math.sin(time * 1.2) * 1.5,
-  );
+  if (g.trace) return g.trace.draw(honuAt, g, t, time, seaTop, seaBottom);
+  const swim = clamp(seaTop + (seaBottom - seaTop) * 0.55, seaTop + 3, seaBottom - 3);
+  const land = smooth(t.land ?? 0);
+  const y = Math.round(swim + Math.sin(time * 1.2) * 1.5 * (1 - land) + (seaBottom - 2 - swim) * land);
   honuShellAt(g, t, y + 1, time, t.scale);
 }
 
-// A Hawaiian monk seal hauled out on the sand: grey above and cream below, with no spots. On land
-// it moves in hitches, hunching its back and heaving forward a few pixels at a time, and now and
-// then it lifts its head. A pup is drawn at a smaller scale. Its palette is seal: [back, belly, eye].
-// A Hawaiian monk seal, the swimmers' long build: a body tapering to the tail, a small round head
-// with a dark nose, a pale belly and a dark fore flipper. It galumphs, its middle humping up as it
-// pulls itself along. The pup (scale below 1) is drawn on its own. B body, P belly, D dark, e eye.
-const SEAL = {
-  flat: [
-    "..............BBBB.",
-    "....BBBBBBBBBBBBBeB",
-    "..BBBBBBBBBBBBBBBBD",
-    "BBBBBBBBBBBBBBBBB..",
-    ".DPPPPPPPPPPPPBB...",
-  ],
-  hump: [
-    "..............BBBB.",
-    ".......BBBBBBBBBBeB",
-    "....BBBBBBBBBBBBBBD",
-    "BBBBBBBBBBBBBBBBB..",
-    ".DPPPPPPPPPPPPBB...",
-  ],
-};
-const SEAL_PUP = ["......BBB.", "..BBBBBBeB", "BBBBBBBBBD", ".PPPPPPB.."];
-
-// Its palette is seal: [body, belly, eye].
-function sealAt(g, s, time) {
-  const [body, belly, eye] = g.pal.seal;
-  const x = Math.round(s.x / 3) * 3;
-  const hump = s.state === "walk" && Math.round(s.x / 3) % 2 === 0;
-  const grid = s.scale < 1 ? SEAL_PUP : hump ? SEAL.hump : SEAL.flat;
-  const lift = Math.floor(time * 2 + s.phase) % 3 === 0 ? 1 : 0;
-  sprite(g, grid, { B: body, P: belly, D: eye, e: eye }, x, g.groundY + 7, s.dir, 9, grid.length);
-  if (lift && grid !== SEAL_PUP) part(g, body, x, g.groundY + 7, s.dir, 6, -6, 2, 1); // the head lifts
+// A moa, a feral red junglefowl rooster, built from parts (kit/groundbird.js). It struts while it walks;
+// stopped, it pecks in threes, scratches, preens or flaps. Its palette is moa: [body, tail, comb, legs],
+// with groundShadow beside it.
+function moaAt(g, m, time) {
+  if (g.trace) return g.trace.draw(moaAt, g, m, time);
+  groundBirdAt(g, m, "moa", time);
 }
 
-// A moa, a feral red junglefowl rooster. It struts while it walks and pecks at the sand while it
-// sits. Its palette is moa: [body, tail, comb, legs].
-function moaAt(g, m, _time) {
-  groundBirdAt(g, m, "moa");
+// The honu hauling out (x.haulOut.state): idle, clear (waiting for the beach to be clear), to (swimming
+// to the shore end), crawl, bask, back, then leave (swimming off). Every other animal on the sand.
+function sandAnimals(f) {
+  const x = f.extra;
+  return [x.cat, ...x.crabs, x.moa, ...x.seals, x.puaa].filter((a) => a.active);
 }
 
-// A pua'a, a feral pig. It trots while it walks and roots at the sand while it sits. Its palette is
-// pig: [body, dark, snout].
-// A feral pig's build, from the wild boar: a high bristled shoulder sloping to the rump, a long head
-// with a pale snout and upright ears, a thin tail. Standing, it roots with its snout in the earth.
-// B body, D dark bristles and legs, P snout.
-const PUAA = {
-  walk: [
-    "........DD.....",
-    "..DDDDDDDBD....",
-    ".DBBBBBBBBBBB..",
-    "DBBBBBBBBBBDBB.",
-    ".BBBBBBBBBBBBPP",
-    ".BBBBBBBBBBBBPP",
-    "..DDDDDDDDDDD..",
-  ],
-  root: [
-    "...............",
-    "..DDDDDDD......",
-    ".DBBBBBBBDD....",
-    "DBBBBBBBBBBBB..",
-    ".BBBBBBBBBBDB..",
-    ".BBBBBBBBBBBBB.",
-    "..DDDDDDDDDBBPP",
-  ],
-};
+// Whether the sand from `s` to where it crawls (`dir` the way it faces) is clear of other animals.
+function beachClear(f, s, dir, room = HAUL_ROOM) {
+  const far = s + dir * HAUL_HEAVES * 3;
+  return sandAnimals(f).every((a) => a.x < Math.min(s, far) - room || a.x > Math.max(s, far) + room);
+}
 
-function puaaAt(g, p, _time) {
-  const [body, dark, snout] = g.pal.pig;
-  const x = Math.round(p.x);
-  const y = g.groundY + 7;
-  const walking = p.state === "walk";
-  const rooting = p.state === "sit";
-  [2, 4, 10, 12].forEach((dx, i) => {
-    const up = walking && (Math.floor(p.phase) % 2 === 0) === (i === 0 || i === 3);
-    part(g, dark, x, y, p.dir, dx, -3, 1, up ? 2 : 3);
-  });
-  const grid = rooting ? PUAA.root : PUAA.walk;
-  sprite(g, grid, { B: body, D: dark, P: snout }, x, y - 3, p.dir, 0, grid.length);
-  if (rooting) part(g, snout, x, y, p.dir, 13, -3, 2, 1);
+// The clear stretch of beach nearest the honu, or null.
+function pickBeach(f, from) {
+  let best = null;
+  for (let s = 18; s <= f.cols - 18; s += 4) {
+    const dir = s >= from ? 1 : -1;
+    if (beachClear(f, s, dir) && (best === null || Math.abs(s - from) < Math.abs(best - from))) best = s;
+  }
+  return best;
+}
+
+function haulNext(f, ho) {
+  ho.state = "idle";
+  ho.next = f.time + HAUL_EVERY[0] + f.rand() * HAUL_EVERY[1];
+}
+
+// Runs the haul-out; returns true while it moves the honu (so it does not swim about as usual).
+function haulOut(f, x, dt) {
+  const ho = x.haulOut;
+  const h = x.honu;
+  const age = f.time - ho.since;
+  const night = isNight(f);
+  const go = (state) => {
+    ho.state = state;
+    ho.since = f.time;
+  };
+  const leave = () => {
+    go("leave");
+    x.puaa.leaving = false;
+    if (ho.pigAway) {
+      ho.pigAway = false;
+      enter(f, x.puaa);
+    }
+  };
+  if (ho.state === "idle") {
+    if (f.time < ho.next || night || f.reduced || seaRows(f) < 8) return false;
+    ho.next = Number.POSITIVE_INFINITY; // waits until it is over
+    go("clear");
+    return false;
+  }
+  if (ho.state === "clear") {
+    if (night) {
+      leave();
+      haulNext(f, ho);
+      return false;
+    }
+    if (x.puaa.active) {
+      // A pua'a in the mud finishes its wallow first, then walks off.
+      if (!(x.puaa.state === "sit" && x.puaa.pose === "wallow")) x.puaa.leaving = true;
+      return false;
+    }
+    ho.target = pickBeach(f, h.x);
+    if (ho.target !== null) go("to");
+    return false;
+  }
+  if (ho.state === "to") {
+    if (night || age > 45) {
+      leave();
+      return false;
+    }
+    const dir = ho.target >= h.x ? 1 : -1;
+    if (!beachClear(f, ho.target, dir)) ho.target = pickBeach(f, h.x) ?? ho.target;
+    const dx = ho.target - h.x;
+    if (Math.abs(dx) > 0.5) {
+      h.dir = dx > 0 ? 1 : -1;
+      h.x += h.dir * Math.min(Math.abs(dx), HAUL_SWIM * dt);
+    }
+    h.land = Math.min(1, h.land + dt / 3);
+    if (Math.abs(dx) <= 0.5 && h.land >= 1 && beachClear(f, h.x, h.dir)) {
+      ho.x0 = h.x;
+      go("crawl");
+    }
+    return true;
+  }
+  if (ho.state === "crawl" || ho.state === "back") {
+    const p = Math.min(HAUL_HEAVES, age / CRAWL);
+    h.x = ho.x0 + h.dir * crawlX(p);
+    ho.drop = ho.state === "crawl" ? p / HAUL_HEAVES : 1 - p / HAUL_HEAVES;
+    if (p >= HAUL_HEAVES) {
+      if (ho.state === "crawl") {
+        ho.bask = HAUL_BASK[0] + f.rand() * HAUL_BASK[1];
+        go("bask");
+      } else {
+        leave();
+      }
+    }
+    return true;
+  }
+  if (ho.state === "bask") {
+    const startled = sandAnimals(f).some((a) => Math.abs(a.x - h.x) < HAUL_SHY);
+    if (age >= ho.bask || night || startled) {
+      h.dir *= -1;
+      ho.x0 = h.x;
+      go("back");
+    }
+    return true;
+  }
+  // leave: it swims off as it did before, coming up out of the shallows.
+  h.land = Math.max(0, h.land - dt / 3);
+  if (h.land <= 0) haulNext(f, ho);
+  return false;
+}
+
+// The pua'a walks off the nearer edge of the page, so the beach holds five animals while the honu is
+// ashore.
+function walkOff(f, w, dt) {
+  w.state = "walk";
+  const dir = w.x < f.cols / 2 ? -1 : 1;
+  if (dir !== w.dir) {
+    w.dir = dir;
+    w.sinceX = w.x; // its stride starts again from where it turned
+  }
+  w.x += w.dir * 6 * dt; // the trot's pace, so its feet stay planted
+  w.phase += dt * 5;
+  if (w.x < -12 || w.x > f.cols + 12) {
+    w.active = false;
+    w.leaving = false;
+    f.extra.haulOut.pigAway = true;
+  }
 }
 
 function tide(f) {
   return smooth(clamp(f.stage / 3, 0, 1)) * SEA_ROWS;
+}
+
+// Whether the honu is up on the sand (and drawn in front of the plants, with the other animals).
+function ashore(f) {
+  const state = f.extra.haulOut?.state;
+  return state === "crawl" || state === "bask" || state === "back";
 }
 
 function seaRows(f) {
@@ -530,9 +640,19 @@ const extras = {
       moa: walker(f),
       seals: [walker(f), walker(f, 0.55)],
       puaa: walker(f),
-      honu: { x: f.cols * 0.3, dir: 1, scale: 1 },
-      hatchling: walker(f, 0.5),
-      whale: { next: 6, start: -10, x: 0 },
+      honu: { x: f.cols * 0.3, dir: 1, scale: 1, land: 0 },
+      hatchling: { ...walker(f, 0.5), land: 0 },
+      haulOut: {
+        next: 25 + f.rand() * 20,
+        state: "idle",
+        since: 0,
+        target: 0,
+        x0: 0,
+        drop: 0,
+        bask: 0,
+        pigAway: false,
+      },
+      whale: { next: 6, start: -10, x: 0, dir: 1, dive: false },
       spray: { next: 0, drops: [] },
     };
   },
@@ -549,9 +669,13 @@ const extras = {
     if (f.stage >= 4) {
       const [seal, pup] = x.seals;
       enter(f, seal);
-      enterBehind(f, pup, seal, 12);
+      enterBehind(f, pup, seal, 20);
     }
-    if (f.stage >= 8) enter(f, x.puaa);
+    if (f.stage >= 8 && !x.haulOut.pigAway) {
+      // Not while the honu is on its way to the sand or ashore: the pua'a comes when it is back at sea.
+      if (["to", "crawl", "bask", "back"].includes(x.haulOut.state)) x.haulOut.pigAway = true;
+      else enter(f, x.puaa);
+    }
     if (f.stage >= 5 && !x.hatchling.active) {
       enterBehind(f, x.hatchling, x.honu, 10);
     }
@@ -564,26 +688,76 @@ const extras = {
     rest(f, f.extra.cat, felidPoses("housecat"));
     const x = f.extra;
     x.sea += (tide(f) - x.sea) * Math.min(1, dt * 0.8);
-    if (f.stage >= 2 && !isNight(f))
-      flyBy(f, x.tropicbirds[0], dt, { every: [4, 6], speed: 12, spawn: () => ({ y: 20 + f.rand() * 40 }) });
-    if (f.stage >= 4 && !isNight(f))
-      flyBy(f, x.iiwi, dt, { every: [6, 6], speed: 22, spawn: () => ({ y: f.groundY - 56 - f.rand() * 24 }) });
-    if (f.stage >= 6 && !isNight(f))
-      flyBy(f, x.tropicbirds[1], dt, { every: [5, 7], speed: 38, spawn: () => ({ y: 40 + f.rand() * 40 }) });
-    for (const c of x.crabs) wander(f, c, dt, { speed: 9, sit: [1, 3], walk: [1, 3] });
-    wander(f, x.moa, dt, { speed: 11, stride: 9, sit: [1.5, 3.5], walk: [1.5, 3] });
-    wander(f, x.puaa, dt, { speed: 6, stride: 5, sit: [3, 6], walk: [3, 6] });
+    // Now and then a tropicbird alights on a sea cliff and the ʻiʻiwi on a hibiscus, then they fly on.
+    const day = !isNight(f);
+    const slots = [
+      [
+        f.stage >= 2,
+        x.tropicbirds[0],
+        { every: [4, 6], speed: 12, spawn: () => ({ y: 20 + f.rand() * 40 }), spots: cliffSpots, small: "tropicbird" },
+      ],
+      [
+        f.stage >= 4,
+        x.iiwi,
+        {
+          every: [6, 6],
+          speed: 22,
+          spawn: () => ({ y: f.groundY - 56 - f.rand() * 24 }),
+          spots: hibiscusSpots,
+          small: "iiwi",
+        },
+      ],
+      [
+        f.stage >= 6,
+        x.tropicbirds[1],
+        { every: [5, 7], speed: 38, spawn: () => ({ y: 40 + f.rand() * 40 }), spots: cliffSpots, small: "tropicbird" },
+      ],
+    ];
+    for (const [on, slot, o] of slots) {
+      if (on && day) flyByPerch(f, slot, dt, { ...o, odds: 0.3, stay: [8, 16] });
+      else if (slot.bird?.visit) goHome(f, slot.bird);
+    }
+    for (const c of x.crabs) {
+      wander(f, c, dt, { speed: 9, sit: [1, 3], walk: [1, 3] });
+      rest(f, c, crabPoses);
+    }
+    const moaX = x.moa.x;
+    wander(f, x.moa, dt, { speed: groundSpeed("moa"), stride: 1, sit: [2.6, 6], walk: [1.5, 3] });
+    rest(f, x.moa, groundPoses(x.moa, "moa"));
+    groundBirdStep(f, x.moa, dt, "moa", moaX);
+    if (x.puaa.leaving) walkOff(f, x.puaa, dt);
+    else wander(f, x.puaa, dt, { speed: 6, stride: 5, sit: [3, 18], walk: [3, 6] });
+    rest(f, x.puaa, puaaPoses(x.puaa));
+    // The seal hitches along at 4 px/s, 3 px a stride (1.33 strides a second); her pup keeps behind her and
+    // rests beside her, lifting her head when her mother does.
     const [seal, pup] = x.seals;
-    wander(f, seal, dt, { speed: 6, stride: 5, sit: [3, 6], walk: [2, 4] });
-    follow(pup, seal, dt, 12);
+    const sealX = seal.x;
+    const pupX = pup.x;
+    wander(f, seal, dt, { speed: 4, stride: 1.33, sit: [3, 12], walk: [2, 4] });
+    rest(f, seal, sealPoses(seal));
+    stride(seal, sealX, dt, SEAL_STRIDE[0], SEAL_STRIDE[1]);
+    follow(pup, seal, dt, 20);
+    pup.state = seal.state;
+    pup.timer = seal.timer;
+    settle(f, pup);
+    pup.pose = seal.pose;
+    stride(pup, pupX, dt, PUP_STRIDE[0], PUP_STRIDE[1]);
     if (f.stage >= 5) {
-      x.honu.x += x.honu.dir * 4 * dt;
-      if (x.honu.x < 10 || x.honu.x > f.cols - 10) x.honu.dir *= -1;
-      follow(x.hatchling, x.honu, dt, 10);
+      if (!haulOut(f, x, dt)) {
+        x.honu.x += x.honu.dir * 4 * dt;
+        if (x.honu.x < 10 || x.honu.x > f.cols - 10) x.honu.dir *= -1;
+      }
+      // The hatchling follows to the water's edge and waits there while the honu is ashore.
+      const ho = x.haulOut;
+      const waiting = ho.state === "to" || ho.state === "crawl" || ho.state === "bask" || ho.state === "back";
+      x.hatchling.land += ((waiting ? 1 : 0) - x.hatchling.land) * Math.min(1, dt * 0.8);
+      if (!(ho.state === "crawl" || ho.state === "bask" || ho.state === "back")) follow(x.hatchling, x.honu, dt, 10);
     }
     if (f.stage >= 7 && f.time >= x.whale.next) {
       x.whale.start = f.time;
-      x.whale.x = 12 + f.rand() * (f.cols - 24);
+      x.whale.x = 15 + f.rand() * (f.cols - 30);
+      x.whale.dir = f.rand() < 0.5 ? 1 : -1;
+      x.whale.dive = f.rand() < 0.4; // some surfacings end in a dive with the flukes
       x.whale.next = f.time + 12 + f.rand() * 8;
     }
     updateSpray(f, dt);
@@ -619,29 +793,23 @@ const extras = {
     }
     g.ctx.globalAlpha = 1;
     if (f.stage >= 5 && !f.reduced) {
-      honuAt(g, f.extra.honu, g.time, top, f.groundY);
+      if (!ashore(f)) honuAt(g, f.extra.honu, g.time, top, f.groundY);
       if (f.extra.hatchling.active) honuAt(g, f.extra.hatchling, g.time, top, f.groundY);
     }
     const w = f.extra.whale;
-    const age = f.time - w.start;
-    if (age >= 0 && age < 3 && !f.reduced) {
-      const [back, light] = g.pal.whale;
-      const y0 = top + 2;
-      blob(g, Math.round(w.x), y0 - 2, 9, 5, (_px, py) => (py < y0 ? back : light));
-      const rise = Math.min(1, age / 0.6);
-      const fadeOut = clamp(2.8 - age, 0, 1);
-      g.ctx.globalAlpha = fadeOut;
-      for (let i = 0; i < Math.round(12 * rise); i += 1)
-        rect(g, foam, Math.round(w.x) + 1 + (i > 8 ? (i % 2 ? -1 : 2) : 0), y0 - 3 - i, 1, 1);
-      g.ctx.globalAlpha = 1;
-    }
+    if (!f.reduced) whaleAt(g, w, top + 2, f.time);
   },
 
   draw(g, f) {
+    if (f.stage >= 5 && !f.reduced && ashore(f)) {
+      const ho = f.extra.haulOut;
+      const mode = ho.state === "bask" ? "bask" : "crawl";
+      honuAshoreAt(g, { ...f.extra.honu, mode, age: f.time - ho.since }, f.groundY + Math.round(HAUL_DEPTH * ho.drop));
+    }
     if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "housecat" }, f.time);
     for (const bird of f.extra.tropicbirds) if (bird.bird && !isNight(f)) tropicbirdAt(g, bird.bird, f.time);
     if (f.extra.iiwi.bird && !isNight(f)) flyerAt(g, f.extra.iiwi.bird, f.time, "iiwi");
-    for (const c of f.extra.crabs) if (c.active) crabAt(g, c, g.groundY + 5 + c.lane);
+    for (const c of f.extra.crabs) if (c.active) crabAt(g, c, g.groundY + 5 + c.lane, f.time);
     for (const s of f.extra.seals) if (s.active) sealAt(g, s, f.time);
     if (f.extra.moa.active) moaAt(g, f.extra.moa, f.time);
     if (f.extra.puaa.active) puaaAt(g, f.extra.puaa, f.time);
@@ -652,7 +820,7 @@ export default {
   id: "hawaii",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.62], dark: [0.5, 0.7] },
-  mature: { tree: 3, ridge: 3, hibiscus: 2, taro: 1.5, dune: 1.5, paradise: 2, shell: 1, surfboard: 1 },
+  mature: MATURE,
   paint: { tree, ridge, hibiscus, taro, dune, paradise: birdOfParadise, shell, surfboard },
   generate,
   soil,

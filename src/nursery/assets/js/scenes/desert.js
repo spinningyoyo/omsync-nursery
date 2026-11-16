@@ -6,9 +6,24 @@
 // gone, a great horned owl watches from a Joshua tree, the coyote sits up to howl, and the Perseids
 // fall in two patterns, with quiet spells between.
 // At night a pale desert bobcat comes out to hunt, and rests between prowls.
-import { canidAt, felidAt, felidPoses, hareAt, owlAt, raptorAt, sheepAt, tortoiseAt } from "../kit/animals.js";
 import {
-  doing,
+  bighornAt,
+  canidAt,
+  felidAt,
+  felidPoses,
+  groundBirdAt,
+  groundBirdStep,
+  groundPoses,
+  groundSpeed,
+  hareAt,
+  harePoses,
+  settleCanid,
+  snakeAt,
+  snakePoses,
+  tortoiseAt,
+  tortoisePoses,
+} from "../kit/animals.js";
+import {
   enter,
   enterBehind,
   fidget,
@@ -19,10 +34,22 @@ import {
   narrow,
   percher,
   rest,
+  soarAt,
+  soarer,
   walker,
   wander,
 } from "../kit/critters.js";
+import {
+  cholla as chollaPlant,
+  joshuaGeom,
+  joshua as joshuaTree,
+  ocotillo as ocotilloPlant,
+  pad as padPlant,
+  yucca as yuccaPlant,
+} from "../kit/desert.js";
 import { bandPath, dithered, milkyWayCanvas, onBand, starAt, starField, starFieldAt } from "../kit/effects.js";
+import { glideAt, hawkAt, OWL_MOVES, owlPerchAt } from "../kit/flyers.js";
+import { circlerPerch, flyByPerch, goHome, unhidden } from "../kit/perch.js";
 import {
   blob,
   CLEARING,
@@ -30,21 +57,27 @@ import {
   clearing,
   foliage,
   hash,
-  line,
   makePlant,
-  part,
   placeLandmarks,
   rect,
   scatter,
   sortPlants,
-  sprite,
-  stroke,
-  wind,
 } from "../kit/pixel.js";
 import { crossFlower } from "../kit/plants.js";
-import { trunk } from "../kit/trees.js";
 
-const TREE_ROWS = 36;
+const MATURE = {
+  tree: 3,
+  rockpile: 3,
+  granite: 3,
+  boulders: 1.5,
+  yucca: 2,
+  sage: 2,
+  cholla: 2.5,
+  ocotillo: 2.5,
+  pad: 2,
+  wildflower: 1.2,
+};
+const ROCKPILE_ROWS = 30; // a distant rock pile's height at scale 1
 const GRANITE_ROWS = 34; // a granite pile's height at scale 1
 const STARS = 70;
 // The Milky Way as it stands on an August or September evening: the core (Sagittarius) glows low
@@ -70,14 +103,15 @@ const SHOWERS = [
   { mode: "rain", seconds: 35 },
   { mode: "quiet", seconds: 20 },
 ];
-// Flowering plants at this share of the old superbloom, so the desert stays open and calm.
+// Flowering plants at this share of a full superbloom, so the desert stays open and calm.
 const BLOOMS = 0.7;
-// Small plants are sown at this share of their old number, so more open desert shows and the animals
+// Small plants are sown at this share of the usual number, so more open desert shows and the animals
 // stand out. The Joshua trees are not counted among them.
 const SMALL_PLANTS = 0.6;
 
 const LIGHT = {
   bobcatDesert: { T: "#c8a67c", S: "#a0805c", P: "#f4ecdc", D: "#3a2e24", e: "#3a2e24" },
+  groundShadow: "rgba(88, 60, 20, 0.22)", // the soft shadow every animal, plant and rock casts on the ground
   joshua: ["#d4e28a", "#a9c262", "#7d9c4c"],
   trunk: ["#b19575", "#8a7058"],
   yucca: ["#c4da86", "#98b85c", "#6e9040"],
@@ -100,7 +134,10 @@ const LIGHT = {
   runner: ["#6b5446", "#d8c49a", "#4a8cc0", "#e0603a", "#2a2420", "#efe4cc", "#7e8a96"],
   rabbit: ["#c4ab88", "#98825f", "#f4e8d4"],
   snake: ["#e8c77a", "#6b4a2e"],
+  snakeTongue: "#b8323c",
+  snakeBuzz: "#8a6446",
   coyote: ["#c4a072", "#8a7a64", "#eadcc0", "#2a2420", "#2a2420"],
+  canid: { R: "#6e2c2c", howl: "#5f6f84", dark: false },
   sheep: ["#b8a07e", "#efe4d0", "#c9ab72", "#6e5a46", "#94784c"],
   tortoise: ["#8a7652", "#5e4e36", "#a89a7e", "#3e3424"],
   owl: ["#8a6a4a", "#5a4330", "#d8c2a0", "#f2c230", "#2b2620"],
@@ -112,6 +149,7 @@ const LIGHT = {
 
 const DARK = {
   bobcatDesert: { T: "#897362", S: "#705b4e", P: "#a49e9e", D: "#31282b", e: "#31282b" },
+  groundShadow: "rgba(0, 0, 0, 0.3)",
   joshua: ["#a8c46a", "#84a04e", "#628038"],
   trunk: ["#8c7358", "#6c5742"],
   yucca: ["#9dbb68", "#7a9a4a", "#587a36"],
@@ -134,7 +172,10 @@ const DARK = {
   runner: ["#8a7262", "#e0d0ae", "#5aa0d8", "#e8704a", "#3a3430", "#efe4cc", "#9aa6b2"],
   rabbit: ["#b49c7a", "#8c7656", "#f4e8d4"],
   snake: ["#f0d48a", "#8a6446"],
+  snakeTongue: "#a04050",
+  snakeBuzz: "#e8d4a8",
   coyote: ["#cbab7c", "#948470", "#e6d8bc", "#1e1a16", "#1e1a16"],
+  canid: { R: "#3a2226", howl: "#e4ecf8", dark: true },
   sheep: ["#a08a6c", "#d8ccb8", "#b89c68", "#5a4a3a", "#86704a"],
   tortoise: ["#7a6a4c", "#54462f", "#988c72", "#2e271c"],
   owl: ["#8a6a4a", "#5a4330", "#c8b290", "#f2c230", "#1a1612"],
@@ -144,134 +185,33 @@ const DARK = {
   haze: "#0b0b0b",
 };
 
-// A burst of stiff leaves, like a starburst, round a dark heart.
-function spikyTuft(g, cx, cy, r, tones) {
-  const length = r + 2;
-  for (const [dx, dy] of [
-    [-1, -0.3],
-    [-0.7, -0.8],
-    [-0.2, -1],
-    [0.2, -1],
-    [0.7, -0.8],
-    [1, -0.3],
-    [-1, 0.3],
-    [1, 0.3],
-  ]) {
-    stroke(g, cx, cy, dx, dy, length, 0, 1, [tones[1], tones[0]]);
-  }
-  rect(g, tones[2], cx - 1, cy - 1, 3, 2);
-}
+// The desert plants are on one build (kit/desert.js): light from above in four tones, a soft ground shadow
+// (palette key groundShadow), and a part that sways with what it grows from. The painters here are the kit's
+// own; the kit's joshuaGeom gives a Joshua tree's rows and its top, which the perches below read.
 
-// A Joshua tree: a shaggy trunk that forks into a few thick arms, each ending in a spiky tuft.
+// A Joshua tree: a shaggy trunk that forks into thick, bending arms, each ending in a spiky rosette.
 function joshua(g, p, s, base) {
-  const { pal } = g;
-  const total = Math.max(5, Math.round(TREE_ROWS * p.scale * s));
-  const sway = wind(g.time, p.x);
-  const trunkRows = Math.max(3, Math.round(total * 0.45));
-  const width = total >= 26 ? 3 : total >= 12 ? 2 : 1;
-  trunk(g, p.x, base, trunkRows, width, pal.trunk);
-  for (let y = base - trunkRows; y < base; y += 1) {
-    if (hash(0, y, p.seed) < 0.3) rect(g, pal.trunk[1], p.x - (width >> 1), y, 1, 1);
-  }
-  const arms = 2 + (p.seed % 2);
-  const length = total - trunkRows;
-  const r = total >= 26 ? 3 : total >= 12 ? 2 : 1;
-  for (let i = 0; i < arms; i += 1) {
-    const lean = [-0.55, 0.55, 0.1][i];
-    const reach = Math.max(2, Math.round(length * (0.75 + 0.25 * hash(i, p.seed, 6))));
-    let x = p.x;
-    let y = base - trunkRows;
-    for (let k = 0; k < reach; k += 1) {
-      x = p.x + Math.round(lean * k) + (k > reach * 0.6 ? sway : 0);
-      y = base - trunkRows - k;
-      rect(g, pal.trunk[k % 3 === 0 ? 1 : 0], x, y, Math.max(1, width - 1), 1);
-    }
-    spikyTuft(g, x, y, r, pal.joshua);
-    if (i === arms - 1 && s >= 1) p.top = { x, y: y - r - 1 };
-  }
+  joshuaTree(g, p, s, base);
 }
 
+// A yucca: a rosette of stiff sword leaves round a short trunk, and on some plants a flower stalk.
 function yucca(g, p, s, base) {
-  const { pal } = g;
-  const length = Math.max(2, Math.round((5 + (p.seed % 4)) * p.scale * s));
-  rect(g, pal.trunk[0], p.x, base - 2, 1, 2);
-  for (const [dx, dy] of [
-    [-1, -0.2],
-    [-0.7, -0.7],
-    [-0.3, -1],
-    [0, -1],
-    [0.3, -1],
-    [0.7, -0.7],
-    [1, -0.2],
-  ]) {
-    stroke(g, p.x, base - 2, dx, dy, length, 0.15, 1, [pal.yucca[1], pal.yucca[0]]);
-  }
-  if (p.seed % 3 === 0 && s >= 0.9) {
-    const stalk = Math.round(length * 1.6);
-    rect(g, pal.yucca[2], p.x, base - 2 - stalk, 1, stalk);
-    blob(g, p.x, base - 2 - stalk - 4, 4, 5, (x, y) => (hash(x, y, p.seed) > 0.6 ? pal.bloom[2] : "#f4ecc0"));
-  }
+  yuccaPlant(g, p, s, base);
 }
 
-// Teddy-bear cholla: fuzzy golden segments, each one glowing where the spines catch the light.
-// The teddy-bear cholla: a dark stem with arms of fat, glowing joints, each one pale where the spines
-// catch the light and darker at its base. Its palette is cholla: [glow, light, mid, stem].
+// The teddy-bear cholla: a dark stem with arms of fat, glowing joints.
 function cholla(g, p, s, base) {
-  const [glow, light, mid, stem] = g.pal.cholla;
-  const joints = Math.max(1, Math.round((3 + (p.seed % 2)) * s));
-  const joint = (x, y) => {
-    rect(g, mid, x - 1, y, 3, 3);
-    rect(g, light, x - 1, y, 2, 2);
-    rect(g, glow, x - 1, y, 1, 1);
-    if (hash(x, y, p.seed) > 0.5) rect(g, glow, x + 1, y + 1, 1, 1);
-  };
-  rect(g, stem, p.x, base - joints * 3, 1, joints * 3);
-  for (let i = 0; i < joints; i += 1) joint(p.x, base - (i + 1) * 3);
-  if (joints >= 3) {
-    line(g, stem, p.x, base - 6, p.x - 3, base - 9);
-    joint(p.x - 3, base - 11);
-    joint(p.x - 3, base - 14);
-    line(g, stem, p.x, base - 5, p.x + 3, base - 7);
-    joint(p.x + 3, base - 9);
-  }
+  chollaPlant(g, p, s, base);
 }
 
+// An ocotillo: seven whip-like canes that arch out as they rise, a few ending in a red flower.
 function ocotillo(g, p, s, base) {
-  const { pal } = g;
-  const length = Math.max(3, Math.round((16 + (p.seed % 8)) * p.scale * s));
-  const sway = wind(g.time, p.x);
-  for (let i = 0; i < 7; i += 1) {
-    const dx = (i - 3) * 0.16;
-    const jitter = 0.8 + 0.2 * hash(i, p.seed, 2);
-    const len = Math.round(length * jitter);
-    stroke(g, p.x + (i - 3) * 0.5, base - 1, dx, -1, len, 0, 1, pal.ocotillo);
-    const tipX = Math.round(p.x + (i - 3) * 0.5 + dx * len + sway);
-    if (s >= 0.8 && (i + p.seed) % 3 === 0) rect(g, pal.tip, tipX, base - 1 - len, 1, 2);
-    for (let y = 3; y < len - 2; y += 4)
-      rect(g, pal.joshua[2], Math.round(p.x + (i - 3) * 0.5 + dx * y) + 1, base - 1 - y, 1, 1);
-  }
+  ocotilloPlant(g, p, s, base);
 }
 
-// A prickly pear: flat oval pads, each joined to the one below at its edge, lit on one side, with
-// spines picked out and fruit along the top. Its palettes are pad: [light, mid, dark] and fruit.
+// A prickly pear: flat oval pads stacked on one another, with fruit on the top ones.
 function pad(g, p, s, base) {
-  const { pal } = g;
-  const count = Math.max(1, Math.round((3 + (p.seed % 2)) * s));
-  const pads = [
-    [0, 0],
-    [3, -5],
-    [-3, -6],
-    [1, -10],
-    [5, -10],
-  ].slice(0, count);
-  for (const [i, [dx, dy]] of pads.entries()) {
-    const cx = p.x + dx;
-    const top = base - 7 + dy;
-    blob(g, cx, top, 6, 7, foliage({ cx, top, w: 6, h: 7 }, pal.pad, p.seed + i));
-    rect(g, pal.pad[0], cx - 1, top + 2, 1, 1);
-    rect(g, pal.pad[0], cx + 1, top + 4, 1, 1);
-    if (i > 0 && s >= 0.8) rect(g, pal.fruit[i % 2], cx, top - 1, 1, 1);
-  }
+  padPlant(g, p, s, base);
 }
 
 // Granite boulders: rounded, warm and pitted, stacked in a pile.
@@ -310,13 +250,56 @@ function graniteTop(p, groundY) {
 // Distant rock formations, like Hidden Valley's: tall piles of rounded stone.
 function rockpile(g, p, s, base) {
   const { pal } = g;
-  const h = Math.max(4, Math.round(30 * p.scale * s));
+  const h = Math.max(4, Math.round(ROCKPILE_ROWS * p.scale * s));
   const w = Math.round(h * 1.3);
   const shade = foliage({ cx: p.x, top: base - h, w, h }, pal.rock, p.seed);
   blob(g, p.x, base - Math.round(h * 0.45), w, Math.round(h * 0.45), shade);
   blob(g, p.x - Math.round(w * 0.18), base - Math.round(h * 0.78), Math.round(w * 0.55), Math.round(h * 0.4), shade);
   blob(g, p.x + Math.round(w * 0.2), base - Math.round(h * 0.7), Math.round(w * 0.5), Math.round(h * 0.38), shade);
   blob(g, p.x, base - h, Math.round(w * 0.4), Math.round(h * 0.34), shade);
+}
+
+// The top of a full-grown rock pile, where the hawk's feet go: rockpile() draws its crowning boulder from the
+// same numbers.
+function rockpileTop(p, groundY) {
+  return { x: p.x, y: groundY + 2 - Math.max(4, Math.round(ROCKPILE_ROWS * p.scale)) };
+}
+
+// The top of a full-grown Joshua tree, where a vulture's or the owl's feet go: its last arm's top row, from
+// the kit's joshuaGeom (the numbers joshua() draws from) in the wind at `time`. Its base row is the one the
+// engine paints it on.
+function joshuaTop(p, groundY, time) {
+  return joshuaGeom(p, 1, groundY + (p.layer < 1 ? 1 : p.depth), time).top;
+}
+
+// Where the hawk may perch: the full-grown rock piles. Where a vulture may: the top of a full-grown Joshua tree.
+function hawkSpots(f) {
+  return f.plants
+    .filter((p) => p.kind === "rockpile" && p.shown - p.born >= MATURE.rockpile)
+    .map((p) => ({ x: p.x, top: () => rockpileTop(p, f.groundY) }));
+}
+
+function vultureSpots(f) {
+  const spots = [];
+  const covers = [];
+  for (const [order, p] of f.plants.entries()) {
+    if (p.kind === "tree" && p.shown - p.born >= MATURE.tree) {
+      const at = joshuaTop(p, f.groundY, f.time);
+      spots.push({
+        x: at.x,
+        order,
+        top: (time) => {
+          const t = joshuaTop(p, f.groundY, time);
+          return { x: t.x, y: t.y + 1 };
+        },
+      });
+      covers.push({ x: at.x, order, y: at.y, reach: 12 });
+    } else if (p.kind === "granite") {
+      const h = Math.max(4, Math.round(GRANITE_ROWS * p.scale));
+      covers.push({ x: p.x, order, y: f.groundY + 1 - h, reach: Math.round(h * 0.75) + 2 });
+    }
+  }
+  return unhidden(spots, covers, f.time);
 }
 
 function sage(g, p, s, base) {
@@ -462,40 +445,14 @@ function soil(pal, x, y, depth, turf) {
 
 // Creatures
 
-// The red-tailed hawk circles high over the desert by day, banking at each end of its circle. Once
-// in a while it folds its wings and stoops at the jackrabbit, then opens them at the bottom and
-// beats its way back up to its circle.
-const HAWK_STOOP = [".BB.", "BLLB", "BLLB", ".RR.", ".RR."];
+// The red-tailed hawk circles high over the desert by day, banking at each end of its circle (kit/animals.js
+// hawkAt draws it). Once in a while it folds its wings and stoops at the jackrabbit, then opens them at the
+// bottom and beats its way back up to its circle. Now and then it comes down on a rock pile instead.
 const HAWK_DIVE = 1.1;
-const HAWK_BEATS = ["up", "level", "down", "level"];
-const HAWK_BEAT_FPS = 14;
-
-function hawkAt(g, h) {
-  if (h.stoop) {
-    if (h.stoop.t >= HAWK_DIVE) {
-      const beat = Math.floor((h.stoop.t - HAWK_DIVE) * HAWK_BEAT_FPS) % HAWK_BEATS.length;
-      raptorAt(g, { kind: "hawk", x: h.x, y: h.y, dir: h.dir }, { pose: HAWK_BEATS[beat] });
-      return;
-    }
-    const [dark, pale, tail] = g.pal.hawk;
-    sprite(g, HAWK_STOOP, { B: dark, L: pale, R: tail }, Math.round(h.x), Math.round(h.y), 1, 2, 4);
-    return;
-  }
-  raptorAt(g, { kind: "hawk", x: h.x, y: h.y, dir: h.dir }, { bank: h.bank });
-}
-
-// Where the hawk is on its circle at `f.time`.
-function hawkCircle(f, h) {
-  const t = f.time * 0.22 + h.phase;
-  return {
-    x: h.cx + Math.cos(t) * h.reach,
-    y: h.cy + Math.sin(t * 2) * 5,
-    dir: Math.sin(t) > 0 ? -1 : 1,
-    bank: Math.abs(Math.sin(t)) < 0.3,
-  };
-}
+const HAWK_STOOP_SECONDS = 3;
 
 function moveHawk(f, h, rabbit, dt) {
+  if (h.visit) return;
   if (h.stoop) {
     h.stoop.t += dt;
     const { t, from, to } = h.stoop;
@@ -509,16 +466,16 @@ function moveHawk(f, h, rabbit, dt) {
     // hand-back to the circle does not jump.
     const up = Math.min(1, Math.max(0, (t - 1.3) / 1.6));
     const ease = up * up * (3 - 2 * up);
-    const circle = hawkCircle(f, h);
+    const circle = soarAt(f.time, h);
     h.x = to.x + (circle.x - to.x) * ease;
     h.y = to.y + (circle.y - to.y) * ease;
-    if (t >= 2.9) {
-      Object.assign(h, circle, { stoop: null, next: f.time + 40 + f.rand() * 20 });
+    if (t >= HAWK_STOOP_SECONDS) {
+      Object.assign(h, circle, { stoop: null, calm: f.time, next: f.time + 40 + f.rand() * 20 });
       rabbit.frozen = 0;
     }
     return;
   }
-  Object.assign(h, hawkCircle(f, h));
+  Object.assign(h, soarAt(f.time, h));
   if (f.stage >= 7 && rabbit.active && f.time >= h.next && rabbit.x > 10 && rabbit.x < f.cols - 10) {
     h.stoop = { t: 0, from: { x: h.x, y: h.y }, to: { x: rabbit.x, y: f.groundY - 10 } };
     rabbit.frozen = 3;
@@ -526,103 +483,17 @@ function moveHawk(f, h, rabbit, dt) {
   }
 }
 
-// Turkey vultures glide past on wings held in a shallow V, never flapping, teetering from side to
-// side as they ride the air. In time a second joins the first.
-function vulturesAt(g, bird, time) {
-  for (const m of bird.members) {
-    const tilt = Math.floor(time / 0.8 + m.phase) % 2 === 1;
-    const drift = Math.round(Math.sin(time * 0.9 + m.phase) * 2);
-    raptorAt(
-      g,
-      { kind: "vulture", x: bird.x - bird.dir * m.back, y: bird.y + m.up + drift, dir: bird.dir },
-      { bank: tilt },
-    );
-  }
-}
+// Turkey vultures glide past on wings held in a shallow V, never flapping, rocking from side to side as they
+// ride the air (kit/animals.js glideAt). In time a second joins the first. Now and then a lone one comes down
+// on a Joshua tree.
 
-// A greater roadrunner: brown with buff streaks, a shaggy crest, blue and red skin behind the eye, a
-// dark bill and blue-grey legs. Standing, its tail is cocked high; running, it lowers its head and
-// tail and its legs blur through three frames. Its palette is runner: [brown, buff, blue, red,
-// bill, belly, legs].
-const RUNNER_STAND = [
-  "B.............",
-  "BB.......BB...",
-  ".BB.....BBBB..",
-  "..BB....BbrBKK",
-  "...BBBSBBBB...",
-  "....BSBSBBB...",
-  ".....CCCCC....",
-];
-const RUNNER_RUN = [
-  "..............",
-  "........BBB...",
-  ".......BBbrBKK",
-  "BBBBBBSBBBB...",
-  ".BBBSBSBBB....",
-  "...BSBSBB.....",
-  "....CCCCC.....",
-];
-const RUNNER_LEGS = [
-  [
-    [6, -3],
-    [5, -2],
-    [4, -1],
-    [8, -3],
-    [9, -2],
-    [10, -1],
-  ],
-  [
-    [6, -3],
-    [6, -2],
-    [6, -1],
-    [8, -3],
-    [8, -2],
-    [8, -1],
-  ],
-  [
-    [6, -3],
-    [7, -2],
-    [8, -1],
-    [8, -3],
-    [7, -2],
-    [6, -1],
-  ],
-];
-
-function roadrunnerAt(g, r) {
-  const [brown, buff, blue, red, bill, belly, legs] = g.pal.runner;
-  const colours = { B: brown, S: buff, b: blue, r: red, K: bill, C: belly };
-  const x = Math.round(r.x);
-  const y = g.groundY + 6;
-  const running = r.state === "walk";
-  sprite(g, running ? RUNNER_RUN : RUNNER_STAND, colours, x, y, r.dir, 6, 10);
-  const frame = running ? RUNNER_LEGS[Math.floor(r.phase * 1.5) % 3] : RUNNER_LEGS[1];
-  for (const [dx, dy] of frame) part(g, legs, x, y, r.dir, dx - 6, dy, 1, 1);
-}
-
-// A desert tortoise: a high domed shell with dark scute lines, plodding on stumpy legs. When it
-// stops it pulls its head in. Its palette is tortoise: [shell, scutes, skin, dark].
-
-// A snake sliding along the sand in an S, its body banded sand and brown. The wave runs along it
-// as it moves. Its palette is snake: [sand, brown].
-// A snake: a two-row body with a banded back and a darker belly, a wider head with an eye, and a tail
-// that thins to one row, rippling side to side. Its palette is snake: [sand, brown].
-function snakeAt(g, s) {
-  const [sand, brown] = g.pal.snake;
-  const x = Math.round(s.x);
-  const y = g.groundY + 6;
-  const px = (colour, dx, dy, w, h) => part(g, colour, x, y, s.dir, dx, dy, w, h);
-  const wave = (i) => Math.round(Math.sin(i * 0.7 - s.phase * 0.5) * 1.2);
-  px(brown, 0, wave(0) - 1, 1, 1);
-  for (let i = 1; i < 13; i += 1) {
-    px(Math.floor(i / 2) % 2 ? brown : sand, i, wave(i) - 2, 1, 1);
-    px(brown, i, wave(i) - 1, 1, 1);
-    if (wave(i) !== wave(i - 1)) px(brown, i, Math.min(wave(i), wave(i - 1)) - 1, 1, 2);
-  }
-  const h = wave(12);
-  px(sand, 13, h - 3, 3, 2);
-  px(brown, 13, h - 1, 3, 1);
-  px(brown, 15, h - 2, 1, 1);
+// A greater roadrunner, built from parts (kit/groundbird.js): brown with buff streaks, a shaggy crest, blue
+// and red skin behind the eye, a dark bill and blue-grey legs. It runs with its body level, its head
+// forward and its tail streaming; stopped, it cocks its tail, pumps it, preens or stretches a wing. Its
+// palette is runner: [brown, buff, blue, red, bill, belly, legs], with groundShadow beside it.
+function roadrunnerAt(g, r, time) {
+  if (g.trace) return g.trace.draw(roadrunnerAt, g, r, time);
+  groundBirdAt(g, r, "runner", time);
 }
 
 function tumbleAt(g, t, time) {
@@ -774,10 +645,7 @@ const extras = {
       band: milkyWay(f),
       milky: null,
       hawk: {
-        cx: f.cols * (0.25 + f.rand() * 0.5),
-        cy: 44 + f.rand() * 20,
-        reach: Math.max(30, f.cols * 0.22),
-        phase: f.rand() * 6,
+        ...soarer(f, 44 + f.rand() * 20),
         next: 30 + f.rand() * 20,
         stoop: null,
         x: 0,
@@ -828,11 +696,17 @@ const extras = {
     }
     const x = f.extra;
     const night = isNight(f);
-    wander(f, x.runner, dt, { speed: 26, stride: 12, sit: [1, 3], walk: [1.5, 4] });
+    const runnerX = x.runner.x;
+    wander(f, x.runner, dt, { speed: groundSpeed("runner"), stride: 1, sit: [2, 5.5], walk: [1.5, 4] });
+    rest(f, x.runner, groundPoses(x.runner, "runner"));
+    groundBirdStep(f, x.runner, dt, "runner", runnerX);
     if (x.rabbit.frozen > 0) x.rabbit.frozen -= dt;
     else wander(f, x.rabbit, dt, { speed: 14, stride: 10, sit: [2, 5], walk: [1.5, 3] });
+    rest(f, x.rabbit, harePoses("jackrabbit"));
     wander(f, x.tortoise, dt, { speed: 1.5, stride: 2, sit: [4, 9], walk: [5, 10] });
+    rest(f, x.tortoise, tortoisePoses);
     wander(f, x.snake, dt, { speed: 4, stride: 4, sit: [4, 8], walk: [3, 6] });
+    rest(f, x.snake, snakePoses);
     const [coyote, pup] = x.coyotes;
     // At night the coyote sits up and howls now and then; the pup sits with it.
     if (night && coyote.active && f.time >= x.howl.next) {
@@ -849,39 +723,59 @@ const extras = {
       pup.state = coyote.state;
       pup.phase = coyote.phase;
     }
-    if (f.stage >= 2 && !night) moveHawk(f, x.hawk, x.rabbit, dt);
+    settleCanid(f, coyote);
+    settleCanid(f, pup, coyote);
+    if (f.stage >= 2 && !night) {
+      const h = x.hawk;
+      const away =
+        !h.stoop && circlerPerch(f, h, dt, { first: [20, 20], every: [60, 40], stay: [14, 26], spots: hawkSpots });
+      if (!away) moveHawk(f, h, x.rabbit, dt);
+    } else goHome(f, x.hawk);
     if (f.stage >= 4) flyBy(f, x.tumble, dt, { every: [8, 8], speed: 30, spawn: () => ({}) });
     if (f.stage >= 6 && !night) {
-      flyBy(f, x.vultures, dt, {
+      flyByPerch(f, x.vultures, dt, {
         every: [8, 3],
         speed: 18,
         margin: 30,
         spawn: () => ({ y: 20 + f.rand() * 35, members: flock(f, f.stage >= 8 ? 2 : 1, 12, 5) }),
+        spots: vultureSpots,
+        stay: [14, 26],
+        odds: 0.4,
       });
+      const v = x.vultures.bird;
+      if (v?.visit) v.members = v.members.slice(0, 1); // a lone vulture comes down
+    } else if (x.vultures.bird?.visit) {
+      goHome(f, x.vultures.bird);
+      x.vultures.bird = null;
     }
     const pile = f.plants.find((p) => p.kind === "granite" && p.home);
     if (!x.sheep && pile && pile.shown - pile.born >= 3) {
       const dir = pile.x < f.cols / 2 ? 1 : -1;
       x.sheep = percher(f, pile.x - dir * 7, graniteTop(pile, f.groundY), dir, {
-        look: { every: [4, 8], lasts: 2.5 },
+        look: { every: [5, 10], lasts: 5 },
         chew: { every: [2, 5], lasts: 1.5 },
         stamp: { every: [9, 16], lasts: 0.4 },
+        graze: { every: [10, 18], lasts: 3.6 },
+        lie: { every: [20, 32], lasts: 7 },
       });
       x.sheep.pal = "sheep";
     }
     if (x.sheep) fidget(f, x.sheep);
     if (!x.owl) {
-      const trees = f.plants.filter(
-        (p) => p.kind === "tree" && p.layer === 1 && p.top && Math.abs(p.x - f.cols / 2) > CLEARING,
-      );
+      const trees = f.plants
+        .filter(
+          (p) =>
+            p.kind === "tree" &&
+            p.layer === 1 &&
+            p.shown - p.born >= MATURE.tree &&
+            Math.abs(p.x - f.cols / 2) > CLEARING,
+        )
+        .map((p) => ({ p, top: joshuaTop(p, f.groundY, f.time) }));
       if (trees.length) {
-        const tree = trees.reduce((tall, p) => (p.top.y < tall.top.y ? p : tall));
-        x.owl = percher(f, tree.top.x, tree.top.y, 1, {
-          look: { every: [3, 6], lasts: 1.8 },
-          blink: { every: [2, 4], lasts: 0.2 },
-        });
-        x.owl.pose = "perch";
-        x.owl.tufts = true;
+        const { top } = trees.reduce((tall, t) => (t.top.y < tall.top.y ? t : tall));
+        x.owl = percher(f, top.x, top.y, 1, OWL_MOVES);
+        x.owl.species = "horned";
+        x.owl.look = top.x < f.cols / 2 ? 1 : -1;
       }
     }
     if (x.owl) fidget(f, x.owl);
@@ -900,25 +794,18 @@ const extras = {
     if (f.extra.cat.active && isNight(f)) felidAt(g, { ...f.extra.cat, kind: "bobcat", pal: "bobcatDesert" }, f.time);
     const x = f.extra;
     const night = isNight(f);
-    if (f.stage >= 2 && !night) hawkAt(g, x.hawk);
-    if (x.vultures.bird && !night) vulturesAt(g, x.vultures.bird, f.time);
+    if (f.stage >= 2 && !night) hawkAt(g, x.hawk, f.time);
+    if (x.vultures.bird && !night) glideAt(g, "vulture", x.vultures.bird, f.time);
     if (x.tumble.bird) tumbleAt(g, x.tumble.bird, f.time);
-    if (x.sheep) {
-      sheepAt(g, x.sheep, {
-        look: doing(x.sheep, "look", f.time) >= 0,
-        chew: doing(x.sheep, "chew", f.time) >= 0 && Math.floor(f.time * 6) % 2 === 0,
-        stamp: doing(x.sheep, "stamp", f.time) >= 0,
-      });
-    }
+    if (x.sheep) bighornAt(g, x.sheep, f.time);
     if (x.owl && night) {
-      const look = doing(x.owl, "look", f.time) >= 0 ? (x.owl.x < f.cols / 2 ? 1 : -1) : 0;
-      owlAt(g, x.owl, f.time, { look, blink: doing(x.owl, "blink", f.time) >= 0 });
+      owlPerchAt(g, x.owl, f.time);
     }
-    if (x.tortoise.active) tortoiseAt(g, x.tortoise, g.groundY + 6);
-    for (const c of x.coyotes) if (c.active) canidAt(g, c);
-    if (x.snake.active) snakeAt(g, x.snake);
-    if (x.rabbit.active) hareAt(g, x.rabbit);
-    if (x.runner.active) roadrunnerAt(g, x.runner);
+    if (x.tortoise.active) tortoiseAt(g, x.tortoise, g.groundY + 6, f.time);
+    for (const c of x.coyotes) if (c.active) canidAt(g, c, f.time);
+    if (x.snake.active) snakeAt(g, x.snake, f.time);
+    if (x.rabbit.active) hareAt(g, x.rabbit, f.time);
+    if (x.runner.active) roadrunnerAt(g, x.runner, f.time);
   },
 };
 
@@ -926,18 +813,7 @@ export default {
   id: "desert",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.6], dark: [0.5, 0.7] },
-  mature: {
-    tree: 3,
-    rockpile: 3,
-    granite: 3,
-    boulders: 1.5,
-    yucca: 2,
-    sage: 2,
-    cholla: 2.5,
-    ocotillo: 2.5,
-    pad: 2,
-    wildflower: 1.2,
-  },
+  mature: MATURE,
   paint: { tree: joshua, rockpile, granite, boulders, yucca, sage, cholla, ocotillo, pad, wildflower },
   generate,
   soil,

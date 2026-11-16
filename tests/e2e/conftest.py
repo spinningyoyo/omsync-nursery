@@ -1,8 +1,8 @@
 """Fixtures for the end-to-end tests.
 
-Every test drives the real thing from outside: the engine in headless Chrome on a page that stands
-in for omsync's sign-in page, the `nursery` command as a subprocess, the studio over HTTP and in the
-browser. There are no unit tests here.
+Every test drives the real thing from outside: the `nursery` command as a subprocess, and the
+installed package on a page in headless Chrome that stands in for omsync's sign-in page. They guard
+the release and what omsync installs; the art is checked against the design rules elsewhere.
 
 The code under test is the `nursery` package that Python imports: the page serves its files, and the
 command-line tests copy its source into a throwaway git repository.
@@ -15,11 +15,9 @@ import mimetypes
 import os
 import re
 import shutil
-import socket
 import subprocess
 import sys
 import threading
-import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -52,7 +50,7 @@ GIT_ENV = {
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     """A test that uses Chrome is a browser test, whatever else it is."""
-    browser_fixtures = {"page", "driver", "studio"}
+    browser_fixtures = {"driver"}
     for item in items:
         if browser_fixtures & set(getattr(item, "fixturenames", ())):
             item.add_marker(pytest.mark.browser)
@@ -126,12 +124,6 @@ def serve_host(js: Path, scenes_json: Path, scenes_css: Path) -> Iterator[HostSe
 
 
 @pytest.fixture(scope="session")
-def host_server() -> Iterator[HostServer]:
-    with serve_host(assets.JS, assets.SCENES_JSON, assets.SCENES_CSS) as server:
-        yield server
-
-
-@pytest.fixture(scope="session")
 def driver() -> Iterator[Any]:
     chrome = new_driver()
     chrome.set_window_size(1280, 800)
@@ -187,11 +179,6 @@ class Page:
     def errors(self) -> list[str]:
         """Errors the page saw, and severe console messages."""
         return [*self.run("return window.__errors"), *console_problems(self.chrome)]
-
-
-@pytest.fixture
-def page(driver: Any, host_server: HostServer) -> Page:
-    return Page(driver, host_server.origin).open()
 
 
 # ---- The command line, on a throwaway copy of the nursery ----------------------------------------
@@ -292,46 +279,3 @@ def nursery_cli(repo: Path, *args: str, timeout: float = 300) -> subprocess.Comp
         timeout=timeout,
         check=False,
     )
-
-
-# ---- The studio ----------------------------------------------------------------------------------
-
-
-def free_port() -> int:
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
-
-
-@pytest.fixture(scope="module")
-def studio(nursery_template: Path, tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
-    """`nursery studio --no-window` on a free port, in a copy of the nursery. Gives its URL."""
-    repo = tmp_path_factory.mktemp("studio") / "nursery"
-    shutil.copytree(nursery_template, repo, symlinks=True)
-    port = free_port()
-    process = subprocess.Popen(
-        [sys.executable, "-m", "nursery", "studio", "--no-window", "--port", str(port)],
-        cwd=repo,
-        env=cli_environment(repo),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-    )
-    url = f"http://127.0.0.1:{port}"
-    try:
-        deadline = time.monotonic() + 30
-        while time.monotonic() < deadline:
-            if process.poll() is not None:
-                raise AssertionError(f"the studio stopped: {process.stdout.read()}")
-            with contextlib.suppress(OSError), socket.create_connection(("127.0.0.1", port), 0.2):
-                break
-            time.sleep(0.1)
-        else:
-            raise AssertionError("the studio never started listening")
-        yield url
-    finally:
-        process.terminate()
-        try:
-            process.wait(10)
-        except subprocess.TimeoutExpired:
-            process.kill()

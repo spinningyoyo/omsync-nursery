@@ -6,7 +6,7 @@
 // The rendering, frames, edit states and proposal loading must keep producing what saved edits,
 // baselines and `nursery check` expect, so changing them changes those files' meaning.
 
-import { FAMILIES, hasFamily, roleIn } from "/families.js";
+import { FAMILIES, hasFamily, OPEN_SCENES, roleIn } from "/families.js";
 import { SCENES as ENGINE_SCENES } from "/js/nursery.js";
 import * as poses from "/sprites.js";
 import { api } from "./api.js";
@@ -18,18 +18,6 @@ export const THEMES = ["light", "dark"];
 // The frames each sprite is drawn at: walkers swap legs on whole phases, and painters flap and
 // sway with time. A frame that draws the same as an earlier one is dropped.
 export const FRAMES = [0, 1, 2, 3].map((i) => ({ phase: i, time: i / 4 }));
-// The nursery-scene skill's size tiers: [name, min width, max width, min height, max height].
-const TIERS = [
-  ["XS", 1, 5, 1, 3],
-  ["S", 7, 11, 5, 10],
-  ["M", 12, 17, 7, 12],
-  ["L", 17, 23, 12, 17],
-  ["XL", 23, 28, 18, 23],
-  ["XXL", 28, 31, 24, 38],
-];
-export const MASCOT_WIDTH = 32;
-// Open scenes keep at most 5 ground animals at once, dense ones 8 (the skill's feel and density).
-const OPEN_SCENES = new Set(["desert", "hawaii", "serengeti"]);
 
 export const GROUPS = [
   { id: "landmarks", title: "Landmarks", icon: "mountain" },
@@ -41,14 +29,6 @@ export const GROUPS = [
   { id: "unlisted", title: "Not in the element list", icon: "triangle-alert" },
 ];
 const KIND_GROUP = { animal: "animals", bird: "birds", effect: "effects" };
-
-export function tierOf(w, h) {
-  const byW = TIERS.filter(([, a, b]) => w >= a && w <= b).map(([n]) => n);
-  const byH = TIERS.filter(([, , , a, b]) => h >= a && h <= b).map(([n]) => n);
-  const wT = byW.join("/") || (w > 31 ? "wider than XXL" : "between tiers");
-  const hT = byH.join("/") || "between tiers";
-  return wT === hT ? wT : `w ${wT}, h ${hT}`;
-}
 
 // The scenes in picker order, each with its picker label from scenes.json.
 const LABELS = await fetch("/scenes.json").then((r) => r.json());
@@ -95,8 +75,13 @@ export function renderJob(job, kit = poses, M = job.M) {
   try {
     for (let f = 0; f < (job.count ?? FRAMES.length); f += 1) {
       const imgs = THEMES.map((t) => drawRender(job, kit, M, t, f));
-      const seen = job.frames.some((k) => THEMES.every((t, i) => same(job.renders.get(`${t}|${k}`), imgs[i])));
-      if (seen && !job.proposal) continue;
+      // A proposal keeps every frame, so only a scene's own sprites need the duplicate check.
+      if (
+        !job.proposal &&
+        job.frames.some((k) => THEMES.every((t, i) => same(job.renders.get(`${t}|${k}`), imgs[i])))
+      ) {
+        continue;
+      }
       job.frames.push(f);
       THEMES.forEach((t, i) => {
         job.renders.set(`${t}|${f}`, imgs[i]);
@@ -117,6 +102,42 @@ export function renderJob(job, kit = poses, M = job.M) {
   job.feet = main ? main.y + main.h : job.box.h;
   return job;
 }
+
+// A proposal job drawn at frame 0 only (both themes): enough for its size, its feet and the "built"
+// check. Everything that reads the rest of it (renders, frames, bbox, themes, same) goes through
+// accessors that draw the full job the first time they are read, so nothing sees a half-drawn job.
+const FULL = ["renders", "frames", "bbox", "themes", "same"];
+
+export function renderFirst(job) {
+  job.error = null;
+  try {
+    job.first = new Map(THEMES.map((t) => [t, drawRender(job, poses, job.M, t, 0)]));
+  } catch (error) {
+    job.error = String(error?.message ?? error);
+    return job;
+  }
+  const main = bounds(job.first.get("light"));
+  job.size = main ? [main.w, main.h] : [0, 0];
+  job.feet = main ? main.y + main.h : job.box.h;
+  job.lazy = true;
+  for (const key of FULL) {
+    Object.defineProperty(job, key, { configurable: true, enumerable: true, get: () => ensureRendered(job)[key] });
+  }
+  return job;
+}
+
+// The job drawn in full: a lazy job is drawn now, any other is returned as it is.
+export function ensureRendered(job) {
+  if (job.lazy) {
+    job.lazy = false;
+    for (const key of FULL) delete job[key];
+    renderJob(job);
+  }
+  return job;
+}
+
+// A job's frame-0 render in a theme, without drawing the rest of a lazy job.
+export const firstRender = (job, theme) => (job.lazy ? job.first.get(theme) : job.renders?.get(`${theme}|0`));
 
 export const renderKey = (name, theme, f) => `${name}|${theme}|${f}`;
 
@@ -145,6 +166,7 @@ function iconJob(scene) {
 // ---- The model --------------------------------------------------------------------------------
 
 const models = new Map();
+const built = new Map();
 
 // One of the three places that single out the mascot's pseudo-scene (the others: server.py's
 // scene_dir and check, and the "brand" flag of its job in edits.js and editor-view.js). Its id
@@ -158,19 +180,34 @@ async function buildModel(sid) {
 export class SceneModel {
   // The scene's model, built once and kept; refresh() reloads its saved work.
   static async load(sid) {
-    if (!models.has(sid)) models.set(sid, buildModel(sid));
+    if (!models.has(sid)) {
+      models.set(
+        sid,
+        buildModel(sid).then((model) => {
+          built.set(sid, model);
+          return model;
+        }),
+      );
+    }
     return models.get(sid);
+  }
+
+  // The scene's model if it is built already, else undefined; never builds.
+  static peek(sid) {
+    return built.get(sid);
   }
 
   // Forgets every built model: the code changed.
   static forget() {
     models.clear();
+    built.clear();
   }
 
   constructor(sid) {
     this.sid = sid;
     this.scene = sceneById(sid);
     this.errors = [];
+    this.rendered = new Map(); // proposal name -> its variant jobs, drawn for that file's mtime
   }
 
   async build() {
@@ -193,7 +230,7 @@ export class SceneModel {
       const first = item.jobs.find((j) => !j.error);
       if (first && item.group !== "plants" && item.group !== "landmarks") {
         const [w, h] = first.size;
-        item.facts.push(`${w}×${h} px, ${tierOf(w, h)}`);
+        item.facts.push(`${w}×${h} px`);
       }
     }
     await this.refresh();
@@ -369,50 +406,65 @@ export class SceneModel {
 
   // ---- Proposals -------------------------------------------------------------------------------
 
+  // Reads each proposal again only when its file is new or changed (a review changes the state, not
+  // the drawing). Approved ones draw frame 0 now and the rest when something reads it.
   async loadProposals(list) {
     for (const job of [...this.jobs.values()]) if (job.proposal) this.jobs.delete(job.name);
     this.proposals = [];
+    const kept = new Map();
     for (const info of list) {
       const proposal = { name: info.name, sid: this.sid, info, review: info.review, variants: [], now: null };
       this.proposals.push(proposal);
       try {
-        const spec = (await import(`/proposals/${this.sid}/${info.name}.js?v=${info.mtime}`)).default;
-        if (!spec?.variants?.length) throw new Error("no default export with variants");
-        proposal.spec = spec;
-        if (spec.replaces) {
-          proposal.now = this.jobs.get(spec.replaces) ?? null;
-          if (!proposal.now) proposal.warning = `replaces ${spec.replaces}, which is not a sprite`;
+        let hit = this.rendered.get(info.name);
+        if (hit?.mtime !== info.mtime) {
+          hit = { mtime: info.mtime, ...(await this.drawProposal(info)) };
         }
-        const box = { ...poses.ANIMAL_BOX, ...spec.box };
-        spec.variants.forEach((v, i) => {
-          const seconds = v.seconds ?? spec.seconds ?? 0;
-          const fps = v.fps ?? spec.fps ?? 8;
-          const title = String(v.name ?? String.fromCharCode(65 + i)).replace(/[^\w-]/g, "_");
-          const pals = {};
-          for (const t of THEMES) pals[t] = { ...this.scene.palettes[t], ...spec.palettes?.[t], ...v.palettes?.[t] };
-          const job = {
-            name: `${info.name}--${title}`,
-            title,
-            sid: this.sid,
-            proposal: info.name,
-            variant: v,
-            box,
-            pals,
-            seconds,
-            fps,
-            count: seconds > 0 ? Math.max(1, Math.round(seconds * fps)) : 1,
-            item: { label: spec.title ?? info.name, where: null },
-            paint: (ctx, pal, f) => v.draw({ ctx, pal, time: f / fps, groundY: box.ground, cols: box.w }, f / fps),
-          };
-          renderJob(job);
-          proposal.variants.push(job);
-          this.jobs.set(job.name, job);
-        });
+        kept.set(info.name, hit);
+        proposal.spec = hit.spec;
+        proposal.variants = hit.variants;
+        for (const job of hit.variants) this.jobs.set(job.name, job);
+        if (hit.spec.replaces) {
+          proposal.now = this.jobs.get(hit.spec.replaces) ?? null;
+          if (!proposal.now) proposal.warning = `replaces ${hit.spec.replaces}, which is not a sprite`;
+        }
       } catch (error) {
         proposal.error = String(error?.message ?? error);
       }
       proposal.state = proposalState(proposal);
     }
+    this.rendered = kept;
+  }
+
+  async drawProposal(info) {
+    const spec = (await import(`/proposals/${this.sid}/${info.name}.js?v=${info.mtime}`)).default;
+    if (!spec?.variants?.length) throw new Error("no default export with variants");
+    const box = { ...poses.ANIMAL_BOX, ...spec.box };
+    const lazy = reviewState(info) === "approved";
+    const variants = spec.variants.map((v, i) => {
+      const seconds = v.seconds ?? spec.seconds ?? 0;
+      const fps = v.fps ?? spec.fps ?? 8;
+      const title = String(v.name ?? String.fromCharCode(65 + i)).replace(/[^\w-]/g, "_");
+      const pals = {};
+      for (const t of THEMES) pals[t] = { ...this.scene.palettes[t], ...spec.palettes?.[t], ...v.palettes?.[t] };
+      const job = {
+        name: `${info.name}--${title}`,
+        title,
+        sid: this.sid,
+        M: this.M,
+        proposal: info.name,
+        variant: v,
+        box,
+        pals,
+        seconds,
+        fps,
+        count: seconds > 0 ? Math.max(1, Math.round(seconds * fps)) : 1,
+        item: { label: spec.title ?? info.name, where: null },
+        paint: (ctx, pal, f) => v.draw({ ctx, pal, time: f / fps, groundY: box.ground, cols: box.w }, f / fps),
+      };
+      return lazy ? renderFirst(job) : renderJob(job);
+    });
+    return { spec, variants };
   }
 
   // ---- Rules -------------------------------------------------------------------------------------
@@ -447,20 +499,11 @@ export class SceneModel {
       state: "eye",
       detail: `${items("animals").length} kinds in the scene; count them in the On the page row`,
     });
-    const wide = creatures.filter((i) => i.jobs.some((j) => j.size?.[0] > MASCOT_WIDTH));
-    out.push(
-      wide.length
-        ? {
-            rule: `No animal wider than the mascot (${MASCOT_WIDTH} px)`,
-            state: "bad",
-            detail: wide.map((i) => `${i.label} ${Math.max(...i.jobs.map((j) => j.size[0]))} px`).join(", "),
-          }
-        : {
-            rule: `No animal wider than the mascot (${MASCOT_WIDTH} px)`,
-            state: "ok",
-            detail: `${creatures.length} checked`,
-          },
-    );
+    out.push({
+      rule: "Sizes on the scale, poses that add nothing",
+      state: "eye",
+      detail: "Run the Verify view: its scale and pose rules check every animal",
+    });
     const orphans = creatures.flatMap((i) => i.jobs).filter((j) => !hasFamily(this.sid, j.name));
     out.push(
       orphans.length
@@ -489,20 +532,32 @@ function familyOf(sid, sprite) {
   return family ? { id: family.id, title: family.title } : null;
 }
 
+// What the review alone says: waiting (new, or revised since your review), changes asked, or approved.
+export function reviewState(info) {
+  const r = info.review;
+  if (!r || r.mtime < info.mtime) return "waiting";
+  return r.verdict === "approve" ? "approved" : "changes";
+}
+
+// A proposal in the inbox before its scene is built: the state the review gives, no drawings.
+export const stubProposal = (sid, info) => ({
+  name: info.name,
+  sid,
+  info,
+  review: info.review,
+  variants: [],
+  now: null,
+  stub: true,
+  state: reviewState(info),
+});
+
 // A proposal's state: waiting (new, or revised since your review), changes asked, approved, or
 // built (approved, and the code now draws the chosen variant where the sprite it replaces was).
 export function proposalState(p) {
-  const r = p.review;
-  if (!r || r.mtime < p.info.mtime) return "waiting";
-  if (r.verdict !== "approve") return "changes";
-  const chosen = p.variants.find((v) => v.title === r.choice);
-  if (
-    p.now &&
-    chosen?.renders &&
-    THEMES.every((t) => same(p.now.renders?.get(`${t}|0`), chosen.renders.get(`${t}|0`)))
-  ) {
-    return "built";
-  }
+  const state = reviewState(p.info);
+  if (state !== "approved") return state;
+  const chosen = p.variants.find((v) => v.title === p.review.choice);
+  if (p.now && chosen && THEMES.every((t) => same(firstRender(p.now, t), firstRender(chosen, t)))) return "built";
   return "approved";
 }
 

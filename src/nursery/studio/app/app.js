@@ -23,6 +23,8 @@ if (!(await runHeadless(new URLSearchParams(location.search)))) {
     import("./components/inbox-panel.js"),
     import("./components/changes-panel.js"),
     import("./components/rules-panel.js"),
+    import("./components/verify-view.js"),
+    import("./components/verify-panel.js"),
     import("./components/side-panel.js"),
   ]);
   await import("./components/nursery-app.js");
