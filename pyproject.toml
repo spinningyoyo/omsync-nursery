@@ -1,6 +1,6 @@
 [project]
 name = "omsync-nursery"
-version = "0.2.0"
+version = "0.2.1"
 description = "Pixel-art scenes for omsync's sign-in page, and the Nursery Studio that draws them."
 readme = "README.md"
 requires-python = ">=3.12"
