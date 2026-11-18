@@ -117,7 +117,7 @@ class Plan:
 
 
 def project_version() -> str:
-    return tomllib.loads(PYPROJECT.read_text())["project"]["version"]
+    return tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]["version"]
 
 
 def next_version(version: str, bump: str) -> str:
@@ -158,12 +158,12 @@ def plan_version(bump: str | None) -> Plan:
 
 def write_version(version: str) -> None:
     """Put the version on the [project] version line of pyproject.toml."""
-    text = PYPROJECT.read_text()
+    text = PYPROJECT.read_text(encoding="utf-8")
     pattern = re.compile(r'(?ms)(^\[project\]\s.*?^version\s*=\s*")[^"]*(")')
     new, count = pattern.subn(rf"\g<1>{version}\g<2>", text, count=1)
     if count != 1:
         raise ReleaseError("pyproject.toml has no version line in its [project] table")
-    PYPROJECT.write_text(new)
+    PYPROJECT.write_text(new, encoding="utf-8")
 
 
 def put_back_version_files(sha: str) -> None:

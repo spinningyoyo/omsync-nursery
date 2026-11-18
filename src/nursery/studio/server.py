@@ -78,7 +78,7 @@ def scene_module(sid: str) -> str:
     """The scene module with its imports rewritten and its painters and animals exported."""
     if sid not in catalog.SCENE_IDS:
         raise KeyError(sid)
-    text = module_path(sid).read_text()
+    text = module_path(sid).read_text(encoding="utf-8")
     return catalog.exported_copy(text)
 
 
@@ -92,7 +92,7 @@ def head_file(path: Path) -> str | None:
         )
     except (OSError, subprocess.CalledProcessError, ValueError):
         return None
-    return done.stdout.decode()
+    return done.stdout.decode("utf-8")
 
 
 def head_scene_module(sid: str) -> str | None:
@@ -121,7 +121,7 @@ def version() -> str:
 
 def where(path: Path, pattern: str) -> dict | None:
     """The first line of a module that matches, as a path from the repository root and a line."""
-    lines = catalog.find_lines(path.read_text(), pattern)
+    lines = catalog.find_lines(path.read_text(encoding="utf-8"), pattern)
     if not lines:
         return None
     return {"path": str(path.relative_to(ROOT)), "line": lines[0]}
@@ -136,7 +136,7 @@ def meta() -> dict:
     scenes = []
     for sid in catalog.SCENE_IDS:
         path = module_path(sid)
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         elements = []
         for el in catalog_elements.ELEMENTS[sid]:
             module = module_path(el.module) if el.module else path
@@ -178,7 +178,7 @@ def scene_dir(sid: str) -> Path:
 
 
 def read_edits(folder: Path) -> list[dict]:
-    return [json.loads(p.read_text()) for p in sorted(folder.glob("*.json"))]
+    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted(folder.glob("*.json"))]
 
 
 def proposals(sid: str, with_edits: bool) -> list[dict]:
@@ -190,11 +190,12 @@ def proposals(sid: str, with_edits: bool) -> list[dict]:
             continue
         review = folder / f"{path.stem}.review.json"
         edits = read_edits(folder / f"{path.stem}.edits")
+        review_data = json.loads(review.read_text(encoding="utf-8")) if review.exists() else None
         out.append(
             {
                 "name": path.stem,
                 "mtime": path.stat().st_mtime,
-                "review": json.loads(review.read_text()) if review.exists() else None,
+                "review": review_data,
                 "edits": edits if with_edits else len(edits),
             }
         )
@@ -205,7 +206,7 @@ def saved(sid: str) -> dict:
     """A scene's saved edits, its baseline if it has one, and its proposals."""
     folder = scene_dir(sid)
     baseline = folder / "baseline.json"
-    base = json.loads(baseline.read_text()) if baseline.exists() else None
+    base = json.loads(baseline.read_text(encoding="utf-8")) if baseline.exists() else None
     return {
         "edits": read_edits(folder / "edits"),
         "baseline": base,
@@ -221,7 +222,7 @@ def save_edit(folder: Path, name: str, patch: dict) -> None:
     """Writes the patch without its picture, and the picture beside it."""
     folder.mkdir(parents=True, exist_ok=True)
     picture = patch.pop("picture", None)
-    (folder / f"{name}.json").write_text(json.dumps(patch, indent=1) + "\n")
+    (folder / f"{name}.json").write_text(json.dumps(patch, indent=1) + "\n", encoding="utf-8")
     if picture:
         write_png(folder / f"{name}.png", picture)
 
@@ -261,7 +262,7 @@ def verify_runs() -> list[dict]:
         if not RUN_ID.match(folder.parent.name):
             continue
         try:
-            record = json.loads(folder.read_text())
+            record = json.loads(folder.read_text(encoding="utf-8"))
         except ValueError:
             continue
         by_rule: dict[str, int] = {}
@@ -357,7 +358,7 @@ def save_triage(body: dict) -> None:
     else:
         raise KeyError(verdict)
     verify.RUNS.mkdir(parents=True, exist_ok=True)
-    verify.TRIAGE.write_text(json.dumps(marks, indent=1, sort_keys=True) + "\n")
+    verify.TRIAGE.write_text(json.dumps(marks, indent=1, sort_keys=True) + "\n", encoding="utf-8")
 
 
 class Studio(http.server.BaseHTTPRequestHandler):
@@ -513,7 +514,7 @@ class Studio(http.server.BaseHTTPRequestHandler):
             elif len(parts) == 4 and parts[:2] == ["api", "review"] and PROPOSAL.match(parts[3]):
                 folder = scene_dir(parts[2]) / "proposals"
                 review = json.dumps(self.body(), indent=1) + "\n"
-                (folder / f"{parts[3]}.review.json").write_text(review)
+                (folder / f"{parts[3]}.review.json").write_text(review, encoding="utf-8")
             elif parts == ["api", "verify", "start"]:
                 body = self.body() or {}
                 scenes = [str(x) for x in body.get("scenes") or [] if x in catalog.SCENE_IDS]
@@ -526,7 +527,7 @@ class Studio(http.server.BaseHTTPRequestHandler):
             elif len(parts) == 3 and parts[:2] == ["api", "baseline"]:
                 folder = scene_dir(parts[2])
                 folder.mkdir(parents=True, exist_ok=True)
-                (folder / "baseline.json").write_text(json.dumps(self.body()))
+                (folder / "baseline.json").write_text(json.dumps(self.body()), encoding="utf-8")
             else:
                 self.send(404)
                 return

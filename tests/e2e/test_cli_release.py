@@ -28,8 +28,8 @@ def state(repo: Path) -> dict[str, str]:
         "branches": git(repo, "for-each-ref", "--format=%(refname) %(objectname)", "refs/heads"),
         "tags": git(repo, "for-each-ref", "--format=%(refname) %(objectname)", "refs/tags"),
         "status": git(repo, "status", "--porcelain"),
-        "pyproject.toml": (repo / "pyproject.toml").read_text(),
-        "uv.lock": (repo / "uv.lock").read_text(),
+        "pyproject.toml": (repo / "pyproject.toml").read_text(encoding="utf-8"),
+        "uv.lock": (repo / "uv.lock").read_text(encoding="utf-8"),
     }
 
 
@@ -51,7 +51,7 @@ def stops(done: subprocess.CompletedProcess, why: str) -> None:
 def version_in(repo: Path) -> str:
     line = next(
         line
-        for line in (repo / "pyproject.toml").read_text().splitlines()
+        for line in (repo / "pyproject.toml").read_text(encoding="utf-8").splitlines()
         if line.startswith("version")
     )
     return line.split('"')[1]
@@ -130,7 +130,9 @@ def test_a_bump_commits_the_new_version_tags_it_and_moves_the_release_branch(
         git(repo, "show", "--stat", "--format=", "HEAD").count("|") == 2
     )  # two files, nothing else
     assert version_in(repo) == version
-    assert f'name = "omsync-nursery"\nversion = "{version}"' in (repo / "uv.lock").read_text()
+    assert f'name = "omsync-nursery"\nversion = "{version}"' in (repo / "uv.lock").read_text(
+        encoding="utf-8"
+    )
     assert git(repo, "cat-file", "-t", f"v{version}") == "tag"
     assert git(repo, "rev-parse", f"v{version}^{{commit}}") == head
     assert git(repo, "rev-parse", "refs/heads/release") == head
@@ -175,7 +177,7 @@ def test_a_release_pushes_the_tag_and_the_branch_to_a_remote(repo: Path, tmp_pat
 
 
 def test_changes_that_are_not_committed_stop_the_release(repo: Path) -> None:
-    (repo / "notes.txt").write_text("not committed")
+    (repo / "notes.txt").write_text("not committed", encoding="utf-8")
     before = state(repo)
     stops(release(repo), "the nursery has uncommitted changes")
     assert state(repo) == before
@@ -183,8 +185,8 @@ def test_changes_that_are_not_committed_stop_the_release(repo: Path) -> None:
 
 def test_a_brand_file_that_the_grid_does_not_build_stops_the_release(repo: Path) -> None:
     grid = repo / GRID
-    text = grid.read_text()
-    grid.write_text(text.replace("#", ".", 1))
+    text = grid.read_text(encoding="utf-8")
+    grid.write_text(text.replace("#", ".", 1), encoding="utf-8")
     git(repo, "commit", "-q", "-am", "feat: change the mascot")
     before = state(repo)
     stops(release(repo), "mascot.svg is not what the mascot's grid builds; run `nursery brand`")
@@ -247,7 +249,7 @@ def test_a_tag_that_cannot_be_made_leaves_the_repository_as_it_was(
     # A lock file on the tag's name makes `git tag` fail after the version commit is made.
     lock = repo / ".git" / "refs" / "tags" / f"{tag}.lock"
     lock.parent.mkdir(parents=True, exist_ok=True)
-    lock.write_text("")
+    lock.write_text("", encoding="utf-8")
     before = state(repo)
     done = release(repo, *flags)
     stops(done, "`git tag -a")

@@ -24,7 +24,9 @@ SHARED = STUDIO / "shared"  # the poses and families, shared by the studio and t
 
 def scene_labels() -> dict[str, str]:
     """Each scene's label by id, from scenes.json: the picker label, and the catalogue's title."""
-    return {scene["id"]: scene["label"] for scene in json.loads(SCENES_JSON.read_text())}
+    return {
+        scene["id"]: scene["label"] for scene in json.loads(SCENES_JSON.read_text(encoding="utf-8"))
+    }
 
 
 def module_path(name: str) -> Path:

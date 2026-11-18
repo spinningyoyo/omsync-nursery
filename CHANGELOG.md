@@ -10,6 +10,10 @@ with "Contract change".
 
 ## [Unreleased]
 
+### Fixed
+
+- The Nursery Studio and tools read and write files with UTF-8 encoding so they run on Windows without decode errors.
+
 ## [0.2.1] - 2026-11-17
 
 ### Added

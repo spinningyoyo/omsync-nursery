@@ -78,7 +78,7 @@ def free_port() -> int:
 
 def start_server(site: Path, port: int, log_path: Path) -> subprocess.Popen:
     """Serve the temporary site in its own process group. Stopped by its pid, never by name."""
-    with log_path.open("w") as log:
+    with log_path.open("w", encoding="utf-8") as log:
         return subprocess.Popen(
             [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1"],
             cwd=site,
@@ -125,7 +125,9 @@ def write_scene_copies(site: Path) -> None:
     """Copy each scene module into copies/ with its imports rewritten and its functions exported."""
     (site / "copies").mkdir()
     for sid in RUN.scene_ids:
-        (site / "copies" / f"{sid}.js").write_text(exported_copy(module_path(sid).read_text()))
+        (site / "copies" / f"{sid}.js").write_text(
+            exported_copy(module_path(sid).read_text(encoding="utf-8")), encoding="utf-8"
+        )
 
 
 def exported_copy(text: str) -> str:
@@ -267,7 +269,7 @@ def element_where(sid: str, text: str, el: Element) -> str:
     parts = []
     if el.fn:
         owner = el.module or sid
-        owner_text = module_path(owner).read_text()
+        owner_text = module_path(owner).read_text(encoding="utf-8")
         line = need_line(owner_text, rf"^(?:export )?function {el.fn}\(", el.label)
         parts.append(f"`{el.fn}` {link(owner, line)}")
     for pattern in el.defs:
@@ -391,7 +393,7 @@ def scene_section(sid: str, text: str, data: dict) -> list[str]:
 
 def scene_markdown(sid: str, result: dict) -> str:
     """One scene's file: its title, a generated-file line and its section, standing alone."""
-    text = module_path(sid).read_text()
+    text = module_path(sid).read_text(encoding="utf-8")
     lines = scene_section(sid, text, result["scenes"][sid])
     lines[1:1] = ["", HEADER_LINE]
     return "\n".join(lines).rstrip() + "\n"
@@ -406,7 +408,7 @@ def write_scene_files(result: dict) -> None:
     files = {RUN.scenes_dir / f"{sid}.md": scene_markdown(sid, result) for sid in RUN.scene_ids}
     RUN.scenes_dir.mkdir(parents=True, exist_ok=True)
     for path, content in files.items():
-        path.write_text(content)
+        path.write_text(content, encoding="utf-8")
         print(f"catalogue written to {shown(path)}")
     if not RUN.narrowed:
         for path in sorted(RUN.scenes_dir.glob("*.md")):
@@ -488,7 +490,7 @@ def main(argv: list[str] | None = None) -> None:
     write_scene_copies(site)
     shutil.copy(PAGE_DIR / "index.html", site / "index.html")
     shutil.copy(PAGE_DIR / "catalog.js", site / "catalog.js")
-    (site / "copies.js").write_text(copies_js())
+    (site / "copies.js").write_text(copies_js(), encoding="utf-8")
     port = free_port()
     base = f"http://127.0.0.1:{port}"
     log_path = tmp / "http.log"

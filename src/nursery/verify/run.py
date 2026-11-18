@@ -166,7 +166,7 @@ def code_fingerprint() -> str:
 
 def read_triage() -> dict:
     try:
-        return json.loads(TRIAGE.read_text())
+        return json.loads(TRIAGE.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
 
@@ -275,7 +275,7 @@ def main(argv: list[str]) -> int:  # noqa: C901 - one flat argument-to-jobs pipe
         return doctor()
     if args.triage:
         return print_triage()
-    ids = [s["id"] for s in json.loads(SCENES_JSON.read_text())]
+    ids = [s["id"] for s in json.loads(SCENES_JSON.read_text(encoding="utf-8"))]
     unknown = [s for s in args.scenes if s not in ids]
     if unknown:
         raise SystemExit(

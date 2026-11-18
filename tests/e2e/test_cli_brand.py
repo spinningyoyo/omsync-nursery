@@ -51,14 +51,14 @@ def test_the_brand_files_of_the_repository_match_the_grid(repo: Path) -> None:
 
 
 def test_the_built_files_have_the_mascots_size_and_colours(repo: Path) -> None:
-    mascot = (repo / BUILT[0]).read_text()
+    mascot = (repo / BUILT[0]).read_text(encoding="utf-8")
     assert 'viewBox="0 0 32 22"' in mascot
     assert "currentColor" in mascot  # the outline follows the page's text colour
     assert "--mascot-body" not in mascot  # the body colour is a fill that the host's CSS replaces
     assert 'class="mascot-body"' in mascot
     assert 'class="mascot-eye-closed"' in mascot
 
-    favicon = (repo / BUILT[1]).read_text()
+    favicon = (repo / BUILT[1]).read_text(encoding="utf-8")
     assert 'viewBox="0 0 32 32"' in favicon
     assert "currentColor" not in favicon  # a favicon has no page colours to follow
 
@@ -71,15 +71,15 @@ def test_the_built_files_have_the_mascots_size_and_colours(repo: Path) -> None:
     assert (0xD3, 0xD7, 0xD9, 255) in colours  # the body
     assert (255, 255, 255, 255) in colours  # the tile
     # The PNG is the same picture as the SVG, cell for cell: one body cell in the grid is one here.
-    grid = [line for line in (repo / GRID).read_text().splitlines() if line]
+    grid = [line for line in (repo / GRID).read_text(encoding="utf-8").splitlines() if line]
     inks = sum(line.count("#") + line.count("E") for line in grid)
     assert sum(1 for row in rows for pixel in row if pixel[:3] == (0x0B, 0x0B, 0x0B)) == inks
 
 
 def test_a_changed_grid_makes_the_check_fail_and_brand_fixes_it(repo: Path) -> None:
-    grid = (repo / GRID).read_text()
+    grid = (repo / GRID).read_text(encoding="utf-8")
     first_ink = grid.index("#")
-    (repo / GRID).write_text(grid[:first_ink] + "." + grid[first_ink + 1 :])
+    (repo / GRID).write_text(grid[:first_ink] + "." + grid[first_ink + 1 :], encoding="utf-8")
     before = {path: (repo / path).read_bytes() for path in BUILT}
 
     stale = nursery_cli(repo, "brand", "--check")
@@ -104,7 +104,7 @@ def test_a_changed_grid_makes_the_check_fail_and_brand_fixes_it(repo: Path) -> N
 
 def test_a_hand_edited_or_missing_brand_file_is_stale(repo: Path) -> None:
     original = (repo / BUILT[0]).read_bytes()
-    (repo / BUILT[0]).write_text("<svg/>")
+    (repo / BUILT[0]).write_text("<svg/>", encoding="utf-8")
     (repo / BUILT[2]).unlink()
     done = nursery_cli(repo, "brand", "--check")
     assert done.returncode == 1
@@ -118,7 +118,7 @@ def test_a_hand_edited_or_missing_brand_file_is_stale(repo: Path) -> None:
 
 
 def test_the_closed_eye_is_a_thin_line_across_the_open_eye(repo: Path) -> None:
-    mascot = (repo / BUILT[0]).read_text()
+    mascot = (repo / BUILT[0]).read_text(encoding="utf-8")
     eye = re.findall(
         r'<rect x="(\d+)" y="(\d+)" width="(\d+)" height="1"/>', mascot.split("mascot-eye")[1]
     )
@@ -138,13 +138,13 @@ def test_the_closed_eye_is_a_thin_line_across_the_open_eye(repo: Path) -> None:
 
 
 def test_a_grid_of_the_wrong_size_or_with_unknown_cells_is_refused(repo: Path) -> None:
-    grid = (repo / GRID).read_text()
+    grid = (repo / GRID).read_text(encoding="utf-8")
     for broken, reason in (
         (grid.replace("\n", "", 1)[:-40], "must hold 22 rows of 32 characters"),
         (grid.replace("#", "x", 1), "unknown characters"),
         (grid.replace("E", "."), "no eye cells"),
     ):
-        (repo / GRID).write_text(broken)
+        (repo / GRID).write_text(broken, encoding="utf-8")
         done = nursery_cli(repo, "brand", "--check")
         assert done.returncode != 0
         assert reason in done.stderr

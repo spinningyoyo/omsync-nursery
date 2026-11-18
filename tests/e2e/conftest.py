@@ -32,7 +32,7 @@ PACKAGE = Path(nursery.__file__).resolve().parent  # the code under test
 ROOT = PACKAGE.parents[1]  # the checkout
 HOST_PAGE = Path(__file__).with_name("host.html")
 TEMPLATE_VERSION = "0.1.1"  # the version the throwaway repositories start from
-SCENE_IDS = [scene["id"] for scene in json.loads(assets.SCENES_JSON.read_text())]
+SCENE_IDS = [scene["id"] for scene in json.loads(assets.SCENES_JSON.read_text(encoding="utf-8"))]
 
 # Where omsync serves the scene files (see docs/overview.md).
 VENDOR = "/static/vendor/nursery/"
@@ -222,16 +222,23 @@ def pin_version(repo: Path, version: str) -> None:
     """
     pyproject = repo / "pyproject.toml"
     pyproject.write_text(
-        re.sub(r'(?m)^version = ".*"$', f'version = "{version}"', pyproject.read_text(), count=1)
+        re.sub(
+            r'(?m)^version = ".*"$',
+            f'version = "{version}"',
+            pyproject.read_text(encoding="utf-8"),
+            count=1,
+        ),
+        encoding="utf-8",
     )
     lock = repo / "uv.lock"
     lock.write_text(
         re.sub(
             r'(name = "omsync-nursery"\nversion = )"[^"]*"',
             rf'\g<1>"{version}"',
-            lock.read_text(),
+            lock.read_text(encoding="utf-8"),
             count=1,
-        )
+        ),
+        encoding="utf-8",
     )
 
 

@@ -68,9 +68,9 @@ def test_the_wheel_exposes_every_file_that_omsync_reads(installed: dict[str, Any
         assert exports[name].is_file()
         assert exports[name].stat().st_size > 0
     assert exports["FAVICON_PNG"].read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
-    assert exports["MASCOT_SVG"].read_text().startswith("<svg")
-    assert exports["FAVICON_SVG"].read_text().startswith("<svg")
-    assert json.loads(exports["SCENES_JSON"].read_text())
+    assert exports["MASCOT_SVG"].read_text(encoding="utf-8").startswith("<svg")
+    assert exports["FAVICON_SVG"].read_text(encoding="utf-8").startswith("<svg")
+    assert json.loads(exports["SCENES_JSON"].read_text(encoding="utf-8"))
 
 
 def test_the_wheel_needs_nothing_and_has_the_projects_version(installed: dict[str, Any]) -> None:
@@ -90,8 +90,9 @@ def test_the_scene_ids_agree_in_the_json_the_script_and_the_css(
     installed: dict[str, Any], driver: Any
 ) -> None:
     exports = {name: Path(path) for name, path in installed["exports"].items()}
-    in_json = [scene["id"] for scene in json.loads(exports["SCENES_JSON"].read_text())]
-    css = exports["SCENES_CSS"].read_text()
+    scenes = json.loads(exports["SCENES_JSON"].read_text(encoding="utf-8"))
+    in_json = [scene["id"] for scene in scenes]
+    css = exports["SCENES_CSS"].read_text(encoding="utf-8")
     tints = re.findall(r'\[data-tint="([a-z]+)"\]', css)
     backdrops = re.findall(r'\[data-scene="([a-z]+)"\]', css)
 
