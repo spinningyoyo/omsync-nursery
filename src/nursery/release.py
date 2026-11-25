@@ -4,13 +4,15 @@
 
 A release, in order, stopping at the first problem:
 
-1. Checks the nursery is ready: nothing uncommitted, every saved pixel edit in code, no proposal
-   approved but not built, and every scene drawing without errors.
+1. Checks the nursery is ready: nothing uncommitted but CHANGELOG.md, every saved pixel edit in
+   code, no proposal approved but not built, and every scene drawing without errors.
 2. Settles the version. The tag is always vX.Y.Z, and X.Y.Z is the version in pyproject.toml.
    This commit may already carry a v tag: it is reused (no bump flag allowed). If v<version> is
    not a tag yet, that version is released as it is (no bump flag allowed). Otherwise a bump flag
-   is required: the command writes the next version into pyproject.toml, refreshes uv.lock,
-   commits both as `chore: release vX.Y.Z` and tags that commit (annotated).
+   is required: CHANGELOG.md must hold the section for the next version, and the command writes
+   that version into pyproject.toml, refreshes uv.lock, commits the three files as
+   `chore: release vX.Y.Z` and tags that commit (annotated). The changelog is written once, for
+   the release, so its section lands in the release commit.
 3. Moves the `release` branch to the tagged commit, or creates it. The branch only moves forward:
    if it holds work that commit does not, the release stops and nothing is committed or tagged.
 4. Pushes the tag and the branch, if the repository has a remote. Otherwise nothing is pushed.
@@ -60,7 +62,7 @@ def git(*args: str, cwd: Path = ROOT) -> str:
 def readiness() -> list[str]:
     """Problems that stop a release; an empty list means ready. Notes worth knowing are printed."""
     problems = []
-    dirty = git("status", "--porcelain")
+    dirty = git("status", "--porcelain", "--", ".", f":!{CHANGELOG.name}")
     if dirty:
         problems.append(f"the nursery has uncommitted changes:\n{dirty}")
 
@@ -100,6 +102,7 @@ def scene_problems(sid: str, scene: dict) -> list[str]:
 
 PYPROJECT = ROOT / "pyproject.toml"
 LOCKFILE = ROOT / "uv.lock"
+CHANGELOG = ROOT / "CHANGELOG.md"
 BUMPS = ("major", "minor", "patch")
 VERSION_TAG = re.compile(r"v(\d+)\.(\d+)\.(\d+)")
 BUMP_HELP = (
@@ -173,15 +176,36 @@ def put_back_version_files(sha: str) -> None:
     )
 
 
+def changelog_problem(plan: Plan) -> str | None:
+    """Why CHANGELOG.md stops this release, or None. A bump needs the new version's section; a
+    release with no bump makes no commit, so the changelog must be committed already."""
+    if plan.bump:
+        text = CHANGELOG.read_text(encoding="utf-8") if CHANGELOG.is_file() else ""
+        if not re.search(rf"(?m)^## \[{re.escape(plan.version)}\]", text):
+            return f"CHANGELOG.md has no section for {plan.version}; write it before the release"
+        return None
+    if git("status", "--porcelain", "--", CHANGELOG.name):
+        return "CHANGELOG.md has uncommitted changes, and a release with no bump makes no commit"
+    return None
+
+
+def unstage_changelog(sha: str) -> None:
+    """Take CHANGELOG.md out of the index as `sha` has it, and leave the written file on disk."""
+    subprocess.run(["git", "reset", "-q", sha, "--", CHANGELOG.name], cwd=ROOT, check=False)
+
+
 def commit_version(plan: Plan) -> None:
-    """Commit the new version with its lock file. On failure both files are put back."""
+    """Commit the new version with its lock file and the changelog. On failure the version files
+    are put back, and the changelog stays on disk, uncommitted."""
+    files = ("pyproject.toml", "uv.lock", CHANGELOG.name)
     try:
         write_version(plan.version)
         run(["uv", "lock", "-q"], ROOT)
-        git("add", "pyproject.toml", "uv.lock")
-        git("commit", "-q", "-m", f"chore: release {plan.tag}", "--", "pyproject.toml", "uv.lock")
+        git("add", *files)
+        git("commit", "-q", "-m", f"chore: release {plan.tag}", "--", *files)
     except BaseException:
         put_back_version_files("HEAD")
+        unstage_changelog("HEAD")
         raise
 
 
@@ -238,7 +262,8 @@ def describe(plan: Plan, state: str, remote: str | None) -> None:
         old = project_version()
         print(
             f"2. Would change the version from {old} to {plan.version} in pyproject.toml and "
-            f"uv.lock, commit them as 'chore: release {tag}', and tag that commit {tag}"
+            f"uv.lock, commit them with CHANGELOG.md as 'chore: release {tag}', and tag that "
+            f"commit {tag}"
         )
     else:
         print(f"2. Would tag this commit {tag} (the version in pyproject.toml, no bump)")
@@ -262,9 +287,10 @@ def tag_commit(plan: Plan) -> None:
     try:
         create_tag(plan.tag)
     except ReleaseError:
-        if plan.bump:  # the tree was clean: move the branch back and restore the two files
+        if plan.bump:  # move the branch back, restore the version files, unstage the changelog
             git("reset", "-q", "--soft", before)
             put_back_version_files(before)
+            unstage_changelog(before)
         raise
     print(f"2. {'Committed the version and tagged' if plan.bump else 'Tagged'} {plan.tag}")
 
@@ -281,6 +307,9 @@ def release(bump: str | None, dry_run: bool) -> int:
             f"the {BRANCH} branch holds work that this commit does not; "
             "it only moves forward, so it is left alone"
         )
+    problem = changelog_problem(plan)
+    if problem:
+        raise ReleaseError(problem)
     if plan.bump and state == "same":
         state = "behind"  # the version commit puts this commit ahead of the branch
     remote = push_remote()

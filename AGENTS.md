@@ -49,18 +49,20 @@ uv run nursery brand              # rebuilds the mascot, favicons and studio mar
 
 ## Changelog
 
-- `CHANGELOG.md` follows Keep a Changelog. Put each new entry under `## [Unreleased]`, in
-  `### Added`, `### Changed`, `### Fixed` or `### Removed`. Read the section first. Add to its
-  subsections instead of repeating them.
+- `CHANGELOG.md` follows Keep a Changelog. Write it once, at release: the release commit holds
+  the new version's section. A feature commit does not touch it.
+- One short sentence for each item, for the person who installs the package. A new scene is its
+  name, what it is and how it feels. Never list a scene's animals, plants or effects.
+- Start an entry with "Contract change:" when it changes what a host reads. Say at a high level
+  what changes for the host.
 - Never change a released section.
-- Start an entry with "Contract change:" when it changes what omsync reads.
-- Write for the person who installs the package. Do not list linters, checks, tests or CI.
-- Contributors do not edit the changelog.
+- Do not list linters, checks, tests or CI.
 
 ## Releasing
 
 Release only when the owner asks. The rules and the steps are in the
 [Release section of docs/overview.md](docs/overview.md#release). The version tag is `vX.Y.Z`.
 Run `uv run nursery release --dry-run` first. Then run the command with `--patch`, `--minor` or
-`--major`. Before it, move the `[Unreleased]` entries to a section for the new version in
-`CHANGELOG.md`, and commit that change. omsync takes a release on its own schedule.
+`--major`. Before it, write the new version's section in `CHANGELOG.md` and leave it
+uncommitted. The release commit takes it with the version. omsync takes a release on its own
+schedule.

@@ -149,11 +149,12 @@ flowchart LR
     E -. "omsync takes it when its owner chooses" .-> F
 ```
 
-1. Commit all changes in this repository. Move the `[Unreleased]` entries of `CHANGELOG.md` to
-   a section for the new version, and commit that change.
+1. Commit all changes in this repository. Write the section for the new version in
+   `CHANGELOG.md`, and do not commit it.
 2. Run `uv run nursery release --dry-run`. Correct each problem that it shows.
 3. Run `uv run nursery release --patch`, `--minor` or `--major`. The flag raises the version in
-   `pyproject.toml`. The command commits the new version and tags that commit `vX.Y.Z`. If
+   `pyproject.toml`. The command commits the new version with the changelog and tags that commit
+   `vX.Y.Z`. If
    `pyproject.toml` holds a version that has no tag, run the command with no flag. It releases
    that version.
 

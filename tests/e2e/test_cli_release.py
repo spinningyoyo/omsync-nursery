@@ -42,6 +42,12 @@ def released(repo: Path, tag: str = "v0.1.1") -> None:
     git(repo, "tag", "-a", tag, "-m", "released")
 
 
+def changelog(repo: Path, version: str) -> None:
+    """The changelog section for `version`, written and not committed, as before a release."""
+    section = f"# Changelog\n\n## [{version}] - 2026-11-25\n"
+    (repo / "CHANGELOG.md").write_text(section, encoding="utf-8")
+
+
 def stops(done: subprocess.CompletedProcess, why: str) -> None:
     assert done.returncode != 0, done.stdout
     assert done.stderr.startswith("release stopped:"), done.stderr[:1500]
@@ -75,13 +81,13 @@ def test_a_dry_run_of_a_bump_names_the_new_version(repo: Path) -> None:
     released(repo)
     commit(repo)
     git(repo, "branch", "release", "HEAD~1")
+    changelog(repo, "0.1.2")
     before = state(repo)
     done = release(repo, "--patch", "--dry-run")
     assert done.returncode == 0, done.stderr
     assert (
         "2. Would change the version from 0.1.1 to 0.1.2 in pyproject.toml and uv.lock, commit "
-        "them "
-        "as 'chore: release v0.1.2', and tag that commit v0.1.2"
+        "them with CHANGELOG.md as 'chore: release v0.1.2', and tag that commit v0.1.2"
     ) in done.stdout
     assert "3. Would move the release branch forward to the tagged commit" in done.stdout
     assert state(repo) == before
@@ -116,6 +122,7 @@ def test_a_bump_commits_the_new_version_tags_it_and_moves_the_release_branch(
     git(repo, "branch", "release")
     commit(repo)
     work = git(repo, "rev-parse", "HEAD")
+    changelog(repo, version)
 
     done = release(repo, flag)
     assert done.returncode == 0, done.stderr
@@ -126,9 +133,11 @@ def test_a_bump_commits_the_new_version_tags_it_and_moves_the_release_branch(
     head = git(repo, "rev-parse", "HEAD")
     assert git(repo, "log", "-1", "--format=%s", "HEAD") == f"chore: release v{version}"
     assert git(repo, "rev-parse", "HEAD~1") == work
-    assert (
-        git(repo, "show", "--stat", "--format=", "HEAD").count("|") == 2
-    )  # two files, nothing else
+    assert git(repo, "show", "--name-only", "--format=", "HEAD").split() == [
+        "CHANGELOG.md",
+        "pyproject.toml",
+        "uv.lock",
+    ]
     assert version_in(repo) == version
     assert f'name = "omsync-nursery"\nversion = "{version}"' in (repo / "uv.lock").read_text(
         encoding="utf-8"
@@ -154,6 +163,7 @@ def test_a_release_branch_at_the_commit_still_moves_on_a_bump(repo: Path) -> Non
     released(repo)
     commit(repo)
     git(repo, "branch", "release")  # already at the commit that the version commit will follow
+    changelog(repo, "0.1.2")
     assert release(repo, "--patch").returncode == 0
     assert git(repo, "rev-parse", "refs/heads/release") == git(repo, "rev-parse", "HEAD")
     assert git(repo, "rev-parse", "v0.1.2^{commit}") == git(repo, "rev-parse", "HEAD")
@@ -246,6 +256,7 @@ def test_a_tag_that_cannot_be_made_leaves_the_repository_as_it_was(
         released(repo)
         git(repo, "branch", "release")
         commit(repo)
+        changelog(repo, "0.1.2")
     # A lock file on the tag's name makes `git tag` fail after the version commit is made.
     lock = repo / ".git" / "refs" / "tags" / f"{tag}.lock"
     lock.parent.mkdir(parents=True, exist_ok=True)
