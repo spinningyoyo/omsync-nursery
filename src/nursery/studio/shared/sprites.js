@@ -5,8 +5,10 @@
 
 import * as animals from "./js/kit/animals.js";
 import * as effects from "./js/kit/effects.js";
+import * as fish from "./js/kit/fish.js";
 import * as flyers from "./js/kit/flyers.js";
 import * as insect from "./js/kit/insect.js";
+import * as octopus from "./js/kit/octopus.js";
 import * as owl from "./js/kit/owl.js";
 import { fade, rect, rng } from "./js/kit/pixel.js";
 import { meadowFlower, meadowFlowerHead } from "./js/kit/plants.js";
@@ -878,6 +880,36 @@ export const SPRITES = {
         plants: [],
       });
       M.nightAt(g, { cols: ANIMAL_BOX.w, extra });
+    },
+  },
+  greatbarrier: {
+    "greatbarrier-mantle": (_M, g) =>
+      octopus.octopusAt(g, walk({ mode: "crawl", c: frame.time / 0.9, m: 1, phase: 1 }), g.groundY, frame.time),
+    "greatbarrier-mantle-sitting": (_M, g) =>
+      octopus.octopusAt(g, walk({ mode: "sit", phase: 1 }), g.groundY, frame.time),
+    "greatbarrier-mantle-camouflaged": (_M, g) =>
+      octopus.octopusAt(g, walk({ mode: "sit", camo: 1, phase: 1 }), g.groundY, frame.time),
+    "greatbarrier-mantle-reaching": (_M, g) =>
+      octopus.octopusAt(g, walk({ mode: "sit", rest: "reach", phase: 1 }), g.groundY, frame.time),
+    "greatbarrier-mantle-in-den": (_M, g) =>
+      octopus.octopusAt(g, walk({ mode: "den", phase: 1 }), g.groundY, frame.time),
+    "greatbarrier-mantle-jetting": (_M, g) => {
+      octopus.inkAt(g, { x: 30, y: 38, age: 0.8 });
+      octopus.octopusAt(g, walk({ mode: "jet", flash: 1, lift: 8, phase: 1 }), g.groundY, frame.time);
+    },
+    "greatbarrier-clownfish": (_M, g) => fish.fishAt(g, "clownfish", bird(), frame.time),
+    "greatbarrier-chromis": (_M, g) => fish.fishAt(g, "chromis", bird(), frame.time),
+    "greatbarrier-anthias": (_M, g) => fish.fishAt(g, "anthias", bird(), frame.time),
+    "greatbarrier-wrasse": (_M, g) => fish.fishAt(g, "wrasse", bird(), frame.time),
+    "greatbarrier-parrotfish": (_M, g) => fish.fishAt(g, "parrotfish", bird({ y: 38 }), frame.time, g.groundY),
+    "greatbarrier-trevally": (_M, g) => fish.fishAt(g, "trevally", bird(), frame.time),
+    "greatbarrier-blacktip": (_M, g) => fish.fishAt(g, "blacktip", bird(), frame.time),
+    "greatbarrier-epaulette": (_M, g) =>
+      fish.epauletteAt(g, walk({ c: frame.time / 0.7, m: 1 }), g.groundY, frame.time),
+    "greatbarrier-turtle": (_M, g) => animals.honuShellAt(g, { x: 40, dir: 1 }, 34, frame.time),
+    "greatbarrier-manta": (_M, g) => {
+      fish.mantaShadow(g, 40, g.groundY);
+      fish.mantaAt(g, bird({ y: 24 }), frame.time);
     },
   },
 };

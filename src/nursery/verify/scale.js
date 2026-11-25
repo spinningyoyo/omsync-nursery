@@ -8,7 +8,9 @@ import { ARCTIC, COYOTE, RED, WOLF } from "../js/kit/canid.js";
 import { DEER_SPECS } from "../js/kit/deer.js";
 import { AFRICAN, ASIAN } from "../js/kit/elephant.js";
 import { FELIDS } from "../js/kit/felid.js";
+import { EPAULETTE, FISH } from "../js/kit/fish.js";
 import { ZEBRA } from "../js/kit/horse.js";
+import { OCTOPUS } from "../js/kit/octopus.js";
 
 export const SPECS = {
   "cats/cat": FELIDS.housecat,
@@ -35,4 +37,13 @@ export const SPECS = {
   "horses/zebra": ZEBRA,
   "elephants/elephant-asian": ASIAN,
   "elephants/elephant-african": AFRICAN,
+  "fish/chromis": FISH.chromis,
+  "fish/clownfish": FISH.clownfish,
+  "fish/anthias": FISH.anthias,
+  "fish/wrasse": FISH.wrasse,
+  "fish/parrotfish": FISH.parrotfish,
+  "fish/trevally": FISH.trevally,
+  "fish/blacktip": FISH.blacktip,
+  "fish/epaulette": EPAULETTE,
+  "cephalopods/octopus": OCTOPUS,
 };

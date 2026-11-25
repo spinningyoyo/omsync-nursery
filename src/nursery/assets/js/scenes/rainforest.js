@@ -871,6 +871,8 @@ const extras = {
 
 export default {
   id: "rainforest",
+  label: "Thailand Khao Sok Rainforest",
+  group: "woods",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.38, 0.64], dark: [0.5, 0.75] },
   mature: MATURE,

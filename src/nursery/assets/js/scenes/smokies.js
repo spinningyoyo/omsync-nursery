@@ -781,6 +781,8 @@ const extras = {
 
 export default {
   id: "smokies",
+  label: "Great Smoky Mountains",
+  group: "woods",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.35, 0.55], dark: [0.45, 0.62] },
   mature: MATURE,

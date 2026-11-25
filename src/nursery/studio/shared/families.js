@@ -107,11 +107,34 @@ export const FAMILIES = [
     members: { hawaii: ["seal", "whale"], rainforest: ["otter"] },
   },
   {
+    id: "fish",
+    title: "Fish and sharks",
+    group: "Animals",
+    differ: "size, body profile, tail, fins, markings; the epaulette walks on its fins",
+    members: {
+      greatbarrier: ["clownfish", "chromis", "anthias", "wrasse", "parrotfish", "trevally", "blacktip", "epaulette"],
+    },
+  },
+  {
+    id: "rays",
+    title: "Rays",
+    group: "Animals",
+    differ: "span, colour, belly spots",
+    members: { greatbarrier: ["manta"] },
+  },
+  {
+    id: "cephalopods",
+    title: "Octopuses",
+    group: "Animals",
+    differ: "size, skin colour and its changes",
+    members: { greatbarrier: ["mantle"] },
+  },
+  {
     id: "shelled-scaled",
     title: "Shelled and scaled",
     group: "Animals",
     differ: "shell, length",
-    members: { desert: ["tortoise", "snake"], hawaii: ["honu", "crab"] },
+    members: { desert: ["tortoise", "snake"], hawaii: ["honu", "crab"], greatbarrier: ["turtle"] },
   },
   {
     id: "insects",
@@ -255,6 +278,31 @@ export const FAMILIES = [
     differ: "arms, spines",
     members: { desert: ["tree", "yucca", "cholla", "ocotillo", "pad"] },
   },
+  {
+    id: "corals",
+    title: "Corals and reef plants",
+    group: "Trees",
+    differ: "growth form (pillar, table, branching, boulder, soft, fan, blades), size, colour",
+    members: {
+      greatbarrier: [
+        "bommie",
+        "tableCoral",
+        "staghorn",
+        "boulderCoral",
+        "softCoral",
+        "seaFan",
+        "seagrass",
+        "anemone",
+        "giantClam",
+        "stylophora",
+        "goniopora",
+        "mushroom",
+        "organPipe",
+        "acroporaBush",
+        "softTree",
+      ],
+    },
+  },
 ];
 
 const listed = (names, stem) => (names ?? []).some((name) => stem === name || stem.startsWith(`${name}-`));
@@ -306,6 +354,15 @@ export const REAL_LENGTH = {
   "horses/zebra": 2.3,
   "elephants/elephant-asian": 5.5,
   "elephants/elephant-african": 6.0,
+  "fish/chromis": 0.07,
+  "fish/clownfish": 0.08,
+  "fish/anthias": 0.1,
+  "fish/wrasse": 0.1,
+  "fish/parrotfish": 0.6,
+  "fish/trevally": 1.2,
+  "fish/blacktip": 1.4,
+  "fish/epaulette": 0.7,
+  "cephalopods/octopus": 0.16,
 };
 
 // The body length the scale gives for a real length, and the range it allows.
@@ -335,6 +392,9 @@ export const PREDATORS = new Set([
   "ground-birds/secretary",
   "ground-birds/roadrunner",
   "owls/owl",
+  "fish/blacktip",
+  "fish/trevally",
+  "fish/epaulette",
 ]);
 
 // Open scenes keep at most 5 ground animals and one flyer at a time; every other scene is dense, at

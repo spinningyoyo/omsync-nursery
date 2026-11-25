@@ -1290,6 +1290,8 @@ const extras = {
 
 export default {
   id: "wonderland",
+  label: "Wonderland",
+  group: "storybook",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.3, 0.5], dark: [0.4, 0.6] },
   mature: {

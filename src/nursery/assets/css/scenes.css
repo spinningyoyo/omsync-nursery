@@ -63,6 +63,10 @@
   --scene-tint: #f3d6f0;
   --scene-tint-dark: rgb(120 90 170);
 }
+[data-tint="greatbarrier"] {
+  --scene-tint: #9be0ea;
+  --scene-tint-dark: rgb(42 152 178);
+}
 
 /* Backdrops. */
 [data-scene="meadow"] {
@@ -224,4 +228,20 @@
   --landing-peach: rgb(230 110 150 / 0.2);
   --landing-blush: rgb(120 90 170 / 0.16);
   --landing-bloom: rgb(255 120 190 / 0.3);
+}
+
+[data-scene="greatbarrier"] {
+  --landing-green: #8fdbe8;
+  --landing-green-soft: #bfeef2;
+  --landing-peach: #f5d8c8;
+  --landing-blush: #d6edf7;
+  --landing-bloom: #72d2dc;
+}
+
+[data-theme="dark"] [data-scene="greatbarrier"] {
+  --landing-green: rgb(42 152 178 / 0.42);
+  --landing-green-soft: rgb(32 110 156 / 0.24);
+  --landing-peach: rgb(186 112 96 / 0.16);
+  --landing-blush: rgb(62 188 196 / 0.16);
+  --landing-bloom: rgb(56 202 204 / 0.32);
 }

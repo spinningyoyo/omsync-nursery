@@ -749,6 +749,8 @@ const extras = {
 
 export default {
   id: "meadow",
+  label: "Yosemite Meadows",
+  group: "woods",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.5], dark: [0.55] },
   mature: MATURE,

@@ -221,17 +221,19 @@ records the exact commit. A contract change raises the version past omsync's ran
 things:
 
 - `JS`: the engine, the scenes and the kit. omsync serves this folder at `/static/vendor/nursery/`.
-- `SCENES_JSON`: the id and the picker label of each scene, in picker order. omsync makes its
-  scene pickers from this file. A new scene shows in omsync with no change to omsync.
+- `SCENES_JSON`: the `id`, picker `label` and biome `group` of each scene, in picker order. omsync
+  makes its scene pickers from this file. A new scene shows in omsync with no change to omsync.
+- `SCENE_GROUPS`: the ordered `(id, label)` biome groups (`woods`, `drylands`, `coastal`,
+  `underwater`, `storybook`).
 - `SCENES_CSS`: the colours of each scene. omsync links this file as its own stylesheet.
 - `MASCOT_SVG`, `FAVICON_SVG` and `FAVICON_PNG`: omsync's pixel mascot and its two favicons. omsync
   serves them as its own `mascot.svg`, `favicon.svg` and `favicon-32.png`, with no copy.
   `MASCOT_SVG` uses `currentColor` for the outline and the eye. It uses the CSS variable
   `--mascot-body` for the body, as omsync's `brand.css` expects.
 
-**Exports.** omsync imports `Nursery`, `SCENES`, `MAX_STAGE`, `WATER_MS`, `COOLDOWN_MS`,
-`FINALE_MS`, `releaseMs` and `showMs` from `nursery.js`. It imports `iconSvg` and `clamp` from
-`kit/pixel.js`.
+**Exports.** omsync imports `Nursery`, `SCENES`, `SCENE_GROUPS`, `groupScenes`, `MAX_STAGE`,
+`WATER_MS`, `COOLDOWN_MS`, `FINALE_MS`, `releaseMs` and `showMs` from `nursery.js`. It imports
+`iconSvg` and `clamp` from `kit/pixel.js`.
 
 **Engine.** omsync makes the engine with `{ ground, water, reducedMotion, scene, stage }`. It reads
 `stage`. It calls `sprinkle(clientX, clientY, level)`, `setScene(scene, stage)` and `destroy()`. The

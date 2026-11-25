@@ -38,6 +38,7 @@
 
 import { CELL, clamp, fade, P, rng, SOIL_ROWS, smooth } from "./kit/pixel.js";
 import desert from "./scenes/desert.js";
+import greatbarrier from "./scenes/greatbarrier.js";
 import hawaii from "./scenes/hawaii.js";
 import hundredacre from "./scenes/hundredacre.js";
 import iceland from "./scenes/iceland.js";
@@ -47,6 +48,14 @@ import serengeti from "./scenes/serengeti.js";
 import smokies from "./scenes/smokies.js";
 import wonderland from "./scenes/wonderland.js";
 import yellowstone from "./scenes/yellowstone.js";
+
+export const SCENE_GROUPS = [
+  { id: "woods", label: "Woods" },
+  { id: "drylands", label: "Drylands" },
+  { id: "coastal", label: "Coastal" },
+  { id: "underwater", label: "Underwater" },
+  { id: "storybook", label: "Storybook" },
+];
 
 export const SCENES = [
   meadow,
@@ -59,7 +68,24 @@ export const SCENES = [
   yellowstone,
   hundredacre,
   wonderland,
+  greatbarrier,
 ];
+
+// Organizes scene plugins into ordered biome groups. Hosts can pass custom `groups`,
+// `includeEmpty: true`, or a `filter` predicate to tailor the picker without changing the nursery.
+export function groupScenes(scenes = SCENES, { groups = SCENE_GROUPS, includeEmpty = false, filter } = {}) {
+  const list = filter ? scenes.filter(filter) : scenes;
+  const byId = new Map(groups.map((g) => [g.id, { id: g.id, label: g.label, scenes: [] }]));
+  const other = [];
+  for (const scene of list) {
+    const bucket = byId.get(scene.group);
+    if (bucket) bucket.scenes.push(scene);
+    else other.push(scene);
+  }
+  const result = [...byId.values()].filter((g) => includeEmpty || g.scenes.length > 0);
+  if (other.length) result.push({ id: "other", label: "Other", scenes: other });
+  return result;
+}
 export const MAX_STAGE = 8;
 export const WATER_MS = 1000;
 export const COOLDOWN_MS = 1200;

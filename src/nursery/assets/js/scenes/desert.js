@@ -811,6 +811,8 @@ const extras = {
 
 export default {
   id: "desert",
+  label: "Joshua Tree Desert",
+  group: "drylands",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.6], dark: [0.5, 0.7] },
   mature: MATURE,

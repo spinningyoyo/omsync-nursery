@@ -838,6 +838,8 @@ const extras = {
 
 export default {
   id: "yellowstone",
+  label: "Yellowstone",
+  group: "woods",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.35, 0.55], dark: [0.45, 0.62] },
   mature: MATURE,

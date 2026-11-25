@@ -979,6 +979,8 @@ const extras = {
 
 export default {
   id: "serengeti",
+  label: "Serengeti Savanna",
+  group: "drylands",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.62], dark: [0.45, 0.66] },
   mature: {

@@ -1454,6 +1454,8 @@ const extras = {
 
 export default {
   id: "hundredacre",
+  label: "Hundred Acre Wood",
+  group: "storybook",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.45, 0.65], dark: [0.45, 0.62] },
   mature: MATURE,

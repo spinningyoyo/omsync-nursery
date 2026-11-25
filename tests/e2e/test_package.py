@@ -98,10 +98,14 @@ def test_the_scene_ids_agree_in_the_json_the_script_and_the_css(
 
     with serve_host(exports["JS"], exports["SCENES_JSON"], exports["SCENES_CSS"]) as server:
         page = Page(driver, server.origin).open()
-        in_script = page.run("return host.engine.SCENES.map((scene) => scene.id)")
+        in_script = page.run(
+            "return host.engine.SCENES.map("
+            "(scene) => ({ id: scene.id, label: scene.label, group: scene.group }))"
+        )
         assert page.errors() == []
 
-    assert in_script == in_json  # the same ids in the same (picker) order
+    assert [s["id"] for s in in_script] == in_json  # the same ids in the same (picker) order
+    assert in_script == scenes  # id, label and group match scenes.json
     assert in_json == SCENE_IDS
     assert sorted(set(tints)) == sorted(in_json)
     assert sorted(set(backdrops)) == sorted(in_json)

@@ -818,6 +818,8 @@ const extras = {
 
 export default {
   id: "hawaii",
+  label: "Waikiki Beach",
+  group: "coastal",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.62], dark: [0.5, 0.7] },
   mature: MATURE,

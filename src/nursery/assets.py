@@ -21,3 +21,11 @@ MASCOT_GRID = BRAND / "mascot-grid.txt"
 MASCOT_SVG = BRAND / "mascot.svg"
 FAVICON_SVG = BRAND / "favicon.svg"
 FAVICON_PNG = BRAND / "favicon-32.png"
+
+SCENE_GROUPS = (
+    ("woods", "Woods"),
+    ("drylands", "Drylands"),
+    ("coastal", "Coastal"),
+    ("underwater", "Underwater"),
+    ("storybook", "Storybook"),
+)

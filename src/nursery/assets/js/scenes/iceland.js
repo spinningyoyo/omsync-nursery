@@ -751,6 +751,8 @@ const extras = {
 
 export default {
   id: "iceland",
+  label: "Icelandic Lava Field",
+  group: "coastal",
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.35, 0.6], dark: [0.45, 0.68] },
   mature: {

@@ -61,6 +61,20 @@ export const DRIVERS = {
   honuAt: { family: "shelled-scaled", role: "swimmer", member: () => "honu" },
   honuShellAt: { family: "shelled-scaled", role: "swimmer", member: () => "honu" },
   whaleAt: { family: "swimmers", role: "swimmer", member: () => "whale" },
+  // The reef. Mantle walks on its arms; jetting home it is off the sand on purpose (its lift).
+  octopusAt: walker("cephalopods", () => "octopus"),
+  inkAt: { family: "cephalopods", role: "prop", member: () => "ink" },
+  epauletteAt: { ...walker("fish", () => "epaulette"), day: false },
+  fishAt: {
+    family: "fish",
+    role: "swimmer",
+    member: (_a, args) => args[0],
+    // The blacktip hunts by night too; a day fish asleep (in its anemone, in its cocoon) is a night detail.
+    day: (a, args) => args[0] !== "blacktip" && !a?.asleep,
+  },
+  schoolAt: group("fish", (_a, args) => `${args[0]} school`, true),
+  mantaAt: { family: "rays", role: "swimmer", member: () => "manta", day: true },
+  mantaShadow: { family: "rays", role: "prop", member: () => "manta shadow" },
   macaqueAt: { family: "primates", role: "climber", member: () => "monkey" },
   langurAt: { family: "primates", role: "climber", member: () => "langur" },
   gibbonAt: { family: "primates", role: "climber", member: () => "gibbon" },
