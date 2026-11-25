@@ -6,6 +6,8 @@ The rules, from AGENTS.md and the layout of src/nursery/assets/js/:
    package stays self-contained. No bare names, no URLs.
 2. A scene (js/scenes/) imports only kit/ modules. It does not import another scene.
 3. A kit module (js/kit/) imports only other kit modules.
+4. A garden module (js/garden/) reaches scenes only through nursery.js, and nothing outside
+   garden/ imports it: the engine and the scenes do not depend on the host's garden.
 
 Run from anywhere: python3 scripts/check_js_imports.py. It needs only the standard library.
 """
@@ -61,6 +63,10 @@ def layer_problems(rel: str, target: str, spec: str) -> list[str]:
         return [f"{rel}: imports {spec!r}; a scene imports only kit/ modules, not {target}"]
     if rel.startswith("kit/") and not target.startswith("kit/"):
         return [f"{rel}: imports {spec!r}; a kit module imports only other kit modules"]
+    if rel.startswith("garden/") and target.startswith("scenes/"):
+        return [f"{rel}: imports {spec!r}; the garden reaches scenes only through nursery.js"]
+    if not rel.startswith("garden/") and target.startswith("garden/"):
+        return [f"{rel}: imports {spec!r}; only a host uses the garden, the engine does not"]
     return []
 
 

@@ -1,0 +1,541 @@
+/*
+ * The garden around a scene: the backdrop it is drawn on, the mascot that waters it, the scene
+ * picker, the stage sprout and the control buttons (js/garden/). A host links this file before its
+ * own stylesheet, so its own rules can place and adjust these, and uses the classes below.
+ *
+ * The host sets the colours of its controls with three properties, which may refer to its own
+ * theme: --nursery-ink (text, outlines, tips), --nursery-paper (the buttons' panel) and
+ * --nursery-page (the page under the backdrop). Each has a light and a dark default. The washes take
+ * the --landing-* colours that scenes.css sets per scene; the defaults here are the meadow's.
+ *
+ * Every backdrop layer is anchored to the bottom edge, so a grid line sits on the soil's top edge.
+ */
+
+/* Registered as colours so that a change of scene crossfades instead of jumping. */
+@property --landing-green {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --landing-green-soft {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --landing-peach {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --landing-blush {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --landing-bloom {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: transparent;
+}
+
+:root {
+  --nursery-ink-default: #171717;
+  --nursery-paper-default: #ffffff;
+  --nursery-page-default: #ffffff;
+  --landing-green: #b7dc98;
+  --landing-green-soft: #d3eac0;
+  --landing-peach: #fbdfc8;
+  --landing-blush: #fdeceb;
+  --landing-bloom: #cfeab4;
+  --landing-line: rgb(255 255 255 / 0.95);
+  --landing-dot: #ffffff;
+  --nursery-stage: #559c4a;
+  --nursery-water: #7cc4e8;
+  --nursery-water-deep: #4f9fd0;
+  --nursery-foam: #ffffff;
+  --nursery-bubble: #e6f6ff;
+}
+
+[data-theme="dark"] {
+  --nursery-ink-default: #ffffff;
+  --nursery-paper-default: #171717;
+  --nursery-page-default: #0b0b0b;
+  --landing-green: rgb(96 160 84 / 0.4);
+  --landing-green-soft: rgb(96 160 84 / 0.2);
+  --landing-peach: rgb(206 128 84 / 0.22);
+  --landing-blush: rgb(196 96 120 / 0.14);
+  --landing-bloom: rgb(110 178 92 / 0.34);
+  --landing-line: rgb(255 255 255 / 0.07);
+  --landing-dot: rgb(255 255 255 / 0.2);
+  --nursery-stage: #8fc272;
+  --nursery-water: #4a8cc0;
+  --nursery-water-deep: #2f6a9c;
+  --nursery-foam: #cfe6f5;
+  --nursery-bubble: #a9d2ee;
+}
+
+:root,
+[data-theme="dark"] {
+  --nursery-ink-now: var(--nursery-ink, var(--nursery-ink-default));
+  --nursery-paper-now: var(--nursery-paper, var(--nursery-paper-default));
+  --nursery-page-now: var(--nursery-page, var(--nursery-page-default));
+}
+
+/* ---- Backdrop ---------------------------------------------------------------------------------- */
+
+/* A pale page with soft colour washes under a white grid. The washes show the grid, and the grid
+   disappears where the page is white. */
+.nursery-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--nursery-page-now);
+}
+
+.nursery-backdrop > * {
+  position: absolute;
+  inset: 0;
+}
+
+/* The washes drift slowly. The layer is larger than the page, so its edges never show. */
+.nursery-backdrop__wash {
+  inset: -8%;
+  background:
+    radial-gradient(52% 58% at 100% 0%, var(--landing-green) 0%, transparent 72%),
+    radial-gradient(42% 46% at 0% 42%, var(--landing-peach) 0%, transparent 74%),
+    radial-gradient(60% 34% at 58% 72%, var(--landing-blush) 0%, transparent 76%),
+    radial-gradient(34% 30% at 0% 100%, var(--landing-green-soft) 0%, transparent 72%);
+  animation: nursery-drift 42s ease-in-out infinite alternate;
+  transition:
+    --landing-green 0.9s,
+    --landing-green-soft 0.9s,
+    --landing-peach 0.9s,
+    --landing-blush 0.9s;
+}
+
+/* The host raises its opacity with the stage, so the page greens as the scene grows. */
+.nursery-backdrop__bloom {
+  background: radial-gradient(90% 55% at 50% 100%, var(--landing-bloom) 0%, transparent 75%);
+  opacity: 0;
+  transition:
+    opacity 2.4s ease-out,
+    --landing-bloom 0.9s;
+}
+
+.nursery-backdrop__grid {
+  background-image:
+    linear-gradient(to right, var(--landing-line) 0 2px, transparent 2px),
+    linear-gradient(to bottom, var(--landing-line) 0 2px, transparent 2px);
+  background-size: var(--landing-cell) var(--landing-cell);
+  background-position: 0 100%;
+}
+
+/* A dot on every other grid crossing. */
+.nursery-backdrop__dots {
+  background-image: radial-gradient(circle at 50% 50%, var(--landing-dot) 0 3px, transparent 4px);
+  background-size: calc(var(--landing-cell) * 2) calc(var(--landing-cell) * 2);
+  background-position: 0 100%;
+  animation: nursery-breathe 6s ease-in-out infinite alternate;
+}
+
+/* The engine's two canvases. The ground is in the backdrop; the water falls in front of the page
+   and never takes clicks. */
+.nursery-ground,
+.nursery-water {
+  position: absolute;
+  inset: auto auto 0 0;
+  image-rendering: pixelated;
+}
+
+.nursery-water {
+  position: fixed;
+  z-index: 20;
+  pointer-events: none;
+}
+
+@keyframes nursery-drift {
+  to {
+    transform: translate3d(-3%, 2%, 0) scale(1.05);
+  }
+}
+
+@keyframes nursery-breathe {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- Controls ---------------------------------------------------------------------------------- */
+
+/* The controls sit in the top-right corner: the scene, then the host's own groups, then reset with
+   the stage sprout under it. */
+.nursery-controls {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.nursery-reset {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A group of buttons on a frosted panel. */
+.nursery-pill {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--nursery-paper-now) 72%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--nursery-ink-now) 12%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+/* The group in use stays above the others, so a tip that hangs over the next row is not covered. */
+.nursery-pill:hover,
+.nursery-pill:focus-within {
+  z-index: 2;
+}
+
+/* A square icon button: a scene's pixel icon, or a host's line icon (--small), which follows the
+   ink colour. */
+.nursery-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.nursery-button--small,
+.nursery-button--trigger {
+  width: 36px;
+  height: 36px;
+}
+
+.nursery-button--small {
+  color: color-mix(in srgb, var(--nursery-ink-now) 62%, transparent);
+}
+
+.nursery-button--small:hover,
+.nursery-button--small[aria-pressed="true"] {
+  color: var(--nursery-ink-now);
+}
+
+.nursery-button--trigger svg {
+  width: 24px;
+  height: 24px;
+}
+
+.nursery-button:hover {
+  background: color-mix(in srgb, var(--nursery-ink-now) 8%, transparent);
+}
+
+.nursery-button[aria-pressed="true"],
+.nursery-button[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--nursery-ink-now) 12%, transparent);
+  box-shadow: inset 0 0 0 2px var(--nursery-ink-now);
+}
+
+.nursery-button:focus-visible {
+  outline: 2px solid var(--nursery-ink-now);
+  outline-offset: 1px;
+}
+
+/* The name of a button or of the stage, shown at once on hover or keyboard focus. It hangs below,
+   centred; the first and last button of a row align to that edge so the tip stays on screen. */
+.nursery-button[data-tip]::after,
+.nursery-stage::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 3;
+  translate: -50% 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--nursery-ink-now);
+  color: var(--nursery-paper-now);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.nursery-button:hover::after,
+.nursery-button:focus-visible::after,
+.nursery-stage:hover::after {
+  opacity: 1;
+}
+
+.nursery-button:hover,
+.nursery-button:focus-visible {
+  z-index: 2;
+}
+
+:is(.nursery-pill, .nursery-picker__row) > .nursery-button:first-child::after {
+  left: 0;
+  translate: none;
+}
+
+:is(.nursery-pill, .nursery-picker__row) > .nursery-button:last-child::after,
+.nursery-stage::after {
+  left: auto;
+  right: 0;
+  translate: none;
+}
+
+/* The scene's stage as a sprout, under reset. It only shows; it takes no clicks. */
+.nursery-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 28px;
+  color: var(--nursery-stage);
+}
+
+.nursery-stage[hidden] {
+  display: none;
+}
+
+/* ---- Scene picker ------------------------------------------------------------------------------ */
+
+/* A frosted card: the popover's, or a host's own (a menu that slides out, say). */
+.nursery-panel {
+  flex-direction: column;
+  gap: 10px;
+  width: max-content;
+  min-width: 13.5rem;
+  padding: 10px 12px 12px;
+  border: 0;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--nursery-paper-now) 94%, transparent);
+  box-shadow:
+    0 8px 24px -6px rgb(11 11 11 / 14%),
+    0 0 0 1px color-mix(in srgb, var(--nursery-ink-now) 12%, transparent);
+  backdrop-filter: blur(12px);
+  color: var(--nursery-ink-now);
+}
+
+.nursery-panel:not([popover]),
+.nursery-popover:popover-open {
+  display: flex;
+}
+
+/* picker.js sets top and one side before it opens. */
+.nursery-popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  overflow: visible;
+}
+
+.nursery-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nursery-picker__group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nursery-picker__label {
+  margin: 0;
+  padding-left: 2px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--nursery-ink-now) 54%, transparent);
+}
+
+.nursery-picker__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* ---- Mascot ------------------------------------------------------------------------------------ */
+
+/* The button that waters the scene (watering.js), with the host's pixel sprite as its only child.
+   It steps rather than glides, like the pixels it is made of: a hop on hover, and a double hop with
+   a happy squint while it waters. Held down, it fills with water: it shakes on each fill step,
+   harder from the fifth, and bobs with its eyes shut at the brim. A press never scrolls the page,
+   selects text or opens a menu on a phone. */
+.nursery-mascot {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+
+.nursery-mascot .mascot-water__water {
+  fill: var(--nursery-water);
+}
+
+.nursery-mascot .mascot-water__deep {
+  fill: var(--nursery-water-deep);
+}
+
+.nursery-mascot .mascot-water__foam {
+  fill: var(--nursery-foam);
+}
+
+.nursery-mascot .mascot-water__bubble {
+  fill: var(--nursery-bubble);
+}
+
+.nursery-mascot:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 6px;
+}
+
+.nursery-mascot:hover > * {
+  transform: translateY(-4px);
+}
+
+.nursery-mascot:active > * {
+  transform: translateY(4px);
+}
+
+.nursery-mascot.is-watering > * {
+  animation: nursery-hop 1s step-end;
+}
+
+.nursery-mascot.is-watering .mascot-eye,
+.nursery-mascot.is-squinting .mascot-eye {
+  animation: none;
+  opacity: 0;
+}
+
+.nursery-mascot.is-watering .mascot-eye-closed,
+.nursery-mascot.is-squinting .mascot-eye-closed {
+  animation: none;
+  opacity: 1;
+}
+
+/* The shake moves the button and the bob the sprite, both by the translate property, so they add
+   to the hop and the hover lift, which use transform. */
+.nursery-mascot.is-shaking,
+.nursery-mascot.is-shaking-hard {
+  --shake: 4px;
+  animation: nursery-shake 0.32s step-end;
+}
+
+.nursery-mascot.is-shaking-hard {
+  --shake: 8px;
+}
+
+.nursery-mascot.is-brim > * {
+  animation: nursery-bob 0.36s step-end infinite;
+}
+
+@keyframes nursery-shake {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  12%,
+  62% {
+    translate: calc(var(--shake) * -1) 0;
+  }
+  37%,
+  87% {
+    translate: var(--shake) 0;
+  }
+}
+
+@keyframes nursery-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -4px;
+  }
+}
+
+@keyframes nursery-hop {
+  0%,
+  22%,
+  44%,
+  66%,
+  100% {
+    transform: translateY(0);
+  }
+  8%,
+  30% {
+    transform: translateY(-8px);
+  }
+  52% {
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nursery-backdrop__wash,
+  .nursery-backdrop__dots,
+  .nursery-mascot.is-watering > *,
+  .nursery-mascot.is-brim > *,
+  .nursery-mascot.is-shaking,
+  .nursery-mascot.is-shaking-hard {
+    animation: none;
+  }
+
+  .nursery-backdrop__bloom {
+    transition: none;
+  }
+
+  .nursery-mascot:hover > *,
+  .nursery-mascot:active > * {
+    transform: none;
+  }
+
+  .nursery-mascot.is-watering .mascot-eye-closed,
+  .nursery-mascot.is-squinting .mascot-eye-closed {
+    opacity: 0;
+  }
+
+  .nursery-mascot.is-watering .mascot-eye,
+  .nursery-mascot.is-squinting .mascot-eye {
+    opacity: 1;
+  }
+}

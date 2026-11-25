@@ -1,6 +1,7 @@
 # Overview
 
-omsync-nursery holds the pixel-art scenes for the sign-in page of omsync. It also holds the
+omsync-nursery holds the pixel-art scenes for the sign-in page of omsync, and the garden around
+them: the scene picker, the watering mascot, the stage sprout and day and night. It also holds the
 Nursery Studio and omsync's pixel mascot. You use the studio to look at the scenes, edit their
 pixels and review new art.
 
@@ -12,10 +13,12 @@ agent changes the code. The studio is the place where each one shows work to the
 ```mermaid
 flowchart LR
     subgraph Package ["The package: what omsync installs"]
-        Engine["nursery.js<br/>the engine"] --> Scenes["scenes/<br/>ten scene modules"]
+        Garden["garden/<br/>picker, watering, memory, day and night"] --> Engine
+        Engine["nursery.js<br/>the engine"] --> Scenes["scenes/<br/>one module per scene"]
         Engine --> Kit["kit/<br/>shared drawing code"]
+        Garden --> Kit
         Scenes --> Kit
-        Files["scenes.json, scenes.css<br/>brand/"]
+        Files["scenes.json, scenes.css, garden.css<br/>brand/"]
         Assets["nursery.assets<br/>the file locations"] -.-> Engine
         Assets -.-> Files
     end
@@ -38,13 +41,15 @@ flowchart LR
     omsync -- reads --> Assets
 ```
 
-An arrow points from a part to the part that it needs. The package needs no dev tool. The engine
-imports scenes and the kit. A scene imports only the kit. A kit module imports only the kit.
-`sh scripts/check.sh` enforces these rules. omsync reads the package through `nursery.assets` only.
+An arrow points from a part to the part that it needs. The package needs no dev tool. The garden
+imports the engine and the kit. The engine imports scenes and the kit. A scene imports only the
+kit. A kit module imports only the kit. Only a host imports the garden. `sh scripts/check.sh`
+enforces these rules. omsync reads the package through `nursery.assets` only.
 
 | Part | Where | What it does |
 |---|---|---|
 | Engine, scenes and kit | `src/nursery/assets/js/` | The code that omsync runs on its sign-in page. |
+| Garden | `src/nursery/assets/js/garden/`, `css/garden.css` | The parts around a scene that a host shows. See [The garden](#the-garden). |
 | Mascot | `src/nursery/assets/brand/` | The grid of omsync's pixel mascot, and the files that `nursery brand` builds from it. |
 | Studio | `uv run nursery` | Shows each scene and each sprite from the code on disk. You edit pixels and review proposals here. |
 | Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `brand`, `preview`, `verify` and `release`. Agents use most of them. |
@@ -201,47 +206,49 @@ scene: it has no module, no stages and no catalogue file. The studio edits it, s
 and checks them with the code that works for scenes, so the studio needs no second editor. The
 edits are in `.nursery/brand/edits/`, and `uv run nursery check brand` checks them.
 
-## The omsync contract
+## The garden
 
-omsync uses the items in this section. If you change one of them, change omsync's host code at the
-same time. The host code is these files in omsync:
+```mermaid
+flowchart LR
+    Host["The host page<br/>omsync, Mantle Reef"] --> Early["early.js<br/>first paint, day and night rule"]
+    Host --> Garden["Garden<br/>garden.js"]
+    Host --> Picker["ScenePicker, ScenePopover<br/>picker.js"]
+    Host --> Daylight["Daylight<br/>daylight.js"]
+    Host -- links --> CSS["garden.css"]
+    Garden --> Engine["Nursery<br/>nursery.js"]
+    Garden --> Memory["GardenMemory<br/>memory.js"]
+    Garden --> Watering["Watering<br/>watering.js"]
+    Watering --> Water["MascotWater<br/>mascot-water.js"]
+    Daylight --> Early
+    Picker --> Engine
+```
 
-- `src/omsync/web/static/js/controllers/nursery_controller.js`
-- `src/omsync/web/static/js/controllers/scene_controller.js`
-- `src/omsync/web/styles/tint.css`
-- `src/omsync/web/styles/landing.css`
-- `src/omsync/web/styles/brand.css`
+The garden is everything around a scene that a host shows. `Garden` keeps the engine, the saved
+growth and the watering mascot in step. A watering saves the new stage. A scene that the user picks
+again comes back at the stage where the user left it. A reset starts the scene on show again at
+stage 0. The picker shows the scenes in their biome groups. `Daylight` applies light, dark or auto.
 
-**Package.** omsync installs this repository as the Python package `omsync-nursery`. Its
-`pyproject.toml` names the repository by its GitHub URL and the `release` branch. Its `uv.lock`
-records the exact commit. A contract change raises the version past omsync's range. See
-[Release](#release).
+**Decision: the garden shows and reports, and the host decides what a change means.** Each host
+gives its own storage keys, its mascot, the point where the water leaves the mascot, and the words
+that it announces. `Garden` calls `onChange` with the cause (`start`, `water`, `choose` or
+`reset`), and the host reacts. A garden with no mascot only shows the scene.
 
-**Files.** `nursery.assets` ([`assets.py`](../src/nursery/assets.py)) gives the location of these
-things:
+**Decision: one script runs before first paint.** `early.js` is a classic script that the host
+loads in `<head>`. It sets `data-theme` and returns the saved scene before the page is drawn, so the
+colours never flash. It holds the only copy of the day and night rule. `daylight.js` uses that
+rule after load.
 
-- `JS`: the engine, the scenes and the kit. omsync serves this folder at `/static/vendor/nursery/`.
-- `SCENES_JSON`: the `id`, picker `label` and biome `group` of each scene, in picker order. omsync
-  makes its scene pickers from this file. A new scene shows in omsync with no change to omsync.
-- `SCENE_GROUPS`: the ordered `(id, label)` biome groups (`woods`, `drylands`, `coastal`,
-  `underwater`, `storybook`).
-- `SCENES_CSS`: the colours of each scene. omsync links this file as its own stylesheet.
-- `MASCOT_SVG`, `FAVICON_SVG` and `FAVICON_PNG`: omsync's pixel mascot and its two favicons. omsync
-  serves them as its own `mascot.svg`, `favicon.svg` and `favicon-32.png`, with no copy.
-  `MASCOT_SVG` uses `currentColor` for the outline and the eye. It uses the CSS variable
-  `--mascot-body` for the body, as omsync's `brand.css` expects.
+**Decision: the popover is the browser's own.** `ScenePopover` uses the `popover` attribute. The
+browser closes it on Escape and on a click outside, and puts the focus back on its button.
 
-**Exports.** omsync imports `Nursery`, `SCENES`, `SCENE_GROUPS`, `groupScenes`, `MAX_STAGE`,
-`WATER_MS`, `COOLDOWN_MS`, `FINALE_MS`, `releaseMs` and `showMs` from `nursery.js`. It imports
-`iconSvg` and `clamp` from `kit/pixel.js`.
+**Decision: the host colours the garden.** `garden.css` reads `--nursery-ink`, `--nursery-paper`
+and `--nursery-page`, with light and dark defaults. The host links `garden.css` before its own
+stylesheet, so that its own rules can place the parts.
 
-**Engine.** omsync makes the engine with `{ ground, water, reducedMotion, scene, stage }`. It reads
-`stage`. It calls `sprinkle(clientX, clientY, level)`, `setScene(scene, stage)` and `destroy()`. The
-engine reads `data-theme` on `<html>` on each frame. The value "dark" is night. omsync waits
-`COOLDOWN_MS` between two waterings.
-
-**Watering.** The `level` argument of `sprinkle` is optional. The header of
-[`nursery.js`](../src/nursery/assets/js/nursery.js) gives the numbers and the exact behavior.
+**Watering.** The engine's `sprinkle(clientX, clientY, level)` waters the scene. The `level`
+argument is optional. The header of [`nursery.js`](../src/nursery/assets/js/nursery.js) gives the
+numbers and the exact behavior. `Watering` waits the time in the last column before it waters
+again, and drains the mascot at the speed of the spray (`releaseMs`).
 
 | Level | Stages gained | Fountain | How long the host waits |
 |---|---|---|---|
@@ -253,18 +260,73 @@ A host can use `releaseMs(level)` to drain its water at the same speed as the sp
 the mist and the fireflies show on the ground canvas, behind the page. Under reduced motion the
 plants grow and nothing else shows.
 
-**Scenes.** omsync reads the `id` and the `icon` of each scene. Each palette, light and dark, has
-the keys `soil`, `line`, `wet`, `water` and `haze`.
+## The host contract
+
+omsync and Mantle Reef use the items in this section. If you change one of them, change omsync's
+host code at the same time. The host code is these files in omsync:
+
+- `src/omsync/web/templates/layouts/app.html`, `auth.html` and `shell.html`
+- `src/omsync/web/static/js/theme.js`
+- `src/omsync/web/static/js/controllers/nursery_controller.js`
+- `src/omsync/web/static/js/controllers/scene_controller.js`
+- `src/omsync/web/styles/tint.css`, `landing.css` and `brand.css`
+
+Mantle Reef reads the files from a checkout of this repository at `../omsync-nursery`. Its host
+code is `src/mantle_reef/static/index.html`, `reef.js` and `reef.css`, and the `index.html` route in
+`server.py`.
+
+**Package.** omsync installs this repository as the Python package `omsync-nursery`. Its
+`pyproject.toml` names the repository by its GitHub URL and the `release` branch. Its `uv.lock`
+records the exact commit. A contract change raises the version past omsync's range. See
+[Release](#release).
+
+**Files.** `nursery.assets` ([`assets.py`](../src/nursery/assets.py)) gives the location of these
+things:
+
+- `JS`: the engine, the scenes, the kit and the garden. omsync serves this folder at
+  `/static/vendor/nursery/`.
+- `SCENES_JSON`: the `id`, picker `label` and biome `group` of each scene, in picker order. A host
+  reads the ids from this file for the first-paint script. A new scene shows in a host with no
+  change to the host.
+- `SCENES_CSS`: the colours of each scene.
+- `GARDEN_CSS`: the styles of the garden.
+- `MASCOT_SVG`, `FAVICON_SVG` and `FAVICON_PNG`: omsync's pixel mascot and its two favicons. omsync
+  serves them as its own `mascot.svg`, `favicon.svg` and `favicon-32.png`, with no copy.
+  `MASCOT_SVG` uses `currentColor` for the outline and the eye. It uses the CSS variable
+  `--mascot-body` for the body, as omsync's `brand.css` expects.
+
+**First paint.** The host loads `garden/early.js` in `<head>` and calls
+`nurseryEarly.theme(key)`. A page that shows a scene sets `data-scene` from
+`nurseryEarly.scene(key, ids, { first })`.
+
+**Exports.** A host imports `Garden` from `garden/garden.js`, `GardenMemory` from
+`garden/memory.js`, `ScenePicker` and `ScenePopover` from `garden/picker.js`, `Daylight` from
+`garden/daylight.js`, and `MAX_STAGE` from `nursery.js`.
+
+**Garden.** The host makes the garden with `{ ground, water, bloom, sceneId, memory, reducedMotion,
+mascot, onChange, onFill }`. `mascot` is `{ button, spout, body }`. It reads `scene`, `stage` and
+`stageShown`. It calls `choose(scene)`, `reset()`, `refreshMascot()` and `destroy()`.
+
+**Picker.** The host makes a picker with `{ current, onChoose, groups, filter }`. It calls
+`mark(id)` and `destroy()`.
+
+**Classes.** The host uses the classes of `garden.css`: `nursery-backdrop` and its four layers,
+`nursery-ground`, `nursery-water`, `nursery-mascot`, `nursery-controls`, `nursery-pill`,
+`nursery-button`, `nursery-reset`, `nursery-stage` and `nursery-panel`. The mascot's SVG has a body
+group, `.mascot-body` by default.
+
+**Scenes.** Each palette, light and dark, has the keys `soil`, `line`, `wet`, `water` and `haze`.
 
 **Colours.** `scenes.css` sets `--scene-tint` and `--scene-tint-dark` on `[data-tint="<id>"]`. It
 sets `--landing-green`, `--landing-green-soft`, `--landing-peach`, `--landing-blush` and
-`--landing-bloom` on `[data-scene="<id>"]`, with dark values under `[data-theme="dark"]`.
+`--landing-bloom` on `[data-scene="<id>"]`, with dark values under `[data-theme="dark"]`. The engine
+reads `data-theme` on `<html>` on each frame. The value "dark" is night.
 
 **Grid.** `scenes.css` sets `--landing-cell: 64px` on `:root`. This value must be the art pixel size
 (4 px) times the grid cell (16 art pixels).
 
-**Ids.** The ids in `scenes.json`, `scenes.css` and `SCENES` must be the same. On the sign-in page,
-omsync uses the first scene if it cannot find an id.
+**Ids.** The ids in `scenes.json`, `scenes.css` and `SCENES` must be the same. `Garden` uses the
+first scene if it cannot find an id.
 
 ## Decisions
 

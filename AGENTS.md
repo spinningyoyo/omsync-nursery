@@ -1,7 +1,7 @@
 # AGENTS.md
 
-omsync-nursery holds the pixel-art scenes for omsync's sign-in page (`../omsync`) and the Nursery
-Studio that draws and edits them. Start with [docs/README.md](docs/README.md). It maps the
+omsync-nursery holds the pixel-art scenes for omsync's sign-in page (`../omsync`), the garden that
+hosts show around a scene, and the Nursery Studio that draws and edits the scenes. Start with [docs/README.md](docs/README.md). It maps the
 documents. [docs/overview.md](docs/overview.md) shows the owner-agent workflow and the omsync
 contract. `docs/adr/` holds the reasons behind the layout and the stack.
 
@@ -11,9 +11,12 @@ contract. `docs/adr/` holds the reasons behind the layout and the stack.
   change a scene, read its module and its `docs/scenes/<scene>.md`.
 - Art verification work: use the `verify-nursery` skill.
 - The modules in `src/nursery/assets/js/` import only each other, so the package stays
-  self-contained. A scene imports only `kit/`. `sh scripts/check.sh` enforces both.
-- What omsync reads is the contract in `docs/overview.md`. Change it only together with omsync's
-  host code. Mark the change in `CHANGELOG.md` as a contract change.
+  self-contained. A scene imports only `kit/`. Only a host imports `garden/`. `sh scripts/check.sh`
+  enforces these rules.
+- Behavior that every host needs goes in `garden/`, not in a host. A host keeps only what is its
+  own: its storage keys, its mascot, its words and its layout.
+- What a host reads is the host contract in `docs/overview.md`. Change it only together with
+  omsync's host code. Mark the change in `CHANGELOG.md` as a contract change.
 - The mascot's master is `src/nursery/assets/brand/mascot-grid.txt`. Change the grid, run
   `uv run nursery brand`, and never edit or copy a built brand file.
 - `.nursery/` is the owner's working state. Read it, and leave its files in place.

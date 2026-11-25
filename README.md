@@ -1,7 +1,8 @@
 # omsync-nursery
 
 omsync-nursery holds the pixel-art scenes that grow on the sign-in page of omsync, a personal
-finance tracker. It also holds the Nursery Studio, where you draw the scenes, and omsync's pixel
+finance tracker, and the garden around them: the scene picker, the mascot that waters the scene,
+and day and night. It also holds the Nursery Studio, where you draw the scenes, and omsync's pixel
 mascot. omsync installs this repository as a Python package and serves the scene files from it. The
 studio and the `nursery` command run from a checkout of this repository.
 
