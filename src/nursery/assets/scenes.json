@@ -7,6 +7,7 @@
   { "id": "serengeti", "label": "Serengeti Savanna", "group": "drylands" },
   { "id": "iceland", "label": "Icelandic Lava Field", "group": "coastal" },
   { "id": "yellowstone", "label": "Yellowstone", "group": "woods" },
+  { "id": "village", "label": "Rural Village", "group": "woods" },
   { "id": "hundredacre", "label": "Hundred Acre Wood", "group": "storybook" },
   { "id": "wonderland", "label": "Wonderland", "group": "storybook" },
   { "id": "greatbarrier", "label": "Great Barrier Reef", "group": "underwater" }

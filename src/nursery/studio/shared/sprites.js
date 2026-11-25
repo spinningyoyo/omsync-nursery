@@ -245,6 +245,14 @@ export const SPRITES = {
       animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "lie" }), 0),
     "hawaii-cat-stretching": (_M, g) =>
       animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "bow" }), 0),
+    "hawaii-cat-loafing": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "loaf" }), 0),
+    "hawaii-cat-curled": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "curl" }), 0),
+    "hawaii-cat-dozing": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "doze" }), 0),
+    "hawaii-cat-grooming": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-calico", state: "sit", pose: "groom" }), 0),
     "hawaii-cat-white": (_M, g) =>
       animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-white", state: "sit", pose: "sit" }), 0),
     "hawaii-cat-silver-tabby": (_M, g) =>
@@ -552,6 +560,14 @@ export const SPRITES = {
       animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "lie" }), 0),
     "iceland-cat-stretching": (_M, g) =>
       animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "bow" }), 0),
+    "iceland-cat-loafing": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "loaf" }), 0),
+    "iceland-cat-curled": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "curl" }), 0),
+    "iceland-cat-dozing": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "doze" }), 0),
+    "iceland-cat-grooming": (_M, g) =>
+      animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "groom" }), 0),
     "iceland-cat-white": (_M, g) =>
       animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-white", state: "sit", pose: "sit" }), 0),
     "iceland-cat-silver-tabby": (_M, g) =>
@@ -881,6 +897,69 @@ export const SPRITES = {
       });
       M.nightAt(g, { cols: ANIMAL_BOX.w, extra });
     },
+  },
+  village: {
+    ...soarSprites("village-eagle", "golden", { side: true, below: false }),
+    ...soarSprites("village-buzzard", "hawk", {}),
+    "village-cat": (_M, g) => animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-ginger" }), 0),
+    ...Object.fromEntries(
+      [
+        ["sitting", "sit"],
+        ["arching", "arch"],
+        ["lying", "lie"],
+        ["stretching", "bow"],
+        ["loafing", "loaf"],
+        ["curled", "curl"],
+        ["dozing", "doze"],
+        ["grooming", "groom"],
+      ].map(([name, pose]) => [
+        `village-cat-${name}`,
+        (_M, g) => animals.felidAt(g, walk({ kind: "housecat", pal: "housecat-ginger", state: "sit", pose }), 0),
+      ]),
+    ),
+    "village-cat-stalking": (_M, g) =>
+      animals.felidAt(
+        g,
+        walk({ kind: "housecat", pal: "housecat-silver-tabby", ...animals.catPlayAt(1, 40)[0], since: -10 }),
+        0,
+      ),
+    "village-cat-leaping": (_M, g) =>
+      animals.felidAt(
+        g,
+        walk({ kind: "housecat", pal: "housecat-silver-tabby", ...animals.catPlayAt(3.3, 30)[0], since: -10 }),
+        0,
+      ),
+    "village-cat-swatting": (_M, g) =>
+      animals.felidAt(
+        g,
+        walk({
+          kind: "housecat",
+          pal: "housecat-tuxedo",
+          state: "sit",
+          pose: "swat",
+          rest: { from: "swat", to: "swat", u: 1 },
+        }),
+        0,
+      ),
+    "village-rooster": (_M, g) => animals.groundBirdAt(g, walk({ c: frame.phase * 0.25, amp: 1 }), "moa", 0),
+    "village-rooster-pecking": (_M, g) =>
+      animals.groundBirdAt(g, walk({ state: "sit", pose: "peck", since: 0, timer: 6, amp: 0 }), "moa", 0.5),
+    "village-rooster-scratching": (_M, g) =>
+      animals.groundBirdAt(g, walk({ state: "sit", pose: "scratch", since: 0, timer: 6, amp: 0 }), "moa", 1.2),
+    "village-rooster-flapping": (_M, g) =>
+      animals.groundBirdAt(g, walk({ state: "sit", pose: "flap", since: 0, timer: 6, amp: 0 }), "moa", 1.3),
+    "village-rooster-crowing": (_M, g) =>
+      animals.groundBirdAt(g, walk({ state: "sit", pose: "crow", since: 0, timer: 6, amp: 0 }), "moa", 2),
+    "village-hen": (_M, g) => animals.groundBirdAt(g, walk({ c: frame.phase * 0.25, amp: 1 }), "hen", 0),
+    "village-hen-pecking": (_M, g) =>
+      animals.groundBirdAt(g, walk({ state: "sit", pose: "peck", since: 0, timer: 6, amp: 0 }), "hen", 0.5),
+    "village-hen-scratching": (_M, g) =>
+      animals.groundBirdAt(g, walk({ state: "sit", pose: "scratch", since: 0, timer: 6, amp: 0 }), "hen", 1.2),
+    "village-sparrow-perched": (_M, g) => smallbird.perchedSmall(g, "sparrow", 40, 40, 0, smallbird.blendPose({})),
+    "village-swallow": (_M, g) => flyers.flyerAt(g, bird(), 0, "swallow"),
+    "village-crow": (_M, g) => flyers.flyerAt(g, bird(), 0, "crow"),
+    "village-butterfly": (_M, g) => insect.butterflyAt(g, butterfly({ colour: 0 }), 0),
+    "village-firefly": (_M, g) => insect.fireflyAt(g, 40, 30, 0.75, 0, g.pal.glow),
   },
   greatbarrier: {
     "greatbarrier-mantle": (_M, g) =>

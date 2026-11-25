@@ -46,6 +46,7 @@ import meadow from "./scenes/meadow.js";
 import rainforest from "./scenes/rainforest.js";
 import serengeti from "./scenes/serengeti.js";
 import smokies from "./scenes/smokies.js";
+import village from "./scenes/village.js";
 import wonderland from "./scenes/wonderland.js";
 import yellowstone from "./scenes/yellowstone.js";
 
@@ -66,6 +67,7 @@ export const SCENES = [
   serengeti,
   iceland,
   yellowstone,
+  village,
   hundredacre,
   wonderland,
   greatbarrier,

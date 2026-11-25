@@ -67,6 +67,10 @@
   --scene-tint: #9be0ea;
   --scene-tint-dark: rgb(42 152 178);
 }
+[data-tint="village"] {
+  --scene-tint: #cfe4a8;
+  --scene-tint-dark: rgb(120 150 80);
+}
 
 /* Backdrops. */
 [data-scene="meadow"] {
@@ -244,4 +248,20 @@
   --landing-peach: rgb(186 112 96 / 0.16);
   --landing-blush: rgb(62 188 196 / 0.16);
   --landing-bloom: rgb(56 202 204 / 0.32);
+}
+
+[data-scene="village"] {
+  --landing-green: #c4dea0;
+  --landing-green-soft: #e0eccb;
+  --landing-peach: #f6d8b8;
+  --landing-blush: #dbe6ee;
+  --landing-bloom: #f2b878;
+}
+
+[data-theme="dark"] [data-scene="village"] {
+  --landing-green: rgb(110 150 80 / 0.36);
+  --landing-green-soft: rgb(90 120 70 / 0.18);
+  --landing-peach: rgb(220 120 50 / 0.2);
+  --landing-blush: rgb(90 110 150 / 0.16);
+  --landing-bloom: rgb(240 150 60 / 0.3);
 }

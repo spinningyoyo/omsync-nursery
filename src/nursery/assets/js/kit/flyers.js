@@ -85,6 +85,7 @@ const smallFlyer = (fps, sway) => ({
 const FLYERS = {
   pigeon: smallFlyer(8, [1.5, 2]),
   lory: smallFlyer(10, [1.7, 2]),
+  crow: smallFlyer(6, [1.2, 2]),
 };
 
 // The small flyers on the bird build (smallbird.js): the kingfishers, jay, cardinal, bluebird, ʻiʻiwi and swift

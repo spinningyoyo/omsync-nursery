@@ -1,5 +1,6 @@
 // The small flyers on one build: kingfishers, Steller's jay, great hornbill, lilac-breasted roller,
-// white-tailed tropicbird, ʻiʻiwi, Atlantic puffin, mountain bluebird, cardinal and chimney swift. A bird
+// white-tailed tropicbird, ʻiʻiwi, Atlantic puffin, mountain bluebird, cardinal, chimney swift, house
+// sparrow and barn swallow. A bird
 // is a set of cells (swimmer.js's Cells; u along the body, v up) filled from capsules, so a wing that
 // bends, a neck that turns or a tail that tilts stays one joined shape. Parts, back to front: far wing,
 // tail, far leg, body, neck, head, bill, crest, near leg, near wing. Four tones lit from above (back lit,
@@ -7,7 +8,7 @@
 // `birdCells` builds one (its `upright` tilts the body up to 60 degrees, so one build serves flying and
 // perched), `flyingBird` flies it, `perchedSmall` perches it and `puffinStand` is the puffins' standing
 // template. animals.js's small-flyer drivers place and pose them. Palettes, from the scene: cardinal,
-// swift, bluebird, jay and iiwi are { C, H, E, K, T, b, B, l, t, p, d } (crown, head, eye, bill, tail
+// swift, bluebird, jay, iiwi, sparrow and swallow are { C, H, E, K, T, b, B, l, t, p, d } (crown, head, eye, bill, tail
 // tip, tail, back, breast, wing leading edge, patch, trailing edge); kingfisher [blue, orange, bill,
 // white], hornbill [black, white, yellow, casque], roller [lilac, teal, blue, dark] with rollerDepth
 // [pale, deep, crown], tropicbird [white, black, bill, shade] and puffin [black, white, beak, tip, foot].
@@ -129,6 +130,35 @@ export const SPECIES = {
     fly: { hz: 4, amp: 40, mid: 6, bound: { period: 1.5, burst: 5 } },
     stand: { legs: 0.6, upright: 1.2 },
     col: (p) => passerine(p),
+  },
+  // The house sparrow: stout, a short thick bill, a grey crown over a chestnut nape (C and H), streaked
+  // brown back, pale grey breast, and a short square tail.
+  sparrow: {
+    ...BASE,
+    label: "House sparrow",
+    own: true,
+    s: 0.8,
+    body: { a: [-1.5, -0.1], b: [1.5, 0.2], r: 1.8 },
+    head: { at: [2.9, 1.1], r: 1.35 },
+    bill: { len: 1.0, r: 0.65, droop: 0 },
+    tail: { len: 2.8, w: 1.0, drop: -0.3 },
+    stand: { legs: 1.0, upright: 0.7 },
+    col: (p) => ({ ...passerine(p), throat: p.l, bars: true }),
+  },
+  // The barn swallow: the swift's long swept wings on a slimmer body, a deeply forked tail, a dark
+  // steel-blue back and a pale breast under a rufous throat (H).
+  swallow: {
+    ...BASE,
+    label: "Barn swallow",
+    own: true,
+    body: { a: [-1.9, -0.1], b: [1.9, 0.1], r: 1.35 },
+    head: { at: [3.2, 0.5], r: 1.05 },
+    bill: { len: 0.6, r: 0.4, droop: 0 },
+    tail: { len: 4.0, w: 0.8, drop: -0.1 },
+    wing: { root: [0.9, 0.7], arm: 4.2, hand: 4.6, w: 1.3, sweep: 0.9, fingers: 0 },
+    fly: { hz: 5, amp: 44, mid: 8 },
+    stand: { legs: 0.6, upright: 1.0 },
+    col: (p) => ({ ...passerine(p), throat: p.H, head: p.C }),
   },
   roller: {
     ...BASE,

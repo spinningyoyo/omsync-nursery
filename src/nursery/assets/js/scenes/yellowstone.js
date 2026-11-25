@@ -36,6 +36,7 @@ import {
 } from "../kit/critters.js";
 import { dithered, starField, starFieldAt } from "../kit/effects.js";
 import { circlerAt, eagleFlyAt, flyerAt } from "../kit/flyers.js";
+import { peak } from "../kit/landforms.js";
 import { flyByPerch, goHome, unhidden } from "../kit/perch.js";
 import {
   blob,
@@ -204,22 +205,9 @@ const DARK = {
   haze: "#0b0b0b",
 };
 
-// The Absaroka peaks: a jagged mountain, lit on the left, with snow on its upper slopes.
+// The Absaroka peaks: the landforms family's peak (kit/landforms.js), snow on its upper slopes.
 function mountain(g, p, s, base) {
-  const { pal } = g;
-  const height = Math.max(4, Math.round(RANGE_ROWS * p.scale * s));
-  const width = Math.round(height * 1.5);
-  for (let r = 0; r < height; r += 1) {
-    const f = r / height;
-    const bulge = (hash(r, p.seed, 1) - 0.5) * 2;
-    const half = Math.round((width / 2) * (1 - f) ** 0.9 + bulge);
-    if (half < 1) break;
-    row(g, base - 1 - r, p.x - half, p.x + half, (x) => {
-      if (f > 0.7 + (hash(x, 0, p.seed) - 0.5) * 0.14) return pal.snow;
-      const u = (x - p.x) / half;
-      return pal.range[u < -0.3 ? 0 : u < 0.3 ? 1 : 2];
-    });
-  }
+  peak(g, p, s, base, { rows: RANGE_ROWS, tones: g.pal.range, snow: g.pal.snow });
 }
 
 // Lodgepole pines: slender conifers on long bare trunks, in dense stands.

@@ -166,9 +166,109 @@ const SHAPES = {
       stand: 0,
     };
   },
+  // The loaf: down on its belly with every paw tucked out of sight, the body closed up a little and
+  // rounded at the rump, the head sunk low on the shoulders, and the tail curled in behind.
+  loaf(spec) {
+    const F = spec.len - 1;
+    const bottom = profile(spec.bottom);
+    const at = (x) => F - (F - x) * 0.8;
+    const off = (x) => -bottom(x);
+    const tail = spec.tail.points;
+    const hx = at(spec.hind.root[0]);
+    const fx = at(spec.fore.root[0]);
+    return {
+      off,
+      at,
+      hind: { near: [hx, spec.paw.h], far: [hx + 1, spec.paw.h] },
+      fore: { near: [fx, spec.paw.h], far: [fx - 1, spec.paw.h] },
+      head: [-REST_HEAD_BACK, off(F) + spec.headLie - 1],
+      tail: [
+        [at(0), tail[0][1] + off(0)],
+        [at(0) - 1.5, 0],
+        [at(0) + 1, 0],
+      ],
+      haunch: 1,
+      paws: 0,
+      stand: 0,
+    };
+  },
+  // Curled asleep: a low mound closed up to a ring, its front sloping down to the head tucked on the
+  // ground against the body, and the tail wrapped round to the nose.
+  curl(spec) {
+    const F = spec.len - 1;
+    const bottom = profile(spec.bottom);
+    const at = (x) => F - (F - x) * 0.7;
+    const off = (x) => -bottom(x) - Math.max(0, x - F * 0.6) * 0.5;
+    const tail = spec.tail.points;
+    const hx = at(spec.hind.root[0]);
+    const fx = at(spec.fore.root[0]);
+    return {
+      off,
+      at,
+      hind: { near: [hx, spec.paw.h], far: [hx + 1, spec.paw.h] },
+      fore: { near: [fx, spec.paw.h], far: [fx - 1, spec.paw.h] },
+      head: [-REST_HEAD_BACK - 1, spec.face.grid.length - 1 - spec.face.at[1]],
+      tail: [
+        [at(0), tail[0][1] + off(0)],
+        [at(0) - 1, 0],
+        [F + 1, 0],
+      ],
+      haunch: 1,
+      paws: 0,
+      stand: 0,
+    };
+  },
+  // Dozing: lying, with the head laid down on the forepaws.
+  doze(spec) {
+    const lie = SHAPES.lie(spec);
+    return { ...lie, head: [lie.head[0] + 1, lie.head[1] - 2] };
+  },
+  // Grooming: sitting, the head bent a row, the near forepaw lifted to the mouth.
+  groom(spec) {
+    const sit = SHAPES.sit(spec);
+    return { ...sit, head: [sit.head[0], sit.head[1] - 1], raise: [1.5, 1] };
+  },
+  // The swat: sitting up with the near forepaw thrown out forward at head height.
+  swat(spec) {
+    const sit = SHAPES.sit(spec);
+    return { ...sit, head: [0, sit.head[1]], raise: [3, 2] };
+  },
+  // The stalking crouch: the body let down on folded legs, the head forward level with the
+  // shoulders, the tail low and straight behind. A cat creeps in it (walking with this as its rest).
+  crouch(spec) {
+    const drop = spec.hind.root[1] - 1.5;
+    const tail = spec.tail.points;
+    const h = tail[0][1] - drop;
+    return {
+      ...SHAPES.stand(spec),
+      off: () => -drop,
+      head: [1, -drop - 1.5],
+      tail: [
+        [0, h],
+        [-2, h],
+        [-4, h - 1],
+      ],
+    };
+  },
+  // The leap: standing, the head forward and the tail streaming level behind; the caller lifts the
+  // cat off the ground and throws the legs out (pose.steps).
+  leap(spec) {
+    const tail = spec.tail.points;
+    const h = tail[0][1];
+    return {
+      ...SHAPES.stand(spec),
+      head: [1, 0],
+      tail: [
+        [0, h],
+        [-2, h],
+        [-4, h + 1],
+      ],
+    };
+  },
 };
 
-const shapeOf = shapeCache(SHAPES);
+// Every shape names its raised forepaw, none by default.
+const shapeOf = shapeCache(SHAPES, (shape) => ({ raise: [0, 0], ...shape }));
 
 // Two poses blended, u of the way from the first to the second.
 const blend = blender({
@@ -181,6 +281,7 @@ const blend = blender({
   haunch: "num",
   paws: "num",
   stand: "num",
+  raise: "pt",
 });
 
 // ---- Faces ------------------------------------------------------------------------------------
@@ -223,8 +324,9 @@ function faceOf(spec, mouth) {
 // ---- The cat ----------------------------------------------------------------------------------
 
 // One animal. Pose fields: phase and amp (the walk), sway, headUp, blink, breath, bodyX; rest (a blend
-// of two poses: { from, to, u }); mouth (0 shut, 1 parted, 2 wide), eyesShut, and for the lion
-// roar (seconds into the roar, while it lasts). A spec with `closeHoles` has its one-pixel pinholes
+// of two poses: { from, to, u }); mouth (0 shut, 1 parted, 2 wide), eyesShut, earFlick (the front ear
+// folded flat), steps (a short-legged animal's legs held in drawn poses, { fore, hind }, as in a
+// leap), and for the lion roar (seconds into the roar, while it lasts). A spec with `closeHoles` has its one-pixel pinholes
 // closed (a blend between two poses can leave one under short legs): the body is painted into a map
 // first, and a hole with a pixel on all four sides takes the colour of the one to its left.
 export function drawBody(spec, pal, plot, pose) {
@@ -251,6 +353,21 @@ export function drawBody(spec, pal, plot, pose) {
   for (const [x, h, colour] of cells.values()) plot(x, h, colour);
 }
 
+// A short foreleg lifted off the ground: one pixel wide from the root out to (dx, dh) from it, the paw
+// a pixel past the end.
+function raisedLimb(root, dx, dh) {
+  const cells = [];
+  const n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dh))));
+  for (let i = 0; i <= n; i += 1) {
+    const x = Math.round(root[0] + (dx * i) / n);
+    const h = Math.round(root[1] + (dh * i) / n);
+    cells.push([x, h]);
+    if (i > 0) cells.push([x, h - 1]);
+  }
+  cells.push([Math.round(root[0] + dx) + 1, Math.round(root[1] + dh)]);
+  return cells;
+}
+
 function paintBody(spec, pal, plot, pose) {
   const { phase = 0, amp = 0, sway = 0, headUp = 0, blink = false, breath = 0, bodyX = null } = pose;
   const shape = pose.rest
@@ -272,8 +389,25 @@ function paintBody(spec, pal, plot, pose) {
     const drop = L.fore ? dropFore : dropHind;
     const p = frac(phase + offset);
     const rest = footRest(shape, L, far)[0];
-    if (spec.drawnLegs)
+    const [rx, rh] = shape.raise;
+    if (spec.drawnLegs && L.fore && !far && Math.hypot(rx, rh) >= 0.75) return raisedLimb(root, rx, rh);
+    if (spec.drawnLegs && pose.steps) {
+      const step = pose.steps[L.fore ? "fore" : "hind"];
+      return drawnLimb(spec, L, { root, drop: 0, foot: rest, p: (step + 0.5) / 4, amp: 1, stand: 1, paws: 0 });
+    }
+    if (spec.drawnLegs) {
+      // A resting leg is drawn at its foot's column, so it reaches up to the belly over that column,
+      // which a pose that lifts the middle (the arch) raises above the hip.
+      if (amp <= 0.5) {
+        let under = root[1];
+        for (let x = 0; x < spec.len; x += 1) {
+          if (Math.round(shape.at(x)) === Math.round(rest))
+            under = Math.max(under, Math.round(bottom(x) + shape.off(x)));
+        }
+        root[1] = under;
+      }
       return drawnLimb(spec, L, { root, drop, foot: rest, p, amp, stand: shape.stand, paws: shape.paws });
+    }
     const R = [root[0], root[1] - drop];
     return pawLimb(spec, L, { R, rest, p, amp, bodyX, straight: (1 - amp) * shape.stand, stance: STANCE });
   };
@@ -357,6 +491,8 @@ function paintBody(spec, pal, plot, pose) {
   face.grid.forEach((line, r) => {
     [...line].forEach((ch, c) => {
       if (ch === ".") return;
+      // An ear twitch folds the front ear flat for a moment.
+      if (pose.earFlick && r === 0 && c === line.lastIndexOf(ch) && ch !== "D") return;
       const key = ch === "e" ? (eyeShut ? (spec.face.lid ?? "T") : (spec.face.eye ?? "D")) : ch;
       const h = hh - r + lift;
       if (h >= 0) plot(hx + c + dx, h, pal[key]);

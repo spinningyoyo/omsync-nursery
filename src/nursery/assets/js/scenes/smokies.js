@@ -39,6 +39,7 @@ import {
 } from "../kit/critters.js";
 import { bandPath, milkyWayCanvas, mistAt, mistBand, onBand, starAt, starField, starFieldAt } from "../kit/effects.js";
 import { circlerAt, eagleFlyAt, flyerAt, OWL_MOVES, owlPerchAt } from "../kit/flyers.js";
+import { ridge as softRidge } from "../kit/landforms.js";
 import { flyByPerch, goHome, unhidden } from "../kit/perch.js";
 import {
   blob,
@@ -48,7 +49,6 @@ import {
   foliage,
   hash,
   rect,
-  row,
   scatter,
   sortPlants,
   stroke,
@@ -394,33 +394,10 @@ function log(g, p, s, base) {
   }
 }
 
-// The Smokies' blue ridgelines: wide, soft hills, hazier the farther they are. The highest carry
-// a fringe of red spruce along their crests, dark spires against the sky.
+// The Smokies' blue ridgelines: the landforms family's ridge (kit/landforms.js), hazier the farther
+// they are. The highest carry a fringe of red spruce along their crests, dark spires against the sky.
 function ridge(g, p, s, base) {
-  const { pal } = g;
-  const height = Math.max(3, Math.round(26 * p.scale * s));
-  const width = Math.round(90 * p.scale);
-  const tops = [];
-  for (let r = 0; r < height; r += 1) {
-    const f = r / height;
-    const half = Math.round((width / 2) * (1 - f) ** 0.6 + (hash(r, p.seed, 1) - 0.5) * 2);
-    if (half < 1) break;
-    tops.push(half);
-    row(g, base - 1 - r, p.x - half, p.x + half, (x) => {
-      if (f > 0.82 && hash(x, r, p.seed) < 0.5) return pal.ridge[0];
-      return pal.ridge[hash(x, r, p.seed + 3) < 0.15 ? 2 : 1];
-    });
-  }
-  if (!p.spruce || s < 1) return;
-  // Spires stand along the upper slopes, where the ridge is high enough for spruce and fir.
-  for (let x = p.x - Math.round(width * 0.3); x <= p.x + Math.round(width * 0.3); x += 3) {
-    if (hash(x, 1, p.seed) < 0.35) continue;
-    const r = tops.findIndex((half) => half < Math.abs(x - p.x)) - 1;
-    if (r < height * 0.55) continue;
-    const tall = 3 + Math.round(hash(x, 2, p.seed) * 3);
-    for (let k = 0; k < tall; k += 1)
-      rect(g, pal.ridge[2], x - (k < tall - 2 ? 1 : 0), base - 1 - r - k, k < tall - 2 ? 3 : 1, 1);
-  }
+  softRidge(g, p, s, base, { tones: g.pal.ridge, fringe: p.spruce ? "spires" : null });
 }
 
 function generate(ctx) {

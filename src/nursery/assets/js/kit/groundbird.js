@@ -1,11 +1,12 @@
 // The ground birds built from parts: the greater roadrunner (desert), the wild turkey (Smokies), the
-// secretary bird (Serengeti) and the moa, Hawaii's feral red junglefowl rooster. A bird is an egg of
+// secretary bird (Serengeti), the moa, Hawaii's feral red junglefowl rooster, and the hen, the
+// farmyard rooster's mate (the village). A bird is an egg of
 // overlapping ovals that tilts and breathes, a neck that curves from the chest to a small head, a tail
 // that fans from the rump, a wing rooted on the shoulder that changes shape from folded to open, and two
 // thin legs of two bones whose ankle bends backward, lit from above in four tones. drawBird draws one
 // facing right with plot(x, h, colour) (h the height over the ground row; h -1 is its soft shadow);
 // animals.js's groundBirdAt places it and chooses its pose. A member (RUNNER, TURKEY, SECRETARY,
-// MOA) is a spec, its colours made from the scene's palette (groundTones): runner [brown, buff, blue,
+// MOA, HEN) is a spec, its colours made from the scene's palette (groundTones): runner [brown, buff, blue,
 // red, bill, belly, legs], turkey [body, wing, red, blue, dark], secretary [grey, black, face, white],
 // moa [body, tail, comb, legs], with the scene's groundShadow beside them.
 import { bone, joint, mixPose, plant, rowFill, straighten } from "./build.js";
@@ -618,9 +619,10 @@ const MOA = {
     const grids = [
       ["..cc.", ".cfeY", "..fYY", "..wf."],
       ["..cc.", ".cfe.", "..fY.", "..wY."],
+      ["..cc..", ".cfeYY", "..f...", "..wfY."],
     ];
     return {
-      grid: down ? grids[1] : grids[0],
+      grid: P.crow > 0.5 ? grids[2] : down ? grids[1] : grids[0],
       at: [1, 2],
       lid: "f",
       keys: { c: C.comb, f: mix(C.comb, "#ffffff", 0.05), w: C.comb, e: "#14100c", Y: C.legs },
@@ -631,11 +633,38 @@ MOA.neck.paint = (s, tone, C) =>
   s > 0.3 ? (tone === "S" || tone === "U" ? darken(C.hackle, 0.2) : C.hackle) : C.body[tone];
 MOA.tail.paint = (_s, f, _fan, C) => (f > 0.6 ? C.wing.flight.H : f > 0.25 ? C.tail : C.wing.flight.S);
 
+// The hen: the rooster's build without his finery. A low single comb, no golden hackle, and a short
+// tail of a few feathers held up; a little smaller. Her palette is [body, tail, comb, legs] like his.
+const HEN = {
+  ...MOA,
+  id: "hen",
+  lobes: [
+    [0, 0, 2.9, 1.8],
+    [1.3, 0.3, 1.7, 1.6],
+  ],
+  neck: { ...MOA.neck, paint: (_s, tone, C) => C.body[tone] },
+  tail: { ...MOA.tail, len: 2.4, n: 3, spread: 18, fanLen: 0.8 },
+  head(P, C) {
+    const down = P.peck > 0.5;
+    const grids = [
+      ["..c..", ".cfeY", "..fYY", "..w.."],
+      ["..c..", ".cfe.", "..fY.", "..wY."],
+    ];
+    return {
+      grid: down ? grids[1] : grids[0],
+      at: [1, 2],
+      lid: "f",
+      keys: { c: C.comb, f: mix(C.body.T, C.comb, 0.25), w: C.comb, e: "#14100c", Y: C.legs },
+    };
+  },
+};
+
 export const MEMBERS = {
   runner: RUNNER,
   turkey: TURKEY,
   secretary: SECRETARY,
   moa: MOA,
+  hen: HEN,
 };
 
 // A spec's colours from a scene's palette array, made once per array.
@@ -652,7 +681,7 @@ export function groundTones(spec, colours) {
 // ---- The walk ---------------------------------------------------------------------------------
 
 // Each member's stride time in seconds. The walking speed follows: stride / stance / cycle.
-export const CYCLE = { runner: 0.62, turkey: 1.0, secretary: 1.5, moa: 0.62 };
+export const CYCLE = { runner: 0.62, turkey: 1.0, secretary: 1.5, moa: 0.62, hen: 0.62 };
 export const speedOf = (kind) => {
   const s = MEMBERS[kind];
   const run = kind === "runner" ? 1 : 0;
@@ -853,8 +882,32 @@ const POSES = {
         P.wingAng = -70 + 90 * (0.5 + 0.5 * Math.sin(t * 15)) * k.flap;
       },
     },
+    // The crow, which a scene times (never picked for a stop): a quick flap of the wings, then the
+    // neck stretched up and back with the beak open for the long call, and down again.
+    crow: {
+      seconds: 3.0,
+      timed: true,
+      keys: [
+        [0, {}],
+        [0.3, { flap: 1, tilt: 4 }],
+        [0.8, { flap: 1, tilt: 4 }],
+        [1.1, { neckH: 1.6, neckX: -0.6, tilt: -10, crow: 1 }],
+        [2.4, { neckH: 1.6, neckX: -0.6, tilt: -10, crow: 1 }],
+        [3.0, {}],
+      ],
+      extra(P, t, k) {
+        if (!(k.flap > 0.01)) return;
+        P.wingExt = k.flap;
+        P.wingAng = -70 + 90 * (0.5 + 0.5 * Math.sin(t * 15)) * k.flap;
+      },
+    },
   },
 };
+// The hen pecks, scratches, preens and flaps as the rooster does, but never crows.
+POSES.hen = Object.fromEntries(Object.entries(POSES.moa).filter(([name]) => name !== "crow"));
+
+// Seconds a crow lasts, for the scene that times it.
+export const CROW_SECONDS = POSES.moa.crow.seconds + SETTLE;
 
 // The turkey's strut: from `from` to `to` seconds into its display it walks on at `speed` px/s with its
 // fan up, a step every 2 s.
@@ -864,10 +917,10 @@ export const STRUT = { turkey: { pose: "display", from: 1.6, to: 5.2, speed: 3.3
 // always does something).
 export function restPoses(kind, timer) {
   const fit = Object.entries(POSES[kind])
-    .filter(([, p]) => p.seconds + SETTLE + 0.3 <= timer)
+    .filter(([, p]) => !p.timed && p.seconds + SETTLE + 0.3 <= timer)
     .map(([name]) => name);
   const list = fit.flatMap((n) => [n, n]);
-  return kind === "moa" && fit.length ? list : ["stand", ...list];
+  return (kind === "moa" || kind === "hen") && fit.length ? list : ["stand", ...list];
 }
 
 // A bird standing about: it breathes, blinks and now and then looks up and back.
