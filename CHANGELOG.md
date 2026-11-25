@@ -10,9 +10,29 @@ with "Contract change".
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-25
+
+### Added
+
+- Contract change: the garden. Hosts take the scene picker, the watering mascot, saved growth and
+  day and night from the package instead of keeping their own copies.
+- Contract change: scenes come in biome groups, and the picker shows them by group.
+- Great Barrier Reef: a sunlit coral reef seen from the sand, calm and teeming with life.
+- Rural Village: a farmstead in the Azerbaijani foothills, slow and homely.
+
+### Changed
+
+- House cats rest, groom and doze.
+
+### Removed
+
+- Contract change: the package no longer ships a mascot or favicons. `nursery.assets` drops
+  `MASCOT_SVG`, `FAVICON_SVG`, `FAVICON_PNG`, `MASCOT_GRID` and `BRAND`, and `nursery brand` is
+  gone. Each host passes its own mascot into the garden.
+
 ### Fixed
 
-- The Nursery Studio and tools read and write files with UTF-8 encoding so they run on Windows without decode errors.
+- The studio runs on Windows.
 
 ## [0.2.1] - 2026-11-17
 
@@ -86,7 +106,8 @@ with "Contract change".
 - `scenes.css` sets `--landing-cell`, the size of one backdrop grid cell, so that omsync does not
   need to know the art's pixel size.
 
-[Unreleased]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/spinningyoyo/omsync-nursery/compare/v0.1.0...v0.1.1

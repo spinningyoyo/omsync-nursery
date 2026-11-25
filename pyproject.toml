@@ -1,6 +1,6 @@
 [project]
 name = "omsync-nursery"
-version = "0.2.1"
+version = "0.3.0"
 description = "Pixel-art scenes for omsync's sign-in page, and the Nursery Studio that draws them."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -81,7 +81,6 @@ max-complexity = 10  # ruff's default; split a function that grows past it, do n
 # The command modules print to the user's terminal on purpose (T201).
 # Some start git, uv, Chrome or a local web server with a fixed argument list and no shell. The
 # program name comes from PATH on purpose, and no argument is user input (S404, S603, S607).
-"src/nursery/brand.py" = ["T201"]
 "src/nursery/scenes_build.py" = ["T201", "S404", "S603"]
 "src/nursery/catalog.py" = ["T201", "S404", "S603", "S310"]  # S310: urlopen of its own localhost server
 "src/nursery/launcher.py" = ["S404", "S603"]
