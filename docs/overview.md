@@ -238,6 +238,10 @@ loads in `<head>`. It sets `data-theme` and returns the saved scene before the p
 colours never flash. It holds the only copy of the day and night rule. `daylight.js` uses that
 rule after load.
 
+**Decision: more scenes make the picker taller, not wider than the page.** The picker's panel has
+the width of `--nursery-panel-max`, or of the window when that is narrower. The biome groups fill
+as many columns as that width holds. A host puts the panel where it can grow down or up.
+
 **Decision: the popover is the browser's own.** `ScenePopover` uses the `popover` attribute. The
 browser closes it on Escape and on a click outside, and puts the focus back on its button.
 

@@ -46,6 +46,7 @@
   --nursery-ink-default: #171717;
   --nursery-paper-default: #ffffff;
   --nursery-page-default: #ffffff;
+  --nursery-panel-max: 34rem;
   --landing-green: #b7dc98;
   --landing-green-soft: #d3eac0;
   --landing-peach: #fbdfc8;
@@ -326,12 +327,13 @@
 
 /* ---- Scene picker ------------------------------------------------------------------------------ */
 
-/* A frosted card: the popover's, or a host's own (a menu that slides out, say). */
+/* A frosted card: the popover's, or a host's own (a menu that slides out, say). Its width is
+   --nursery-panel-max, or the window's when that is narrower, so the groups inside have a width to
+   flow into columns. */
 .nursery-panel {
   flex-direction: column;
   gap: 10px;
-  width: max-content;
-  min-width: 13.5rem;
+  width: min(calc(100vw - 24px), var(--nursery-panel-max));
   padding: 10px 12px 12px;
   border: 0;
   border-radius: 14px;
@@ -356,10 +358,13 @@
   overflow: visible;
 }
 
+/* The groups sit side by side, as many columns as the panel holds. A column holds the longest
+   group's row of five scenes; a longer group wraps inside its column. */
 .nursery-picker {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14.25rem, 1fr));
+  gap: 10px 16px;
+  align-items: start;
 }
 
 .nursery-picker__group {

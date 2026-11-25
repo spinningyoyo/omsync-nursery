@@ -1,5 +1,5 @@
-// The scene picker. ScenePicker draws the scenes into a host element, one row per biome group
-// under its name, each scene as its pixel icon with its name on hover or focus. ScenePopover is a
+// The scene picker. ScenePicker draws the scenes into its own element inside a host element, one
+// row per biome group under its name, each scene as its pixel icon with its name on hover or focus. ScenePopover is a
 // button that shows the current scene and opens a ScenePicker beside it. garden.css styles both.
 //
 // The picker only shows and reports the choice. The host decides what a choice does and where it is
@@ -15,10 +15,10 @@ const uniqueId = (prefix) => `${prefix}-${++made}`;
 
 export class ScenePicker {
   // groups and filter go to groupScenes, so a host can reorder the groups or leave scenes out.
-  constructor(root, { current, onChoose, groups, filter }) {
-    this.root = root;
-    this.root.classList.add("nursery-picker");
-    this.root.replaceChildren(
+  constructor(host, { current, onChoose, groups, filter }) {
+    this.root = document.createElement("div");
+    this.root.className = "nursery-picker";
+    this.root.append(
       ...groupScenes(SCENES, { groups, filter }).map((group) => {
         const section = document.createElement("div");
         section.className = "nursery-picker__group";
@@ -35,6 +35,7 @@ export class ScenePicker {
         return section;
       }),
     );
+    host.append(this.root);
     this.onClick = (event) => {
       const button = event.target.closest("[data-scene-id]");
       const scene = button && SCENES.find((s) => s.id === button.dataset.sceneId);
@@ -63,7 +64,7 @@ export class ScenePicker {
 
   destroy() {
     this.root.removeEventListener("click", this.onClick);
-    this.root.replaceChildren();
+    this.root.remove();
   }
 }
 
@@ -84,11 +85,9 @@ export class ScenePopover {
     this.panel.className = "nursery-panel nursery-popover";
     this.panel.setAttribute("popover", "auto");
     this.panel.setAttribute("aria-label", "Scenes");
-    const choices = document.createElement("div");
-    this.panel.append(choices);
     this.root.replaceChildren(this.trigger, this.panel);
 
-    this.picker = new ScenePicker(choices, {
+    this.picker = new ScenePicker(this.panel, {
       current,
       groups,
       filter,
@@ -113,7 +112,7 @@ export class ScenePopover {
   }
 
   // Placed before it shows, so it never flashes elsewhere. Anchoring by the near edge needs no
-  // measure of the panel; its width is capped to the room on that side.
+  // measure of the panel; its width is capped to the room on that side and to --nursery-panel-max.
   place() {
     const box = this.trigger.getBoundingClientRect();
     const gap = 8;
@@ -123,12 +122,12 @@ export class ScenePopover {
     if (box.left + box.width / 2 > window.innerWidth / 2) {
       style.left = "auto";
       style.right = `${window.innerWidth - box.right}px`;
-      style.maxWidth = `${box.right - edge}px`;
+      style.maxWidth = `min(${box.right - edge}px, var(--nursery-panel-max))`;
       this.panel.dataset.align = "end";
     } else {
       style.right = "auto";
       style.left = `${box.left}px`;
-      style.maxWidth = `${window.innerWidth - box.left - edge}px`;
+      style.maxWidth = `min(${window.innerWidth - box.left - edge}px, var(--nursery-panel-max))`;
       this.panel.dataset.align = "start";
     }
   }
