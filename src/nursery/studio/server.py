@@ -41,12 +41,11 @@ import time
 from pathlib import Path
 from urllib.parse import urlparse
 
-from nursery import brand, catalog
+from nursery import catalog
 from nursery.headless import studio_result
 from nursery.launcher import open_app
 from nursery.paths import (
     APP,
-    BRAND_DIR,
     CSS_DIR,
     JS_DIR,
     ROOT,
@@ -89,7 +88,7 @@ def version() -> str:
     """A fingerprint of the code the studio draws and runs, so an open studio can reload itself
     when any of it changes on disk."""
     digest = hashlib.sha256()
-    watched = [JS_DIR, CSS_DIR, BRAND_DIR, STUDIO, SCENES_JSON]
+    watched = [JS_DIR, CSS_DIR, STUDIO, SCENES_JSON]
     for root in watched:
         files = [root] if root.is_file() else sorted(root.rglob("*"))
         for path in files:
@@ -127,9 +126,8 @@ def meta() -> dict:
 
 
 def scene_dir(sid: str) -> Path:
-    """A scene's folder in .nursery. The mascot has one too, though it is not a scene. This and
-    check() are the server's two places that single the mascot out; /api/brand serves the rest."""
-    if sid != brand.BRAND_ID and sid not in catalog.SCENE_IDS:
+    """A scene's folder in .nursery."""
+    if sid not in catalog.SCENE_IDS:
         raise KeyError(sid)
     return STORE / sid
 
@@ -380,8 +378,6 @@ class Studio(http.server.BaseHTTPRequestHandler):
             self.send_file(CSS_DIR.joinpath(*parts[1:]), CSS_DIR)
         elif parts[0] == "app":
             self.send_file(APP.joinpath(*parts[1:]) if parts[1:] else APP / "index.html", APP)
-        elif len(parts) == 2 and parts[0] == "brand":
-            self.send_file(BRAND_DIR / parts[1], BRAND_DIR)
         elif parts == ["scenes.json"]:
             self.send_file(SCENES_JSON, ROOT)
         elif len(parts) == 2 and parts[0] == "verify" and parts[1].endswith((".js", ".html")):
@@ -398,8 +394,6 @@ class Studio(http.server.BaseHTTPRequestHandler):
             self.send_json({"version": version()})
         elif parts == ["api", "meta"]:
             self.send_json(meta())
-        elif parts == ["api", "brand"]:
-            self.send_json(brand.studio_data())
         elif len(parts) == 3 and parts[:2] == ["api", "scene"]:
             self.send_json(saved(parts[2]))
         elif parts == ["api", "proposals"]:
@@ -551,7 +545,7 @@ def print_problem(folder: Path, item: dict) -> None:
 
 def check(only: str | None) -> int:
     """Runs the studio's check page headless and prints each edit's state. Returns the exit code."""
-    every = (*catalog.SCENE_IDS, brand.BRAND_ID)
+    every = catalog.SCENE_IDS
     sids = [only] if only else [s for s in every if (STORE / s / "edits").is_dir()]
     if only and only not in every:
         raise SystemExit(f"unknown scene {only!r}")

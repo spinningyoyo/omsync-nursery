@@ -9,7 +9,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const DEEP_ROWS = 2;
 
 export class MascotWater {
-  constructor(svg, { reducedMotion, body = ".mascot-body" }) {
+  constructor(svg, { reducedMotion, body = ".body" }) {
     this.reduced = reducedMotion;
     this.cells = [];
     const group = svg?.querySelector(body);

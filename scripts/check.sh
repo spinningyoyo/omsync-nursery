@@ -15,6 +15,7 @@ step sh scripts/biome.sh check .
 step python3 scripts/check_js_imports.py
 step python3 scripts/check_scenes.py
 step uv run nursery scenes --check
+step shasum -a 256 -c --quiet ink.sha256
 
 if [ "$failed" -ne 0 ]; then
     echo "check: failed" >&2

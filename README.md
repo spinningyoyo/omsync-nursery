@@ -1,10 +1,11 @@
 # omsync-nursery
 
-omsync-nursery holds the pixel-art scenes that grow on the sign-in page of omsync, a personal
-finance tracker, and the garden around them: the scene picker, the mascot that waters the scene,
-and day and night. It also holds the Nursery Studio, where you draw the scenes, and omsync's pixel
-mascot. omsync installs this repository as a Python package and serves the scene files from it. The
-studio and the `nursery` command run from a checkout of this repository.
+omsync-nursery is the shared garden for the owner's apps. It holds the pixel-art scenes that grow
+on a host page, and the garden around them: the scene picker, the watering, and day and night. It
+also holds the Nursery Studio, where you draw the scenes. A host installs this repository as a
+Python package and serves the scene files from it. Each host brings its own mascot. The nursery
+owns no mascot or favicon. The studio and the `nursery` command run from a checkout of this
+repository.
 
 > Pull requests are by invitation only. Open an issue first. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -30,9 +31,8 @@ The studio is a local tool. Do not expose its port to a network.
 ## Development
 
 ```sh
-sh scripts/check.sh                 # ruff, Biome, import boundaries, brand and scenes files
+sh scripts/check.sh                 # ruff, Biome, import boundaries and scenes files
 uv run pytest                       # the end-to-end tests
-uv run nursery brand                # build the mascot and the favicons from the mascot's grid
 uv run nursery scenes               # build scenes.json and scenes.css from the scene modules
 uv run nursery catalog --out DIR    # write per-scene markdown tables to DIR
 uv run nursery verify               # check the art against the design rules
@@ -43,17 +43,19 @@ uv run nursery --help               # every command
 The tests are end-to-end tests only. They are in `tests/e2e/`. GitHub Actions runs the checks and
 the tests on each push.
 
-## Using it from omsync
+## Using it from a host
 
-omsync names this repository by its git URL and the `release` branch, in its `pyproject.toml`:
+A host names this repository by its git URL and the `release` branch in its `pyproject.toml`,
+and gives a version range in its dependencies:
 
 ```toml
 [tool.uv.sources]
 omsync-nursery = { git = "https://github.com/spinningyoyo/omsync-nursery", branch = "release" }
 ```
 
-omsync's `uv.lock` records the exact commit. omsync reads the scene files through `nursery.assets`.
-[docs/overview.md](docs/overview.md) describes this contract and the release rules.
+The host's `uv.lock` records the exact commit. The host reads the scene files through
+`nursery.assets`. [docs/overview.md](docs/overview.md) lists the hosts and describes the host
+contract and the release rules.
 
 ## Contributing
 

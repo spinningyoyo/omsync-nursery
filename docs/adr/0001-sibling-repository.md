@@ -19,11 +19,11 @@ releases. omsync upgrades when it wants new art.
 
 - Each repository has one concern. The history of omsync stays about the finance app.
 - The nursery has its own tools and workflow: the studio, the checks, the catalogue and the skill.
-- omsync depends on a contract, not on a copy of the files. [overview.md](../overview.md) lists the
-  contract. A change to the contract must change the two repositories together.
-- The nursery owns omsync's pixel mascot and favicons. A change to omsync's brand art is made here,
-  in the mascot's grid, and reaches omsync through a release.
-- A release makes no change in omsync. Art reaches omsync only when omsync upgrades. To see art
-  before that, use `scripts/dev-nursery.sh` in omsync.
-- The nursery cannot check omsync at release time. omsync's own tests catch a release that breaks
-  the contract, when omsync upgrades.
+- Each host depends on a contract, not on a copy of the files. [overview.md](../overview.md) lists
+  the contract and the hosts. A change to the contract must change each host's host code when that
+  host takes the release.
+- The nursery owns no mascot or favicon. `ink-studio` owns them, and each host brings its own
+  mascot to the garden.
+- A release makes no change in a host. Art reaches a host only when that host upgrades.
+- The nursery cannot check a host at release time. Each host's own tests catch a release that
+  breaks the contract, when that host upgrades.

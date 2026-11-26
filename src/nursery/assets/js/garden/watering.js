@@ -27,7 +27,7 @@ export class Watering {
     button,
     nursery,
     reducedMotion,
-    body = ".mascot-body",
+    body = ".body",
     spout = middle,
     onWater = () => {},
     onFill = () => {},

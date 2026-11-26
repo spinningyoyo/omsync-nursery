@@ -2,7 +2,7 @@
 
 ```mermaid
 flowchart TD
-    Readme["README.md<br/>what this is, how to start"] --> Overview["overview.md<br/>parts, workflows, release, contract"]
+    Readme["README.md<br/>what this is, how to start"] --> Overview["overview.md<br/>parts, workflows, release, hosts, contract"]
     Overview --> Adr["adr/<br/>the reasons behind the layout"]
     Overview --> Skill[".claude/skills/nursery-scene/<br/>design rules for agents"]
     Overview --> VerifySkill[".claude/skills/verify-nursery/<br/>art verification rules"]
@@ -10,7 +10,7 @@ flowchart TD
 
 | Document | What it tells you |
 |---|---|
-| [overview.md](overview.md) | The parts and how they depend on each other, the two workflows between owner and agent, the release rules, the mascot, and the contract with omsync. |
+| [overview.md](overview.md) | The parts and how they depend on each other, the two workflows between owner and agent, the release rules, the hosts, and the host contract. |
 | [adr/0001-sibling-repository.md](adr/0001-sibling-repository.md) | Why the scenes live in their own repository. |
 | [adr/0002-python-and-lit.md](adr/0002-python-and-lit.md) | Why the tools use Python and the studio uses Lit. |
 | [../CHANGELOG.md](../CHANGELOG.md) | What changed in each release. |

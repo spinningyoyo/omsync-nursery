@@ -17,7 +17,7 @@ from conftest import SCENE_IDS, TEMPLATE_VERSION, Page, serve_host
 
 pytestmark = pytest.mark.slow
 
-EXPORTS = ["JS", "SCENES_CSS", "SCENES_JSON", "MASCOT_SVG", "FAVICON_SVG", "FAVICON_PNG"]
+EXPORTS = ["JS", "SCENES_CSS", "SCENES_JSON", "GARDEN_CSS"]
 
 PROBE = f"""
 import importlib.metadata, json, nursery.assets as assets
@@ -67,9 +67,6 @@ def test_the_wheel_exposes_every_file_that_omsync_reads(installed: dict[str, Any
     for name in EXPORTS[1:]:
         assert exports[name].is_file()
         assert exports[name].stat().st_size > 0
-    assert exports["FAVICON_PNG"].read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
-    assert exports["MASCOT_SVG"].read_text(encoding="utf-8").startswith("<svg")
-    assert exports["FAVICON_SVG"].read_text(encoding="utf-8").startswith("<svg")
     assert json.loads(exports["SCENES_JSON"].read_text(encoding="utf-8"))
 
 

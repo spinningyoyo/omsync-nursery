@@ -1,8 +1,9 @@
 # AGENTS.md
 
-omsync-nursery holds the pixel-art scenes for omsync's sign-in page (`../omsync`), the garden that
-hosts show around a scene, and the Nursery Studio that draws and edits the scenes. Start with [docs/README.md](docs/README.md). It maps the
-documents. [docs/overview.md](docs/overview.md) shows the owner-agent workflow and the omsync
+omsync-nursery is the shared garden for the owner's apps. It holds the pixel-art scenes, the
+garden that hosts show around a scene, and the Nursery Studio that draws and edits the scenes.
+Start with [docs/README.md](docs/README.md). It maps the documents.
+[docs/overview.md](docs/overview.md) shows the owner-agent workflow, the hosts and the host
 contract. `docs/adr/` holds the reasons behind the layout and the stack.
 
 ## Rules
@@ -15,10 +16,12 @@ contract. `docs/adr/` holds the reasons behind the layout and the stack.
   enforces these rules.
 - Behavior that every host needs goes in `garden/`, not in a host. A host keeps only what is its
   own: its storage keys, its mascot, its words and its layout.
-- What a host reads is the host contract in `docs/overview.md`. Change it only together with
-  omsync's host code. Mark the change in `CHANGELOG.md` as a contract change.
-- The mascot's master is `src/nursery/assets/brand/mascot-grid.txt`. Change the grid, run
-  `uv run nursery brand`, and never edit or copy a built brand file.
+- What a host reads is the host contract in `docs/overview.md`. A change to it is a contract
+  change for every host in its hosts table. Mark the change in `CHANGELOG.md` as a contract change.
+- The nursery owns no mascot or favicon. `ink-studio` owns them. The studio's mark in
+  `src/nursery/studio/app/brand/` is exported from `ink-studio`. `ink.toml` lists the files, and
+  `ink.sha256` records their content. Never edit them here. `sh scripts/check.sh` fails when a
+  file differs from `ink.sha256`.
 - `.nursery/` is the owner's working state. Read it, and leave its files in place.
 - Tests are end-to-end tests only, in `tests/e2e/`. Do not write unit tests. A test drives the
   real engine, CLI or studio from the outside. Run `uv run pytest` after code changes.
@@ -28,14 +31,13 @@ contract. `docs/adr/` holds the reasons behind the layout and the stack.
 ```sh
 uv sync
 git config core.hooksPath .githooks   # once per clone: pre-commit and commit-msg checks
-sh scripts/check.sh               # ruff, Biome, import boundaries, scene records, brand and scenes freshness (needs Node)
+sh scripts/check.sh               # ruff, Biome, import boundaries, scene records, scenes freshness (needs Node)
 uv run pytest                     # the end-to-end tests (needs Chrome); -m "not browser" skips Chrome
 uv run nursery --help
 uv run nursery verify             # check the art against the design rules
 uv run nursery release --patch --dry-run   # or --minor, --major
 uv run nursery scenes             # rebuilds scenes.json and scenes.css from the scene modules
 uv run nursery catalog --out DIR  # writes per-scene markdown tables to DIR
-uv run nursery brand              # rebuilds the mascot, favicons and studio mark from the grid
 ```
 
 ## Git
@@ -65,5 +67,5 @@ Release only when the owner asks. The rules and the steps are in the
 [Release section of docs/overview.md](docs/overview.md#release). The version tag is `vX.Y.Z`.
 Run `uv run nursery release --dry-run` first. Then run the command with `--patch`, `--minor` or
 `--major`. Before it, write the new version's section in `CHANGELOG.md` and leave it
-uncommitted. The release commit takes it with the version. omsync takes a release on its own
+uncommitted. The release commit takes it with the version. Each host takes a release on its own
 schedule.

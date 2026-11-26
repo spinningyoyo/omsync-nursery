@@ -172,22 +172,13 @@ function iconJob(scene) {
 const models = new Map();
 const built = new Map();
 
-// One of the three places that single out the mascot's pseudo-scene (the others: server.py's
-// scene_dir and check, and the "brand" flag of its job in edits.js and editor-view.js). Its id
-// comes from brand.py; brand-model.js is imported here, not at the top, because it extends
-// SceneModel.
-async function buildModel(sid) {
-  const { BrandModel, brandId } = await import("./brand-model.js");
-  return new (sid === (await brandId()) ? BrandModel : SceneModel)(sid).build();
-}
-
 export class SceneModel {
   // The scene's model, built once and kept; refresh() reloads its saved work.
   static async load(sid) {
     if (!models.has(sid)) {
       models.set(
         sid,
-        buildModel(sid).then((model) => {
+        new SceneModel(sid).build().then((model) => {
           built.set(sid, model);
           return model;
         }),

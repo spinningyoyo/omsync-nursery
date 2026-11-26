@@ -5,17 +5,15 @@ description: Design, add, change or review a nursery scene in src/nursery/assets
 
 # Nursery scenes
 
-omsync's sign-in page grows a pixel-art scene in eight waterings. A scene is one module in
+A host page grows a pixel-art scene in eight waterings. A scene is one module in
 `src/nursery/assets/js/scenes/`, drawn with the kit in `src/nursery/assets/js/kit/`. The header of
 `src/nursery/assets/js/nursery.js` is the scene contract. Before you edit a scene, read its module
 end to end.
 
 Which path:
 
-- **The user saved pixel edits**: follow [studio-edits.md](studio-edits.md); no proposal. This
-  includes the mascot: its master is `src/nursery/assets/brand/mascot-grid.txt`, the user edits it
-  on the studio's Icons page, and `uv run nursery brand` builds every brand file from it. Never
-  paste copies.
+- **The user saved pixel edits**: follow [studio-edits.md](studio-edits.md); no proposal.
+- **A mascot or favicon change**: not here. `ink-studio` owns every mascot and favicon.
 - **New or changed art**, still or animated: the steps below.
 - **The user reviewed a proposal**: [proposals.md](proposals.md), "The loop".
 
@@ -44,13 +42,13 @@ Which path:
    the end, only when the user says yes, and report any failure with its output. A subagent never
    runs it; it reports "tests not run". A new scene declares `META` (id, label, group, density,
    tint, backdrop), registers in `nursery.js` (import and `SCENES`), and runs `uv run nursery scenes`
-   to build `src/nursery/assets/scenes.json` and `src/nursery/assets/css/scenes.css`; the omsync
-   contract in `docs/overview.md` says what omsync reads.
+   to build `src/nursery/assets/scenes.json` and `src/nursery/assets/css/scenes.css`; the host
+   contract in `docs/overview.md` says what a host reads.
 7. **Release** only when the user asks. The [Release section of docs/overview.md](../../../docs/overview.md#release)
    has the steps and says which flag to use. Run with `--dry-run` first. A release changes nothing
-   in omsync. omsync takes it when its owner runs its upgrade script. To see the art in omsync
-   before a release, run `sh scripts/dev-nursery.sh serve` in omsync. When what the user sees
-   changes, update the scene paragraph in omsync's `docs/architecture/interface.md`.
+   in a host. Each host takes it on its own schedule; the hosts table in `docs/overview.md` says
+   how, and how to see art in a host before a release. When what a user sees changes, tell the
+   user which host documents may describe the scenes. A host's documents change in that host.
 
 ## Design rules
 

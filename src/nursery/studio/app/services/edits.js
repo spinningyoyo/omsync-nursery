@@ -45,20 +45,10 @@ function patchFor(model, job, theme, f, original, target, linked) {
       ? { proposal: `.nursery/${model.sid}/proposals/${job.proposal}.js`, variant: job.title }
       : job.icon
         ? { drawnBy: `the icon grid in ${w?.path}`, note_icon: "x and y are cells of the icon grid" }
-        : job.brand
-          ? {
-              drawnBy: `the grid file ${w?.path}`,
-              note_grid:
-                "x and y are the column and row of the grid file, from 0. Its characters are '#' " +
-                "ink (key ink), 'E' eye (key eye) and '.' paper (key body, or empty). Paper " +
-                "reached from the grid's edge through paper is exterior and is not drawn; the " +
-                "rest of the paper is the body. Close the outline around any body pixel. The " +
-                "eye shows in its own colour here; in omsync it is drawn like the outline.",
-            }
-          : {
-              drawnBy: w ? `${w.fn ? `${w.fn} at ` : ""}${w.path}:${w.line}` : null,
-              pose_in_sprites_js: `src/nursery/studio/shared/sprites.js SPRITES.${model.sid}["${job.name}"]`,
-            }),
+        : {
+            drawnBy: w ? `${w.fn ? `${w.fn} at ` : ""}${w.path}:${w.line}` : null,
+            pose_in_sprites_js: `src/nursery/studio/shared/sprites.js SPRITES.${model.sid}["${job.name}"]`,
+          }),
     box: { w: job.box.w, h: job.box.h },
     anchor: { x: 40, feet: job.feet },
     note:

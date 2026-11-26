@@ -13,8 +13,6 @@ from conftest import git, nursery_cli
 
 pytestmark = pytest.mark.browser
 
-GRID = Path("src/nursery/assets/brand/mascot-grid.txt")
-
 
 def release(repo: Path, *flags: str) -> subprocess.CompletedProcess:
     return nursery_cli(repo, "release", *flags)
@@ -190,16 +188,6 @@ def test_changes_that_are_not_committed_stop_the_release(repo: Path) -> None:
     (repo / "notes.txt").write_text("not committed", encoding="utf-8")
     before = state(repo)
     stops(release(repo), "the nursery has uncommitted changes")
-    assert state(repo) == before
-
-
-def test_a_brand_file_that_the_grid_does_not_build_stops_the_release(repo: Path) -> None:
-    grid = repo / GRID
-    text = grid.read_text(encoding="utf-8")
-    grid.write_text(text.replace("#", ".", 1), encoding="utf-8")
-    git(repo, "commit", "-q", "-am", "feat: change the mascot")
-    before = state(repo)
-    stops(release(repo), "mascot.svg is not what the mascot's grid builds; run `nursery brand`")
     assert state(repo) == before
 
 

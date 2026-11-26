@@ -1,9 +1,13 @@
 # Overview
 
-omsync-nursery holds the pixel-art scenes for the sign-in page of omsync, and the garden around
-them: the scene picker, the watering mascot, the stage sprout and day and night. It also holds the
-Nursery Studio and omsync's pixel mascot. You use the studio to look at the scenes, edit their
-pixels and review new art.
+omsync-nursery is the shared garden for the owner's apps. It holds the pixel-art scenes that grow
+on a host page, and the garden around them: the scene picker, the watering, the stage sprout and
+day and night. It also holds the Nursery Studio. You use the studio to look at the scenes, edit
+their pixels and review new art.
+
+A host is any app that installs this package and shows a garden. The hosts are in
+[The hosts](#the-hosts). The nursery does not own a mascot. Each host brings its own mascot, and
+`ink-studio` owns every mascot and favicon.
 
 The owner and a coding agent do the work together. The owner decides how the art looks. The
 agent changes the code. The studio is the place where each one shows work to the other.
@@ -12,13 +16,13 @@ agent changes the code. The studio is the place where each one shows work to the
 
 ```mermaid
 flowchart LR
-    subgraph Package ["The package: what omsync installs"]
+    subgraph Package ["The package: what a host installs"]
         Garden["garden/<br/>picker, watering, memory, day and night"] --> Engine
         Engine["nursery.js<br/>the engine"] --> Scenes["scenes/<br/>one module per scene"]
         Engine --> Kit["kit/<br/>shared drawing code"]
         Garden --> Kit
         Scenes --> Kit
-        Files["scenes.json, scenes.css, garden.css<br/>brand/"]
+        Files["scenes.json, scenes.css, garden.css"]
         Assets["nursery.assets<br/>the file locations"] -.-> Engine
         Assets -.-> Files
     end
@@ -28,7 +32,6 @@ flowchart LR
         Preview
         Verify
         Release
-        BrandBuild["Brand build"]
         ScenesBuild["Scenes build"]
     end
     Studio --> Package
@@ -36,24 +39,23 @@ flowchart LR
     Preview --> Package
     Verify --> Package
     Release --> Package
-    BrandBuild -- writes --> Files
     ScenesBuild -- writes --> Files
     Studio -- writes --> Work[".nursery/"]
-    omsync -- reads --> Assets
+    Host -- reads --> Assets
 ```
 
 An arrow points from a part to the part that it needs. The package needs no dev tool. The garden
 imports the engine and the kit. The engine imports scenes and the kit. A scene imports only the
 kit. A kit module imports only the kit. Only a host imports the garden. `sh scripts/check.sh`
-enforces these rules. omsync reads the package through `nursery.assets` only.
+enforces these rules. A host reads the package through `nursery.assets` only.
 
 | Part | Where | What it does |
 |---|---|---|
-| Engine, scenes and kit | `src/nursery/assets/js/` | The code that omsync runs on its sign-in page. |
+| Engine, scenes and kit | `src/nursery/assets/js/` | The code that a host runs on its page. |
 | Garden | `src/nursery/assets/js/garden/`, `css/garden.css` | The parts around a scene that a host shows. See [The garden](#the-garden). |
-| Mascot | `src/nursery/assets/brand/` | The grid of omsync's pixel mascot, and the files that `nursery brand` builds from it. |
 | Studio | `uv run nursery` | Shows each scene and each sprite from the code on disk. You edit pixels and review proposals here. |
-| Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `brand`, `scenes`, `preview`, `verify` and `release`. Agents use most of them. |
+| Studio mark | `src/nursery/studio/app/brand/` | The studio's own mark and favicon. `ink-studio` exports these files, as `ink.toml` lists. Do not edit them here. |
+| Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `scenes`, `preview`, `verify` and `release`. Agents use most of them. |
 | Working folder | `.nursery/<scene>/` | Your saved edits, the proposals and your reviews. Git ignores this folder. |
 | Skills | `.claude/skills/` | The design rules (`nursery-scene`) and verification rules (`verify-nursery`). |
 
@@ -141,12 +143,12 @@ flowchart LR
         C -- No --> D[Stop and show the problem]
         C -- Yes --> E[Tag the release and move the release branch]
     end
-    subgraph O ["omsync, on its own schedule"]
-        F[Run the upgrade script] --> G[Lock the newest release]
-        G --> H[Run omsync's checks and tests]
-        H --> I[One commit in omsync]
+    subgraph O ["Each host, on its own schedule"]
+        F[Upgrade the lock] --> G[Lock the newest release in the range]
+        G --> H[Run the host's checks and tests]
+        H --> I[One commit in the host]
     end
-    E -. "omsync takes it when its owner chooses" .-> F
+    E -. "a host takes it when its owner chooses" .-> F
 ```
 
 1. Commit all changes in this repository. Write the section for the new version in
@@ -159,19 +161,19 @@ flowchart LR
    that version.
 
 [`release.py`](../src/nursery/release.py) is the full list of checks and steps. The release stops
-when a saved edit is not in the code, when an approved proposal is not built, when a brand file
-is not what the grid builds, or when `scenes.json` or `scenes.css` is stale.
+when a saved edit is not in the code, when an approved proposal is not built, or when
+`scenes.json` or `scenes.css` is stale.
 
-**Decision: omsync follows a branch.** The `main` branch holds work in progress. The `release`
-branch holds only tagged releases, and it moves forward only. omsync names the branch, and its
-lock file records the commit. Art reaches omsync when omsync upgrades, not when a commit lands
-here. The release does not change omsync. It pushes the tag and the branch only when this
-repository has a remote.
+**Decision: a host follows a branch.** The `main` branch holds work in progress. The `release`
+branch holds only tagged releases, and it moves forward only. Each host names the branch, and its
+lock file records the commit. Art reaches a host when that host upgrades, not when a commit lands
+here. A host reads a checkout of this repository only for a preview before a release. The release does not change a host. It
+pushes the tag and the branch only when this repository has a remote.
 
-**Decision: the version says if omsync must change.** The tag is `vX.Y.Z`, and `X.Y.Z` is the
-version in `pyproject.toml`. omsync gives a version range. A contract change raises a number that
-the range excludes, so omsync's lock refuses the release until omsync widens the range together
-with its host code. Choose the flag with this table.
+**Decision: the version says if a host must change.** The tag is `vX.Y.Z`, and `X.Y.Z` is the
+version in `pyproject.toml`. Each host gives a version range. A contract change raises a number
+that the range excludes, so the host's lock refuses the release until that host widens the range
+together with its host code. Choose the flag with this table.
 
 | Change | Major version 0 | From 1.0.0 |
 |---|---|---|
@@ -179,39 +181,23 @@ with its host code. Choose the flag with this table.
 | New scene | `--patch` | `--minor` |
 | Art fix, or anything else | `--patch` | `--patch` |
 
-omsync takes a release when its owner runs `sh scripts/upgrade-nursery.sh` in omsync. The script
-locks the newest release inside the range, runs omsync's checks and tests, and commits. Then open
-the omsync sign-in page and look at the scene.
+## The hosts
 
-To see art in omsync before a release, run `sh scripts/dev-nursery.sh serve` in omsync. It also
-shows colour changes.
+| Host | Repository | How it takes a release | How to see art before a release |
+|---|---|---|---|
+| omsync | `../omsync` | `sh scripts/upgrade-nursery.sh`. It locks the newest release in the range, runs the checks and tests, and commits. | `sh scripts/dev-nursery.sh serve` |
+| Mantle Reef | `../mantle` | `uv lock --upgrade-package omsync-nursery`, then `sh scripts/check.sh` and `uv run pytest -q`. | None |
 
-## The mascot
-
-```mermaid
-flowchart LR
-    Grid["mascot-grid.txt<br/>the master"] --> Build["nursery brand"]
-    Build --> Mascot["mascot.svg"]
-    Build --> Favicons["favicon.svg<br/>favicon-32.png"]
-    Build --> Mark["the studio's mark"]
-    Edit["Saved edit in the studio"] -. "the agent applies it" .-> Grid
-```
-
-**Decision: this repository owns omsync's mascot.** The mascot and the scenes draw at one art pixel
-size. One owner keeps that size in one place. The
-grid is the only master. [`brand.py`](../src/nursery/brand.py) builds every other file from it, so
-no copy can drift. `nursery brand --check` and `nursery release` stop when a built file is stale.
-
-**Decision: the studio treats the mascot as a pseudo-scene.** It has the id `brand`. It is not a
-scene: it has no module, no stages and no catalogue file. The studio edits it, saves its edits
-and checks them with the code that works for scenes, so the studio needs no second editor. The
-edits are in `.nursery/brand/edits/`, and `uv run nursery check brand` checks them.
+**Decision: the nursery knows each host by name, not by its files.** This table tells you which
+repositories a contract change touches. Each host keeps the list of its own host code. To add a
+host, add a row here. The host names the `release` branch and a version range in its
+`pyproject.toml`, and it gives the garden its own mascot.
 
 ## The garden
 
 ```mermaid
 flowchart LR
-    Host["The host page<br/>omsync, Mantle Reef"] --> Early["early.js<br/>first paint, day and night rule"]
+    Host["The host page"] --> Early["early.js<br/>first paint, day and night rule"]
     Host --> Garden["Garden<br/>garden.js"]
     Host --> Picker["ScenePicker, ScenePopover<br/>picker.js"]
     Host --> Daylight["Daylight<br/>daylight.js"]
@@ -231,7 +217,7 @@ stage 0. The picker shows the scenes in their biome groups. `Daylight` applies l
 
 **Decision: the garden shows and reports, and the host decides what a change means.** Each host
 gives its own storage keys, its mascot, the point where the water leaves the mascot, and the words
-that it announces. `Garden` calls `onChange` with the cause (`start`, `water`, `choose` or
+that it announces. The garden draws no mascot of its own. `Garden` calls `onChange` with the cause (`start`, `water`, `choose` or
 `reset`), and the host reacts. A garden with no mascot only shows the scene.
 
 **Decision: one script runs before first paint.** `early.js` is a classic script that the host
@@ -267,38 +253,25 @@ plants grow and nothing else shows.
 
 ## The host contract
 
-omsync and Mantle Reef use the items in this section. If you change one of them, change omsync's
-host code at the same time. The host code is these files in omsync:
+Every host uses the items in this section. If you change one of them, it is a contract change:
+change the host code of each host in [The hosts](#the-hosts), each in its own repository, when
+that host takes the release.
 
-- `src/omsync/web/templates/layouts/app.html`, `auth.html` and `shell.html`
-- `src/omsync/web/static/js/theme.js`
-- `src/omsync/web/static/js/controllers/nursery_controller.js`
-- `src/omsync/web/static/js/controllers/scene_controller.js`
-- `src/omsync/web/styles/tint.css`, `landing.css` and `brand.css`
-
-Mantle Reef reads the files from a checkout of this repository at `../omsync-nursery`. Its host
-code is `src/mantle_reef/static/index.html`, `reef.js` and `reef.css`, and the `index.html` route in
-`server.py`.
-
-**Package.** omsync installs this repository as the Python package `omsync-nursery`. Its
-`pyproject.toml` names the repository by its GitHub URL and the `release` branch. Its `uv.lock`
-records the exact commit. A contract change raises the version past omsync's range. See
-[Release](#release).
+**Package.** A host installs this repository as the Python package `omsync-nursery`. Its
+`pyproject.toml` names the repository by its GitHub URL and the `release` branch, and gives a
+version range. Its `uv.lock` records the exact commit. A contract change raises the version past
+the range. See [Release](#release).
 
 **Files.** `nursery.assets` ([`assets.py`](../src/nursery/assets.py)) gives the location of these
 things:
 
-- `JS`: the engine, the scenes, the kit and the garden. omsync serves this folder at
-  `/static/vendor/nursery/`.
+- `JS`: the engine, the scenes, the kit and the garden. The host serves this folder at a path of
+  its choice.
 - `SCENES_JSON`: the `id`, picker `label` and biome `group` of each scene, in picker order. A host
   reads the ids from this file for the first-paint script. A new scene shows in a host with no
   change to the host.
 - `SCENES_CSS`: the colours of each scene.
 - `GARDEN_CSS`: the styles of the garden.
-- `MASCOT_SVG`, `FAVICON_SVG` and `FAVICON_PNG`: omsync's pixel mascot and its two favicons. omsync
-  serves them as its own `mascot.svg`, `favicon.svg` and `favicon-32.png`, with no copy.
-  `MASCOT_SVG` uses `currentColor` for the outline and the eye. It uses the CSS variable
-  `--mascot-body` for the body, as omsync's `brand.css` expects.
 
 **First paint.** The host loads `garden/early.js` in `<head>` and calls
 `nurseryEarly.theme(key)`. A page that shows a scene sets `data-scene` from
@@ -318,7 +291,7 @@ mascot, onChange, onFill }`. `mascot` is `{ button, spout, body }`. It reads `sc
 **Classes.** The host uses the classes of `garden.css`: `nursery-backdrop` and its four layers,
 `nursery-ground`, `nursery-water`, `nursery-mascot`, `nursery-controls`, `nursery-pill`,
 `nursery-button`, `nursery-reset`, `nursery-stage` and `nursery-panel`. The mascot's SVG has a body
-group, `.mascot-body` by default.
+group, `.body` by default.
 
 **Scenes.** Each palette, light and dark, has the keys `soil`, `line`, `wet`, `water` and `haze`.
 

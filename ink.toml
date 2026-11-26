@@ -1,0 +1,6 @@
+# Brand files that ink-studio exports into this repository. Do not edit the files by hand.
+# Each line is: destination path = artifact name. `ink.sha256` records what was exported.
+
+[omsync-nursery]
+"src/nursery/studio/app/brand/favicon.svg" = "favicon.svg"
+"src/nursery/studio/app/brand/mark.js" = "mark.js"

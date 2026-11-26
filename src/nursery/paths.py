@@ -4,8 +4,8 @@ docs and the studio's saved work beside it in the repository checkout the studio
 import json
 from pathlib import Path
 
-from nursery.assets import BRAND, SCENES_CSS, SCENES_JSON
 from nursery.assets import JS as JS_DIR
+from nursery.assets import SCENES_CSS, SCENES_JSON
 
 ROOT = Path(__file__).resolve().parents[2]
 if not (ROOT / "pyproject.toml").is_file():
@@ -14,7 +14,6 @@ if not (ROOT / "pyproject.toml").is_file():
 SCENES_DIR = JS_DIR / "scenes"  # one module per scene
 KIT_DIR = JS_DIR / "kit"  # the shared toolkit the scenes draw with
 CSS_DIR = SCENES_CSS.parent
-BRAND_DIR = BRAND  # the mascot's grid, and the files built from it
 DOCS = ROOT / "docs"
 STORE = ROOT / ".nursery"  # the studio's edits, proposals and reviews; git ignores it
 STUDIO = Path(__file__).resolve().parent / "studio"

@@ -9,8 +9,8 @@ A scene is art. It follows the design rules in
 [the nursery-scene skill](.claude/skills/nursery-scene/SKILL.md). Shared drawing goes in the kit,
 one design for each family, so each scene stays short.
 
-The package contract in [docs/overview.md](docs/overview.md) is what omsync reads. It changes only
-together with omsync, and only for a strong reason.
+The host contract in [docs/overview.md](docs/overview.md) is what every host reads. It changes
+only for a strong reason, and each host then changes its host code.
 
 ## Contribution gate
 
