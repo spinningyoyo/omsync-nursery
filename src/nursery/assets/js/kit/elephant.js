@@ -3,7 +3,7 @@
 // moves with the head, a trunk of five jointed pieces that hangs from the face, swings as the
 // elephant walks and can lift or curl, and tusks that ride with the head. Four tones lit from above.
 // One spec per member (AFRICAN, ASIAN and a calf of each), drawn by drawElephant(spec, pal, plot,
-// pose); animals.js's elephantAt places and poses it. Coordinates are the elephant's own: x runs from
+// pose); elephantAt (below) places and poses it. Coordinates are the elephant's own: x runs from
 // the rump (0) toward the face and h is the height above the ground; `plot(x, h, colour)` paints a
 // pixel, so the caller places and mirrors it. The trumpet, the trunk curl and the dust bath are
 // trunk actions (trumpetAt, curlAt, dustAt), each returning the pose fields it sets.
@@ -26,7 +26,8 @@ import {
   straighten,
   walkDips,
 } from "./build.js";
-import { clamp, frac, hash, lerp, mix, rgba, smooth } from "./pixel.js";
+import { clamp, frac, hash, lerp, mix, rgba, shadowColour, smooth } from "./pixel.js";
+import { blinkAt, breathAt, ease, feet, paintAt, sinceOf, tonesFor } from "./place.js";
 
 export const STANCE = 0.7; // an elephant's slow walk keeps each foot down a little longer than a cat's
 
@@ -616,3 +617,102 @@ export function dustAt(spec, d) {
     dust: d > 1.65 && d < 3.1 ? d - 1.65 : null,
   };
 }
+
+// Elephants
+
+// Built from parts (elephant.js), a calf (scale below 0.8) drawn on its own. An elephant walks an
+// amble with its feet planted, stands breathing and blinking and now and then flaps an ear, and in a
+// long stop does one thing: curls its trunk to test the air, trumpets (rings of sound leave the
+// trunk) or takes a dust bath. A calf in a long stop lies down to sleep and gets up before the herd
+// moves on. e.since (settle, critters.js) is when its state last changed and e.timer the seconds its
+// stop has left, so an action is only chosen when it fits (e.act, "curl", "trumpet" or "dust", with
+// e.actAt seconds in, shows one on demand; e.pose "lie" lays a calf down). Its palette is the scene's `elephant`
+// array (body, shade, skin, tusk, eye) with elephantRoar and elephantDust beside it.
+const ELEPHANTS = { african: AFRICAN, asian: ASIAN, africanCalf: AFRICAN_CALF, asianCalf: ASIAN_CALF };
+const ELEPHANT_SHADOW_COLUMNS = { african: [-1, 29], africanCalf: [0, 15], asian: [-1, 25], asianCalf: [0, 15] };
+const ELEPHANT_ACTIONS = [
+  [curlAt, CURL],
+  [trumpetAt, TRUMPET],
+  [dustAt, DUST],
+];
+const ELEPHANT_ACT_AT = 1.2; // seconds into a stop before it acts
+const ELEPHANT_EASE = 0.4; // seconds a walk takes to start or stop
+const ELEPHANT_ACT_BY_NAME = { curl: curlAt, trumpet: trumpetAt, dust: dustAt };
+
+export function elephantAt(g, e, time) {
+  if (g.trace) return g.trace.draw(elephantAt, g, e, time);
+  const calf = (e.scale ?? 1) < 0.8;
+  const kind = e.kind === "asian" ? "asian" : "african";
+  const name = calf ? `${kind}Calf` : kind;
+  const spec = ELEPHANTS[name];
+  const colours = g.pal[e.pal ?? "elephant"];
+  const pal = tonesFor(colours, "elephant", () =>
+    elephantTones(colours, { roar: g.pal.elephantRoar, dust: g.pal.elephantDust }),
+  );
+  const walking = e.state === "walk";
+  const since = sinceOf(e, time);
+  const bodyX = e.x * e.dir;
+  const phase = bodyX / (spec.stride / STANCE);
+  const stride = Math.sin(phase * 2 * Math.PI);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, ELEPHANT_EASE),
+    sway: walking ? stride * 0.7 : Math.sin(time * 1.3) * 0.5,
+    swing: walking ? stride * 0.16 : Math.sin(time * 0.9) * 0.06,
+    breath: breathAt(time, 1.6),
+    blink: blinkAt(time, (e.phase ?? 0) * 1.7, 3.7, 0.035),
+  };
+  if (!walking && since > ELEPHANT_EASE) {
+    const stop = since + (e.timer ?? 0); // how long this stop lasts
+    const at = since - ELEPHANT_ACT_AT;
+    if (calf) {
+      // A long stop: lie down, sleep, and be up before the walk.
+      const [d0, d1, u0, u1] = [0.8, 1.8, stop - 1.6, stop - 0.6];
+      if (e.pose === "lie") {
+        Object.assign(pose, { rest: { from: "lie", to: "lie", u: 0 }, swing: 0, eyesShut: true, blink: false });
+      } else if (stop >= 5.4 && since >= d0 && since < u1) {
+        if (since < d1) pose.rest = { from: "stand", to: "lie", u: (since - d0) / (d1 - d0) };
+        else if (since < u0) pose.rest = { from: "lie", to: "lie", u: 0 };
+        else pose.rest = { from: "lie", to: "stand", u: (since - u0) / (u1 - u0) };
+        pose.swing = 0;
+        pose.eyesShut = since >= d1 + 0.4 && since < u0;
+        if (pose.eyesShut) pose.blink = false;
+      }
+    } else {
+      const r = hash(Math.round((e.since ?? 0) * 100), Math.round(e.x), kind === "asian" ? 1 : 2);
+      const fits = ELEPHANT_ACTIONS.filter(([, length]) => stop >= ELEPHANT_ACT_AT + length + 0.8);
+      const act = e.act
+        ? ELEPHANT_ACT_BY_NAME[e.act](spec, e.actAt ?? 0)
+        : fits.length && r < 0.8
+          ? fits[Math.floor((r / 0.8) * fits.length)][0](spec, at)
+          : null;
+      if (act) {
+        Object.assign(pose, act, { swing: 0, blink: false });
+      } else if (since >= 2.4 && since < 3.6) {
+        pose.ear = Math.sin((Math.PI * (since - 2.4)) / 0.6) ** 2; // two slow ear flaps
+      }
+    }
+  }
+  const [s0, s1] = ELEPHANT_SHADOW_COLUMNS[name];
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  // Its feet stand a row lower than the other families'.
+  paintAt(g, Math.round(e.x), feet(g, e) + 1, e.dir, (plot) => drawElephant(spec, pal, plot, pose), shadow);
+}
+
+export const FAMILY = {
+  id: "elephants",
+  title: "Elephants",
+  group: "Animals",
+  differ: "size, ears",
+  members: {
+    "elephant-asian": { spec: ASIAN, realLength: 5.5 },
+    "elephant-african": { spec: AFRICAN, realLength: 6.0 },
+  },
+  drivers: {
+    elephantAt: {
+      role: "walker",
+      member: (a) => (a.kind === "african" ? "elephant-african" : a.kind === "asian" ? "elephant-asian" : "elephant"),
+    },
+  },
+};

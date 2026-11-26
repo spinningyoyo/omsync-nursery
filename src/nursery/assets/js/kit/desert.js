@@ -361,3 +361,10 @@ export function pad(g, p, s, base) {
       px(g, pal.fruit[i % 2], cx, top - 1);
   }
 }
+
+export const FAMILY = {
+  id: "desert-plants",
+  title: "Desert trees and cactus",
+  group: "Trees",
+  differ: "arms, spines",
+};

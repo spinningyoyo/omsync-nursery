@@ -26,7 +26,6 @@
 // spawning, which follows the full moons of late spring: every 25 to 45 s the corals release
 // bundles of eggs that rise through the water like snow falling upward.
 
-import { honuShellAt } from "../kit/animals.js";
 import { isNight, narrow, rest, settle, stride } from "../kit/critters.js";
 import { EPAULETTE, epauletteAt, fishAt, MANTA, mantaAt, mantaShadow, schoolAt } from "../kit/fish.js";
 import { inkAt, OCTOPUS, OCTOPUS_POSES, octopusAt } from "../kit/octopus.js";
@@ -47,8 +46,11 @@ import {
   smooth,
   sortPlants,
 } from "../kit/pixel.js";
+import { bird, walk } from "../kit/poses.js";
 import * as reef from "../kit/reef.js";
 import { anemoneTop, bommieGeom } from "../kit/reef.js";
+import { crossingActor, drawStep, runCast } from "../kit/runner.js";
+import { honuShellAt } from "../kit/shell.js";
 
 const MATURE = {
   bommie: 3,
@@ -552,9 +554,9 @@ function newSnow(f, anywhere) {
 function threats(f) {
   const x = f.extra;
   const out = [];
-  if (x.shark.fish) out.push({ x: x.shark.fish.x, reach: 34 });
-  if (x.trevally.fish) out.push({ x: x.trevally.fish.x, reach: 30 });
-  if (x.manta.fish) out.push({ x: x.manta.fish.x, reach: MANTA.span * 0.6 });
+  if (x.shark.bird) out.push({ x: x.shark.bird.x, reach: 34 });
+  if (x.trevally.bird) out.push({ x: x.trevally.bird.x, reach: 30 });
+  if (x.manta.bird) out.push({ x: x.manta.bird.x, reach: MANTA.span * 0.6 });
   return out;
 }
 const near = (list, at) => list.some((t) => Math.abs(t.x - at) < t.reach);
@@ -627,480 +629,604 @@ function mantleUpdate(f, o, dt, den, alarm) {
   o.m = o.mode === "crawl" ? Math.min(1, since / 0.25) : o.mode === "sit" ? Math.max(0, 1 - since / 0.25) : 0;
 }
 
-const extras = {
-  init(f) {
-    const bom = f.plants.find((p) => p.kind === "bommie" && p.layer === 1);
-    const geo = bommieGeom(bom, 1, baseOf(f, bom));
-    const thicket = f.plants.filter((p) => p.kind === "staghorn" && p.layer === 1);
-    const home = thicket.length ? thicket.reduce((a, p) => a + p.x, 0) / thicket.length : f.cols * 0.2;
-    return {
-      bom,
-      mantle: {
-        active: false,
-        x: geo.den.x,
-        dir: 1,
-        mode: "den",
-        age: 0,
-        wait: 3,
-        camo: 0,
-        flash: 0,
-        c: 0,
-        m: 0,
-        lift: 0,
-        phase: f.rand() * 5,
+const extras = runCast(
+  [
+    {
+      label: "Mantle, a day octopus: crawls out of its den, sits camouflaged, inks and jets home",
+      kind: "animal",
+      family: "cephalopods",
+      presence: ["mantle"],
+      sprites: ["mantle", "mantle-sitting", "mantle-camouflaged", "mantle-reaching", "mantle-in-den", "mantle-jetting"],
+    },
+    {
+      label: "clownfish pair in their anemone (asleep in it at night)",
+      kind: "animal",
+      family: "fish",
+      arrives: 2,
+      sprites: ["clownfish"],
+    },
+    {
+      label: "blue-green chromis over their staghorn, diving in when a hunter passes",
+      kind: "animal",
+      family: "fish",
+      arrives: 2,
+      sprites: ["chromis"],
+    },
+    {
+      label: "anthias, orange-pink clouds over the coral, dropping toward it when a hunter passes",
+      kind: "animal",
+      family: "fish",
+      arrives: 3,
+      sprites: ["anthias"],
+    },
+    {
+      label: "cleaner wrasse at their station",
+      kind: "animal",
+      family: "fish",
+      arrives: 3,
+      sprites: ["wrasse"],
+    },
+    {
+      label: "steephead parrotfish biting the coral (in its mucus cocoon at night)",
+      kind: "animal",
+      family: "fish",
+      presence: ["parrot"],
+      sprites: ["parrotfish"],
+    },
+    {
+      label: "green turtle visiting the cleaning station",
+      kind: "animal",
+      family: "shelled-scaled",
+      presence: ["turtle"],
+      sprites: ["turtle"],
+    },
+    drawStep(
+      "water",
+      (g, f) => {
+        const x = f.extra;
+        g.ctx.drawImage(waterCanvas(f, g.pal), 0, 0);
+        g.ctx.drawImage(reefWall(f, g.pal), 0, 0);
+        surface(g, f);
+        if (!isNight(f)) {
+          rays(g, f);
+          caustics(g, f);
+        }
+        if (x.manta.bird) mantaShadow(g, x.manta.bird.x, f.groundY);
       },
-      clowns: [0, 1].map((i) => ({ phase: f.rand() * 6, size: i })),
-      chromis: {
-        home,
-        hide: 0,
-        members: Array.from({ length: CHROMIS }, () => ({
-          ox: (f.rand() - 0.5) * 22,
-          oy: f.rand() * 12,
-          phase: f.rand() * 6,
-          rate: 0.5 + f.rand() * 0.6,
-        })),
-      },
-      parrot: { x: f.cols * 0.3, dir: 1, y: 0, bite: 0, next: 4 },
-      puffs: [],
-      wrasse: [0, 1].map(() => ({ phase: f.rand() * 6 })),
-      anthias: [0.18, 0.82].map((at) => ({
-        x: Math.round(f.cols * at),
-        hide: 0,
-        members: Array.from({ length: ANTHIAS }, () => ({
-          ox: (f.rand() - 0.5) * 30,
-          oy: f.rand() * 14,
-          phase: f.rand() * 6,
-          rate: 0.6 + f.rand() * 0.5,
-        })),
-      })),
-      turtle: { next: 6, t: null },
-      shark: { next: 6, fish: null },
-      trevally: { next: 10, fish: null },
-      manta: { next: 10 + f.rand() * 10, fish: null },
-      // The bait ball hangs on the open-water side of the bommie.
-      bait: {
-        side: bom.x < f.cols / 2 ? 1 : -1,
-        members: Array.from({ length: BAIT }, (_, i) => ({
-          a: (i / BAIT) * Math.PI * 2,
-          r: 4 + (i % 3) * 4 + f.rand() * 2,
-          rate: 1.8 + f.rand() * 0.8,
-          flash: f.rand() * 6,
-        })),
-      },
-      bubbles: [],
-      epaulette: { active: false, x: f.cols * 0.7, dir: -1, state: "walk", timer: 4, c: 0, phase: 0 },
-      spawn: { next: 8 + f.rand() * 8, until: 0, eggs: [] },
-      snow: Array.from({ length: SNOW }, () => newSnow(f, true)),
-      sparks: [],
-      inks: [],
-    };
-  },
+      { back: true },
+    ),
+    drawStep("bait-and-spawn", (g, f) => {
+      const x = f.extra;
+      const time = f.time;
+      const ctx = g.ctx;
+      const pal = g.pal;
 
-  onGrow(f) {
-    if (f.stage >= 1) f.extra.mantle.active = true;
-    if (f.stage >= 2) f.extra.epaulette.active = true;
-  },
+      // Marine snow.
+      ctx.fillStyle = pal.snow;
+      for (const s of x.snow) {
+        ctx.globalAlpha = 0.5;
+        ctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1);
+      }
+      ctx.globalAlpha = 1;
 
-  busy: (f) => f.stage >= 1,
+      // Spawning: bundles of eggs rising, each a pale pink bead that glints.
+      for (const e of x.spawn.eggs) {
+        ctx.globalAlpha = clamp(e.y / 20, 0.2, 0.95);
+        rect(g, pal.spawn[e.c], Math.round(e.x), Math.round(e.y), 1, 1);
+        if (Math.sin(time * 4 + e.phase) > 0.85)
+          rect(g, pal.spawn[1 - e.c], Math.round(e.x), Math.round(e.y) - 1, 1, 1);
+      }
+      ctx.globalAlpha = 1;
 
-  update(f, dt) {
-    const x = f.extra;
-    const day = !isNight(f);
-    const bom = x.bom;
-    const geo = bommieGeom(bom, grown(bom), baseOf(f, bom));
-    const danger = threats(f);
-    const phone = narrow(f);
-
-    // Marine snow drifts down all day and night.
-    for (const s of x.snow) {
-      s.y += s.speed * dt;
-      s.x += Math.sin(f.time * 0.5 + s.phase) * 0.6 * dt;
-      if (s.y > f.groundY) Object.assign(s, newSnow(f, false));
-    }
-
-    // Mantle.
-    if (x.mantle.active) {
-      const hunters = danger.filter((t) => t.reach > 25);
-      mantleUpdate(f, x.mantle, dt, geo.den, f.stage >= 5 && near(hunters, x.mantle.x));
-    }
-    for (const ink of x.inks) ink.age += dt;
-    x.inks = x.inks.filter((i) => i.age < 3);
-
-    // The chromis drop into their staghorn when something passes, and rise again after.
-    const scared = near(danger, x.chromis.home);
-    x.chromis.hide = clamp(x.chromis.hide + (scared ? dt * 3 : -dt * 0.6), 0, 1);
-
-    // The anthias drop toward the coral when a hunter passes, like the chromis.
-    for (const a of x.anthias) a.hide = clamp(a.hide + (near(danger, a.x) ? dt * 3 : -dt * 0.6), 0, 1);
-
-    // The giant clam shuts under the manta's shadow and opens again slowly.
-    const clam = f.plants.find((p) => p.kind === "giantClam");
-    if (clam) {
-      const over = x.manta.fish && Math.abs(x.manta.fish.x - clam.x) < MANTA.span * 0.55;
-      clam.shut = clamp((clam.shut ?? 0) + (over ? dt * 6 : -dt * 0.35), 0, 1);
-    }
-
-    // The parrotfish browses along the reef, biting the coral and dropping sand.
-    const pf = x.parrot;
-    if (f.stage >= 3 && day && !phone) {
-      if (pf.bite > 0) {
-        pf.bite -= dt;
-        if (pf.bite <= 0) {
-          for (let i = 0; i < 6; i += 1) {
-            x.puffs.push({
-              x: pf.x - pf.dir * (8 + f.rand() * 3),
-              y: pf.y + f.rand() * 2,
-              vy: 2 + f.rand() * 3,
-              age: 0,
-            });
+      // The bait ball: silver fish turning in a ring, flashing as they turn, parting round the manta.
+      const ray = x.manta.bird;
+      if (x.bait.active) {
+        const count = narrow(f) ? BAIT / 2 : BAIT;
+        x.bait.members.slice(0, count).forEach((b, i) => {
+          const a = time * b.rate + b.a;
+          let bx = x.bait.x + Math.cos(a) * b.r * 1.4;
+          let by = x.bait.y + Math.sin(a) * b.r * 0.7;
+          if (ray) {
+            const dx = bx - ray.x;
+            const dy = by - ray.y;
+            const d = Math.hypot(dx, dy);
+            const reach = MANTA.span * 0.85;
+            if (d < reach) {
+              const push = ((reach - d) * 0.75) / Math.max(1, d);
+              bx += dx * push;
+              by += dy * push;
+            }
           }
-          pf.next = f.time + 4 + f.rand() * 5;
-        }
-      } else {
-        pf.x += pf.dir * 6 * dt;
-        if (pf.x < 14 || pf.x > f.cols - 14) pf.dir *= -1;
-        if (f.time > pf.next) pf.bite = 1.6;
+          const tone = Math.sin(time * 12 + b.flash) > 0.35 ? pal.baitfish[0] : pal.baitfish[1 + (i % 2)];
+          rect(g, tone, Math.round(bx), Math.round(by), 2, 1);
+        });
       }
-      pf.y = f.groundY - 9 + Math.sin(f.time * 0.4) * 2;
-    }
-    pf.active = f.stage >= 3 && day && !phone;
-    for (const p of x.puffs) {
-      p.age += dt;
-      p.y += p.vy * dt;
-    }
-    x.puffs = x.puffs.filter((p) => p.age < 2.5 && p.y < f.groundY);
-
-    // The green turtle swims in to the cleaning station, hovers while the wrasse clean it, swims on.
-    const station = geo.tables[1];
-    const tu = x.turtle;
-    if (f.stage >= 4 && day) {
-      if (!tu.t && f.time >= tu.next) {
-        const dir = f.rand() < 0.5 ? 1 : -1;
-        tu.t = { x: dir > 0 ? -16 : f.cols + 16, y: station.y - 9, dir, state: "in", hold: 0 };
+      // The manta, and the bubbles in its wake.
+      for (const b of x.bubbles) {
+        ctx.globalAlpha = 1 - b.age / 1.6;
+        rect(g, pal.bubble[b.age < 0.6 ? 0 : 1], Math.round(b.x), Math.round(b.y), 1, 1);
       }
-      const t = tu.t;
-      if (t) {
-        const sx = station.x;
-        if (t.state === "in") {
-          t.x += t.dir * 9 * dt;
-          t.y += (station.y - 9 - t.y) * dt;
-          if ((t.dir > 0 && t.x >= sx) || (t.dir < 0 && t.x <= sx)) Object.assign(t, { state: "clean", hold: 7 });
-        } else if (t.state === "clean") {
-          t.hold -= dt;
-          if (t.hold <= 0) t.state = "out";
-        } else {
-          t.x += t.dir * 9 * dt;
-          t.y -= 3 * dt;
-          if (t.x < -20 || t.x > f.cols + 20) {
-            tu.t = null;
-            tu.next = f.time + 14 + f.rand() * 12;
-          }
-        }
+      ctx.globalAlpha = 1;
+    }),
+    crossingActor({
+      id: "manta",
+      label:
+        "reef manta gliding through the bait ball, a wake of bubbles behind it and its shadow on the sand (the timed event by day)",
+      kind: "animal",
+      family: "rays",
+      sprites: ["manta"],
+      arrives: 6,
+      when: "day",
+      first: (f) => 10 + f.rand() * 10,
+      every: [25, 20],
+      speed: 12,
+      margin: 20,
+      spawn: (f) => ({ y: Math.round(Math.max(16, Math.round(f.groundY * 0.36)) + (f.rand() - 0.5) * 6) }),
+      clearOnOff: true,
+      draw: (g, b, f) => mantaAt(g, b, f.time),
+    }),
+    crossingActor({
+      id: "shark",
+      label: "blacktip reef shark on patrol, day and night",
+      kind: "animal",
+      family: "fish",
+      sprites: ["blacktip"],
+      arrives: 5,
+      first: 6,
+      every: [12, 10],
+      speed: 22,
+      margin: 16,
+      spawn: (f) => ({ y: f.groundY - 30 - f.rand() * 30 }),
+      draw: (g, b, f) => fishAt(g, "blacktip", b, f.time),
+    }),
+    drawStep("sparks", (g, f) => {
+      const x = f.extra;
+      const ctx = g.ctx;
+      const pal = g.pal;
+
+      // Sparks in the wake of moving night animals.
+      for (const s of x.sparks) {
+        ctx.globalAlpha = 1 - s.age / 1.2;
+        rect(g, pal.glow, Math.round(s.x), Math.round(s.y), 1, 1);
       }
-    } else if (!day) tu.t = null;
-    tu.active = Boolean(tu.t);
+      ctx.globalAlpha = 1;
+    }),
+    drawStep("turtle-and-wrasse", (g, f) => {
+      const x = f.extra;
+      const day = !isNight(f);
+      const time = f.time;
 
-    // The hunters: the blacktip patrols day and night; the trevally dashes through by day.
-    if (f.stage >= 5) {
-      flyBySlot(f, x.shark, dt, { every: [12, 10], speed: 22, y: () => f.groundY - 30 - f.rand() * 30 });
-    }
-    if (f.stage >= 7 && day && !phone) {
-      flyBySlot(f, x.trevally, dt, { every: [14, 12], speed: 42, y: () => f.groundY - 18 - f.rand() * 12 });
-    } else Object.assign(x.trevally, { fish: null, active: false });
-
-    // The timed event by day: the manta glides through the bait ball, trailing bubbles.
-    const bait = x.bait;
-    bait.active = f.stage >= 6 && day;
-    bait.x = Math.round(f.cols * (bait.side > 0 ? 0.72 : 0.28));
-    bait.y = Math.max(16, Math.round(f.groundY * 0.36));
-    if (bait.active) {
-      flyBySlot(f, x.manta, dt, {
-        every: [25, 20],
-        speed: 12,
-        margin: 20,
-        y: () => Math.round(bait.y + (f.rand() - 0.5) * 6),
-      });
-    } else Object.assign(x.manta, { fish: null, active: false });
-    const ray = x.manta.fish;
-    if (ray && f.rand() < dt * 10) {
-      x.bubbles.push({
-        x: ray.x - ray.dir * (MANTA.span * 0.4 + f.rand() * 4),
-        y: ray.y + (f.rand() - 0.5) * 4,
-        age: 0,
-      });
-    }
-    for (const b of x.bubbles) {
-      b.age += dt;
-      b.y -= 5 * dt;
-      b.x += Math.sin(f.time * 3 + b.age * 4) * 0.5 * dt;
-    }
-    x.bubbles = x.bubbles.filter((b) => b.age < 1.6 && b.y > 2);
-
-    // Night: the epaulette shark walks the reef flat; the corals spawn.
-    const ep = x.epaulette;
-    if (!day && ep.active) {
-      const prev = ep.x;
-      ep.timer -= dt;
-      if (ep.state === "walk") {
-        ep.x += ep.dir * 5 * dt;
-        if (ep.timer <= 0 || ep.x < 12 || ep.x > f.cols - 12) {
-          ep.state = "stand";
-          ep.timer = 2 + f.rand() * 3;
-          if (ep.x < 12) ep.dir = 1;
-          if (ep.x > f.cols - 12) ep.dir = -1;
-        }
-      } else if (ep.timer <= 0) {
-        ep.state = "walk";
-        ep.timer = 4 + f.rand() * 6;
-        if (f.rand() < 0.4) ep.dir *= -1;
+      // The turtle and the cleaner wrasse at their station.
+      const bom = x.bom;
+      const geo = bommieGeom(bom, grown(bom), baseOf(f, bom));
+      const station = geo.tables[1];
+      const t = x.turtle.t;
+      if (t) honuShellAt(g, t, Math.round(t.y), time);
+      if (day && f.stage >= 3) {
+        x.wrasse.forEach((w, i) => {
+          const at = t && t.state === "clean";
+          const cx = at
+            ? t.x + (i ? -3 : 4) + Math.sin(time * 2 + w.phase) * 2
+            : station.x + (i ? -4 : 3) + Math.sin(time * 0.9 + w.phase) * 4;
+          const cy = at
+            ? t.y - 4 + Math.sin(time * 3 + w.phase) * 2
+            : station.y - 3 - Math.abs(Math.sin(time * 1.3 + w.phase)) * 3;
+          const dir = Math.cos(time * 0.9 + w.phase) > 0 ? 1 : -1;
+          fishAt(g, "wrasse", { x: cx, y: cy, dir, phase: w.phase }, time);
+        });
       }
-      settle(f, ep);
-      stride(ep, prev, dt, EPAULETTE.stride[0], EPAULETTE.stride[1]);
-      const since = f.time - (ep.since ?? 0);
-      ep.m = ep.state === "walk" ? Math.min(1, since / 0.25) : Math.max(0, 1 - since / 0.25);
-      if (ep.moving && f.rand() < dt * 6) x.sparks.push({ x: ep.x - ep.dir * 8, y: f.groundY - 3, age: 0 });
-    }
-    if (!day && x.shark.fish && f.rand() < dt * 10) {
-      const b = x.shark.fish;
-      x.sparks.push({ x: b.x - b.dir * (10 + f.rand() * 8), y: b.y + (f.rand() - 0.5) * 3, age: 0 });
-    }
-    for (const s of x.sparks) s.age += dt;
-    x.sparks = x.sparks.filter((s) => s.age < 1.2);
+    }),
+    crossingActor({
+      id: "trevally",
+      label: "giant trevally dashing through",
+      kind: "animal",
+      family: "fish",
+      sprites: ["trevally"],
+      arrives: 7,
+      when: "day",
+      phone: "hide",
+      first: 10,
+      every: [14, 12],
+      speed: 42,
+      margin: 16,
+      spawn: (f) => ({ y: f.groundY - 18 - f.rand() * 12 }),
+      clearOnOff: true,
+      draw: (g, b, f) => fishAt(g, "trevally", { ...b, rate: 1.6 }, f.time),
+    }),
+    drawStep("school-and-reef", (g, f) => {
+      const x = f.extra;
+      const day = !isNight(f);
+      const time = f.time;
+      const ctx = g.ctx;
+      const pal = g.pal;
+      const bom = x.bom;
+      const geo = bommieGeom(bom, grown(bom), baseOf(f, bom));
 
-    const sp = x.spawn;
-    if (!day && f.stage >= 6) {
-      if (f.time >= sp.next && sp.until <= f.time) {
-        sp.until = f.time + 14;
-        sp.next = sp.until + 25 + f.rand() * 20;
-      }
-      if (f.time < sp.until && sp.eggs.length < SPAWN && f.rand() < dt * 14) {
-        const corals = f.plants.filter(
-          (p) => p.layer >= 0 && ["tableCoral", "staghorn", "boulderCoral", "bommie"].includes(p.kind),
-        );
-        const p = corals[Math.floor(f.rand() * corals.length)];
-        if (p) {
-          const top = p.kind === "bommie" ? bommieGeom(p, grown(p), baseOf(f, p)) : null;
-          const y = top ? top.top + f.rand() * (top.H * 0.6) : baseOf(f, p) - 6;
-          const xx = top ? p.x + (f.rand() - 0.5) * 24 * top.k : p.x + (f.rand() - 0.5) * 6;
-          sp.eggs.push({ x: xx, y, vy: 3 + f.rand() * 3, phase: f.rand() * 6, c: f.rand() < 0.5 ? 0 : 1 });
-        }
-      }
-    } else if (day) sp.until = 0;
-    for (const e of sp.eggs) {
-      e.y -= e.vy * dt;
-      e.x += Math.sin(f.time * 0.9 + e.phase) * 1.2 * dt;
-    }
-    sp.eggs = sp.eggs.filter((e) => e.y > 2);
-  },
-
-  drawBack(g, f) {
-    const x = f.extra;
-    g.ctx.drawImage(waterCanvas(f, g.pal), 0, 0);
-    g.ctx.drawImage(reefWall(f, g.pal), 0, 0);
-    surface(g, f);
-    if (!isNight(f)) {
-      rays(g, f);
-      caustics(g, f);
-    }
-    if (x.manta.fish) mantaShadow(g, x.manta.fish.x, f.groundY);
-  },
-
-  draw(g, f) {
-    const x = f.extra;
-    const day = !isNight(f);
-    const time = f.time;
-    const ctx = g.ctx;
-    const pal = g.pal;
-
-    // Marine snow.
-    ctx.fillStyle = pal.snow;
-    for (const s of x.snow) {
-      ctx.globalAlpha = 0.5;
-      ctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1);
-    }
-    ctx.globalAlpha = 1;
-
-    // Spawning: bundles of eggs rising, each a pale pink bead that glints.
-    for (const e of x.spawn.eggs) {
-      ctx.globalAlpha = clamp(e.y / 20, 0.2, 0.95);
-      rect(g, pal.spawn[e.c], Math.round(e.x), Math.round(e.y), 1, 1);
-      if (Math.sin(time * 4 + e.phase) > 0.85) rect(g, pal.spawn[1 - e.c], Math.round(e.x), Math.round(e.y) - 1, 1, 1);
-    }
-    ctx.globalAlpha = 1;
-
-    // The bait ball: silver fish turning in a ring, flashing as they turn, parting round the manta.
-    const ray = x.manta.fish;
-    if (x.bait.active) {
-      const count = narrow(f) ? BAIT / 2 : BAIT;
-      x.bait.members.slice(0, count).forEach((b, i) => {
-        const a = time * b.rate + b.a;
-        let bx = x.bait.x + Math.cos(a) * b.r * 1.4;
-        let by = x.bait.y + Math.sin(a) * b.r * 0.7;
-        if (ray) {
-          const dx = bx - ray.x;
-          const dy = by - ray.y;
-          const d = Math.hypot(dx, dy);
-          const reach = MANTA.span * 0.85;
-          if (d < reach) {
-            const push = ((reach - d) * 0.75) / Math.max(1, d);
-            bx += dx * push;
-            by += dy * push;
-          }
-        }
-        const tone = Math.sin(time * 12 + b.flash) > 0.35 ? pal.baitfish[0] : pal.baitfish[1 + (i % 2)];
-        rect(g, tone, Math.round(bx), Math.round(by), 2, 1);
-      });
-    }
-    // The manta, and the bubbles in its wake.
-    for (const b of x.bubbles) {
-      ctx.globalAlpha = 1 - b.age / 1.6;
-      rect(g, pal.bubble[b.age < 0.6 ? 0 : 1], Math.round(b.x), Math.round(b.y), 1, 1);
-    }
-    ctx.globalAlpha = 1;
-    if (ray) mantaAt(g, ray, time);
-    // The blacktip, and its wake of sparks by night.
-    if (x.shark.fish) fishAt(g, "blacktip", x.shark.fish, time);
-    for (const s of x.sparks) {
-      ctx.globalAlpha = 1 - s.age / 1.2;
-      rect(g, pal.glow, Math.round(s.x), Math.round(s.y), 1, 1);
-    }
-    ctx.globalAlpha = 1;
-
-    // The turtle and the cleaner wrasse at their station.
-    const bom = x.bom;
-    const geo = bommieGeom(bom, grown(bom), baseOf(f, bom));
-    const station = geo.tables[1];
-    const t = x.turtle.t;
-    if (t) honuShellAt(g, t, Math.round(t.y), time);
-    if (day && f.stage >= 3) {
-      x.wrasse.forEach((w, i) => {
-        const at = t && t.state === "clean";
-        const cx = at
-          ? t.x + (i ? -3 : 4) + Math.sin(time * 2 + w.phase) * 2
-          : station.x + (i ? -4 : 3) + Math.sin(time * 0.9 + w.phase) * 4;
-        const cy = at
-          ? t.y - 4 + Math.sin(time * 3 + w.phase) * 2
-          : station.y - 3 - Math.abs(Math.sin(time * 1.3 + w.phase)) * 3;
-        const dir = Math.cos(time * 0.9 + w.phase) > 0 ? 1 : -1;
-        fishAt(g, "wrasse", { x: cx, y: cy, dir, phase: w.phase }, time);
-      });
-    }
-
-    // The trevally dashing through.
-    if (x.trevally.fish) fishAt(g, "trevally", { ...x.trevally.fish, rate: 1.6 }, time);
-
-    // The chromis over their staghorn; when they hide, the thicket is drawn again over them.
-    if (day && f.stage >= 2) {
-      const ch = x.chromis;
-      const thicket = f.plants.filter((p) => p.kind === "staghorn" && p.layer === 1);
-      const crown = thicket.length
-        ? Math.min(...thicket.map((p) => baseOf(f, p) - 10 * p.scale * grown(p)))
-        : f.groundY - 10;
-      const count = narrow(f) ? Math.ceil(CHROMIS / 2) : CHROMIS;
-      ch.members.slice(0, count).forEach((m) => {
-        const a = time * m.rate + m.phase;
-        const hover = crown - 5 - m.oy;
-        const y = hover + (crown + 3 - hover) * ch.hide;
-        const xx = ch.home + m.ox * (1 - ch.hide * 0.6) + Math.sin(a) * 3;
-        schoolAt(
-          g,
-          "chromis",
-          { x: xx, y, dir: Math.cos(a) > 0 ? 1 : -1, calm: true, members: [{ back: 0, up: 0, phase: m.phase }] },
-          time,
-        );
-      });
-      if (ch.hide > 0.05) {
-        for (const p of thicket) staghorn(g, p, grown(p), baseOf(f, p));
-      }
-    }
-
-    // Anthias: a cloud of orange-pink fish over the coral on each side, facing into the current.
-    if (day && f.stage >= 3) {
-      const count = narrow(f) ? Math.ceil(ANTHIAS / 2) : ANTHIAS;
-      for (const cloud of x.anthias) {
-        cloud.members.slice(0, count).forEach((m) => {
+      // The chromis over their staghorn; when they hide, the thicket is drawn again over them.
+      if (day && f.stage >= 2) {
+        const ch = x.chromis;
+        const thicket = f.plants.filter((p) => p.kind === "staghorn" && p.layer === 1);
+        const crown = thicket.length
+          ? Math.min(...thicket.map((p) => baseOf(f, p) - 10 * p.scale * grown(p)))
+          : f.groundY - 10;
+        const count = narrow(f) ? Math.ceil(CHROMIS / 2) : CHROMIS;
+        ch.members.slice(0, count).forEach((m) => {
           const a = time * m.rate + m.phase;
-          const y = f.groundY - 14 - m.oy * (1 - cloud.hide * 0.7) + Math.cos(a * 1.3) * 1.5;
-          const xx = cloud.x + m.ox * (1 - cloud.hide * 0.4) + Math.sin(a) * 3;
+          const hover = crown - 5 - m.oy;
+          const y = hover + (crown + 3 - hover) * ch.hide;
+          const xx = ch.home + m.ox * (1 - ch.hide * 0.6) + Math.sin(a) * 3;
           schoolAt(
             g,
-            "anthias",
-            { x: xx, y, dir: Math.cos(a) > -0.3 ? 1 : -1, calm: true, members: [{ back: 0, up: 0, phase: m.phase }] },
+            "chromis",
+            { x: xx, y, dir: Math.cos(a) > 0 ? 1 : -1, calm: true, members: [{ back: 0, up: 0, phase: m.phase }] },
+            time,
+          );
+        });
+        if (ch.hide > 0.05) {
+          for (const p of thicket) staghorn(g, p, grown(p), baseOf(f, p));
+        }
+      }
+
+      // Anthias: a cloud of orange-pink fish over the coral on each side, facing into the current.
+      if (day && f.stage >= 3) {
+        const count = narrow(f) ? Math.ceil(ANTHIAS / 2) : ANTHIAS;
+        for (const cloud of x.anthias) {
+          cloud.members.slice(0, count).forEach((m) => {
+            const a = time * m.rate + m.phase;
+            const y = f.groundY - 14 - m.oy * (1 - cloud.hide * 0.7) + Math.cos(a * 1.3) * 1.5;
+            const xx = cloud.x + m.ox * (1 - cloud.hide * 0.4) + Math.sin(a) * 3;
+            schoolAt(
+              g,
+              "anthias",
+              { x: xx, y, dir: Math.cos(a) > -0.3 ? 1 : -1, calm: true, members: [{ back: 0, up: 0, phase: m.phase }] },
+              time,
+            );
+          });
+        }
+      }
+
+      // The parrotfish, and its sand falling. By night it sleeps in its cocoon by the bommie.
+      if (f.stage >= 3 && !narrow(f)) {
+        const pf = x.parrot;
+        if (day) {
+          const nod = pf.bite > 0 ? Math.round(Math.sin(pf.bite * 12)) : 0;
+          fishAt(
+            g,
+            "parrotfish",
+            { x: pf.x, y: pf.y + nod, dir: pf.dir, phase: 1, rate: pf.bite > 0 ? 0.3 : 1 },
+            time,
+            f.groundY,
+          );
+        } else {
+          const cx = bom.x - geo.side * Math.round(12 * geo.k);
+          const cy = f.groundY - 4;
+          fishAt(g, "parrotfish", { x: cx, y: cy, dir: geo.side, phase: 1, rate: 0.15, asleep: true }, 0, f.groundY);
+          cocoon(g, cx, cy, 10, 5, time);
+        }
+      }
+      for (const p of x.puffs) {
+        ctx.globalAlpha = 1 - p.age / 2.5;
+        rect(g, pal.sand, Math.round(p.x), Math.round(p.y), 1, 1);
+      }
+      ctx.globalAlpha = 1;
+
+      // The clownfish in their anemone: they dart about its mat by day and dive in at any threat; by
+      // night they sleep in it.
+      const an = f.plants.find((p) => p.kind === "anemone");
+      if (an && f.stage >= 2) {
+        const top = anemoneTop(an, grown(an), baseOf(f, an));
+        const tucked = !day || near(threats(f), an.x);
+        x.clowns.forEach((c, i) => {
+          const a = time * (0.8 + i * 0.3) + c.phase;
+          const xx = top.x + Math.sin(a) * (tucked ? 1 : top.half * 0.8) + (i ? -2 : 2);
+          const yy = tucked ? top.y + 1 : top.y - 2 - Math.abs(Math.sin(a * 1.3)) * 3;
+          fishAt(
+            g,
+            "clownfish",
+            { x: xx, y: yy, dir: Math.cos(a) > 0 ? 1 : -1, phase: c.phase, rate: tucked ? 0.3 : 1, asleep: !day },
             time,
           );
         });
       }
-    }
 
-    // The parrotfish, and its sand falling. By night it sleeps in its cocoon by the bommie.
-    if (f.stage >= 3 && !narrow(f)) {
-      const pf = x.parrot;
-      if (day) {
-        const nod = pf.bite > 0 ? Math.round(Math.sin(pf.bite * 12)) : 0;
-        fishAt(
-          g,
-          "parrotfish",
-          { x: pf.x, y: pf.y + nod, dir: pf.dir, phase: 1, rate: pf.bite > 0 ? 0.3 : 1 },
-          time,
-          f.groundY,
-        );
-      } else {
-        const cx = bom.x - geo.side * Math.round(12 * geo.k);
-        const cy = f.groundY - 4;
-        fishAt(g, "parrotfish", { x: cx, y: cy, dir: geo.side, phase: 1, rate: 0.15, asleep: true }, 0, f.groundY);
-        cocoon(g, cx, cy, 10, 5, time);
+      // Mantle and its ink.
+      for (const ink of x.inks) inkAt(g, ink);
+      if (x.mantle.active)
+        octopusAt(g, x.mantle, f.groundY + (x.mantle.mode === "den" ? geo.den.y - f.groundY + 1 : 0), time);
+
+      // The epaulette shark by night.
+      if (!day && x.epaulette.active) epauletteAt(g, x.epaulette, f.groundY + 2, time);
+    }),
+    {
+      label: "bait ball, silver fish turning in mid-water and parting round the manta (day)",
+      kind: "effect",
+      arrives: 6,
+      fixed: `${BAIT} fish`,
+    },
+    {
+      label: "reef walls: terraced ridges of the drop-off in the haze",
+      kind: "effect",
+      layer: "behind the plants",
+      arrives: 0,
+    },
+    {
+      label: "epaulette shark walking the reef flat on its fins (night)",
+      kind: "animal",
+      family: "fish",
+      arrives: 2,
+      sprites: ["epaulette"],
+    },
+    {
+      label: "mass coral spawning, eggs rising like snow falling upward (the timed event by night)",
+      kind: "effect",
+      arrives: 6,
+    },
+    {
+      label: "sunlight: shafts from the surface and caustics on the sand (day)",
+      kind: "effect",
+      layer: "behind the plants",
+      arrives: 0,
+    },
+    {
+      label: "marine snow drifting down",
+      kind: "effect",
+      arrives: 0,
+      fixed: `${SNOW} motes`,
+    },
+    {
+      label: "plankton sparking in the wake of anything that moves (night)",
+      kind: "effect",
+      arrives: 2,
+    },
+  ],
+  {
+    init(f) {
+      const bom = f.plants.find((p) => p.kind === "bommie" && p.layer === 1);
+      const geo = bommieGeom(bom, 1, baseOf(f, bom));
+      const thicket = f.plants.filter((p) => p.kind === "staghorn" && p.layer === 1);
+      const home = thicket.length ? thicket.reduce((a, p) => a + p.x, 0) / thicket.length : f.cols * 0.2;
+      return {
+        bom,
+        mantle: {
+          active: false,
+          x: geo.den.x,
+          dir: 1,
+          mode: "den",
+          age: 0,
+          wait: 3,
+          camo: 0,
+          flash: 0,
+          c: 0,
+          m: 0,
+          lift: 0,
+          phase: f.rand() * 5,
+        },
+        clowns: [0, 1].map((i) => ({ phase: f.rand() * 6, size: i })),
+        chromis: {
+          home,
+          hide: 0,
+          members: Array.from({ length: CHROMIS }, () => ({
+            ox: (f.rand() - 0.5) * 22,
+            oy: f.rand() * 12,
+            phase: f.rand() * 6,
+            rate: 0.5 + f.rand() * 0.6,
+          })),
+        },
+        parrot: { x: f.cols * 0.3, dir: 1, y: 0, bite: 0, next: 4 },
+        puffs: [],
+        wrasse: [0, 1].map(() => ({ phase: f.rand() * 6 })),
+        anthias: [0.18, 0.82].map((at) => ({
+          x: Math.round(f.cols * at),
+          hide: 0,
+          members: Array.from({ length: ANTHIAS }, () => ({
+            ox: (f.rand() - 0.5) * 30,
+            oy: f.rand() * 14,
+            phase: f.rand() * 6,
+            rate: 0.6 + f.rand() * 0.5,
+          })),
+        })),
+        turtle: { next: 6, t: null },
+        // The bait ball hangs on the open-water side of the bommie.
+        bait: {
+          side: bom.x < f.cols / 2 ? 1 : -1,
+          members: Array.from({ length: BAIT }, (_, i) => ({
+            a: (i / BAIT) * Math.PI * 2,
+            r: 4 + (i % 3) * 4 + f.rand() * 2,
+            rate: 1.8 + f.rand() * 0.8,
+            flash: f.rand() * 6,
+          })),
+        },
+        bubbles: [],
+        epaulette: { active: false, x: f.cols * 0.7, dir: -1, state: "walk", timer: 4, c: 0, phase: 0 },
+        spawn: { next: 8 + f.rand() * 8, until: 0, eggs: [] },
+        snow: Array.from({ length: SNOW }, () => newSnow(f, true)),
+        sparks: [],
+        inks: [],
+      };
+    },
+
+    onGrow(f) {
+      if (f.stage >= 1) f.extra.mantle.active = true;
+      if (f.stage >= 2) f.extra.epaulette.active = true;
+    },
+
+    busy: (f) => f.stage >= 1,
+
+    update(f, dt) {
+      const x = f.extra;
+      const day = !isNight(f);
+      const bom = x.bom;
+      const geo = bommieGeom(bom, grown(bom), baseOf(f, bom));
+      const danger = threats(f);
+      const phone = narrow(f);
+
+      // Marine snow drifts down all day and night.
+      for (const s of x.snow) {
+        s.y += s.speed * dt;
+        s.x += Math.sin(f.time * 0.5 + s.phase) * 0.6 * dt;
+        if (s.y > f.groundY) Object.assign(s, newSnow(f, false));
       }
-    }
-    for (const p of x.puffs) {
-      ctx.globalAlpha = 1 - p.age / 2.5;
-      rect(g, pal.sand, Math.round(p.x), Math.round(p.y), 1, 1);
-    }
-    ctx.globalAlpha = 1;
 
-    // The clownfish in their anemone: they dart about its mat by day and dive in at any threat; by
-    // night they sleep in it.
-    const an = f.plants.find((p) => p.kind === "anemone");
-    if (an && f.stage >= 2) {
-      const top = anemoneTop(an, grown(an), baseOf(f, an));
-      const tucked = !day || near(threats(f), an.x);
-      x.clowns.forEach((c, i) => {
-        const a = time * (0.8 + i * 0.3) + c.phase;
-        const xx = top.x + Math.sin(a) * (tucked ? 1 : top.half * 0.8) + (i ? -2 : 2);
-        const yy = tucked ? top.y + 1 : top.y - 2 - Math.abs(Math.sin(a * 1.3)) * 3;
-        fishAt(
-          g,
-          "clownfish",
-          { x: xx, y: yy, dir: Math.cos(a) > 0 ? 1 : -1, phase: c.phase, rate: tucked ? 0.3 : 1, asleep: !day },
-          time,
-        );
-      });
-    }
+      // Mantle.
+      if (x.mantle.active) {
+        const hunters = danger.filter((t) => t.reach > 25);
+        mantleUpdate(f, x.mantle, dt, geo.den, f.stage >= 5 && near(hunters, x.mantle.x));
+      }
+      for (const ink of x.inks) ink.age += dt;
+      x.inks = x.inks.filter((i) => i.age < 3);
 
-    // Mantle and its ink.
-    for (const ink of x.inks) inkAt(g, ink);
-    if (x.mantle.active)
-      octopusAt(g, x.mantle, f.groundY + (x.mantle.mode === "den" ? geo.den.y - f.groundY + 1 : 0), time);
+      // The chromis drop into their staghorn when something passes, and rise again after.
+      const scared = near(danger, x.chromis.home);
+      x.chromis.hide = clamp(x.chromis.hide + (scared ? dt * 3 : -dt * 0.6), 0, 1);
 
-    // The epaulette shark by night.
-    if (!day && x.epaulette.active) epauletteAt(g, x.epaulette, f.groundY + 2, time);
+      // The anthias drop toward the coral when a hunter passes, like the chromis.
+      for (const a of x.anthias) a.hide = clamp(a.hide + (near(danger, a.x) ? dt * 3 : -dt * 0.6), 0, 1);
+
+      // The giant clam shuts under the manta's shadow and opens again slowly.
+      const clam = f.plants.find((p) => p.kind === "giantClam");
+      if (clam) {
+        const over = x.manta.bird && Math.abs(x.manta.bird.x - clam.x) < MANTA.span * 0.55;
+        clam.shut = clamp((clam.shut ?? 0) + (over ? dt * 6 : -dt * 0.35), 0, 1);
+      }
+
+      // The parrotfish browses along the reef, biting the coral and dropping sand.
+      const pf = x.parrot;
+      if (f.stage >= 3 && day && !phone) {
+        if (pf.bite > 0) {
+          pf.bite -= dt;
+          if (pf.bite <= 0) {
+            for (let i = 0; i < 6; i += 1) {
+              x.puffs.push({
+                x: pf.x - pf.dir * (8 + f.rand() * 3),
+                y: pf.y + f.rand() * 2,
+                vy: 2 + f.rand() * 3,
+                age: 0,
+              });
+            }
+            pf.next = f.time + 4 + f.rand() * 5;
+          }
+        } else {
+          pf.x += pf.dir * 6 * dt;
+          if (pf.x < 14 || pf.x > f.cols - 14) pf.dir *= -1;
+          if (f.time > pf.next) pf.bite = 1.6;
+        }
+        pf.y = f.groundY - 9 + Math.sin(f.time * 0.4) * 2;
+      }
+      pf.active = f.stage >= 3 && day && !phone;
+      for (const p of x.puffs) {
+        p.age += dt;
+        p.y += p.vy * dt;
+      }
+      x.puffs = x.puffs.filter((p) => p.age < 2.5 && p.y < f.groundY);
+
+      // The green turtle swims in to the cleaning station, hovers while the wrasse clean it, swims on.
+      const station = geo.tables[1];
+      const tu = x.turtle;
+      if (f.stage >= 4 && day) {
+        if (!tu.t && f.time >= tu.next) {
+          const dir = f.rand() < 0.5 ? 1 : -1;
+          tu.t = { x: dir > 0 ? -16 : f.cols + 16, y: station.y - 9, dir, state: "in", hold: 0 };
+        }
+        const t = tu.t;
+        if (t) {
+          const sx = station.x;
+          if (t.state === "in") {
+            t.x += t.dir * 9 * dt;
+            t.y += (station.y - 9 - t.y) * dt;
+            if ((t.dir > 0 && t.x >= sx) || (t.dir < 0 && t.x <= sx)) Object.assign(t, { state: "clean", hold: 7 });
+          } else if (t.state === "clean") {
+            t.hold -= dt;
+            if (t.hold <= 0) t.state = "out";
+          } else {
+            t.x += t.dir * 9 * dt;
+            t.y -= 3 * dt;
+            if (t.x < -20 || t.x > f.cols + 20) {
+              tu.t = null;
+              tu.next = f.time + 14 + f.rand() * 12;
+            }
+          }
+        }
+      } else if (!day) tu.t = null;
+      tu.active = Boolean(tu.t);
+
+      // The bait ball hangs on the open-water side of the bommie.
+      const bait = x.bait;
+      bait.active = f.stage >= 6 && day;
+      bait.x = Math.round(f.cols * (bait.side > 0 ? 0.72 : 0.28));
+      bait.y = Math.max(16, Math.round(f.groundY * 0.36));
+      const ray = x.manta.bird;
+      if (ray && f.rand() < dt * 10) {
+        x.bubbles.push({
+          x: ray.x - ray.dir * (MANTA.span * 0.4 + f.rand() * 4),
+          y: ray.y + (f.rand() - 0.5) * 4,
+          age: 0,
+        });
+      }
+      for (const b of x.bubbles) {
+        b.age += dt;
+        b.y -= 5 * dt;
+        b.x += Math.sin(f.time * 3 + b.age * 4) * 0.5 * dt;
+      }
+      x.bubbles = x.bubbles.filter((b) => b.age < 1.6 && b.y > 2);
+
+      // Night: the epaulette shark walks the reef flat; the corals spawn.
+      const ep = x.epaulette;
+      if (!day && ep.active) {
+        const prev = ep.x;
+        ep.timer -= dt;
+        if (ep.state === "walk") {
+          ep.x += ep.dir * 5 * dt;
+          if (ep.timer <= 0 || ep.x < 12 || ep.x > f.cols - 12) {
+            ep.state = "stand";
+            ep.timer = 2 + f.rand() * 3;
+            if (ep.x < 12) ep.dir = 1;
+            if (ep.x > f.cols - 12) ep.dir = -1;
+          }
+        } else if (ep.timer <= 0) {
+          ep.state = "walk";
+          ep.timer = 4 + f.rand() * 6;
+          if (f.rand() < 0.4) ep.dir *= -1;
+        }
+        settle(f, ep);
+        stride(ep, prev, dt, EPAULETTE.stride[0], EPAULETTE.stride[1]);
+        const since = f.time - (ep.since ?? 0);
+        ep.m = ep.state === "walk" ? Math.min(1, since / 0.25) : Math.max(0, 1 - since / 0.25);
+        if (ep.moving && f.rand() < dt * 6) x.sparks.push({ x: ep.x - ep.dir * 8, y: f.groundY - 3, age: 0 });
+      }
+      if (!day && x.shark.bird && f.rand() < dt * 10) {
+        const b = x.shark.bird;
+        x.sparks.push({ x: b.x - b.dir * (10 + f.rand() * 8), y: b.y + (f.rand() - 0.5) * 3, age: 0 });
+      }
+      for (const s of x.sparks) s.age += dt;
+      x.sparks = x.sparks.filter((s) => s.age < 1.2);
+
+      const sp = x.spawn;
+      if (!day && f.stage >= 6) {
+        if (f.time >= sp.next && sp.until <= f.time) {
+          sp.until = f.time + 14;
+          sp.next = sp.until + 25 + f.rand() * 20;
+        }
+        if (f.time < sp.until && sp.eggs.length < SPAWN && f.rand() < dt * 14) {
+          const corals = f.plants.filter(
+            (p) => p.layer >= 0 && ["tableCoral", "staghorn", "boulderCoral", "bommie"].includes(p.kind),
+          );
+          const p = corals[Math.floor(f.rand() * corals.length)];
+          if (p) {
+            const top = p.kind === "bommie" ? bommieGeom(p, grown(p), baseOf(f, p)) : null;
+            const y = top ? top.top + f.rand() * (top.H * 0.6) : baseOf(f, p) - 6;
+            const xx = top ? p.x + (f.rand() - 0.5) * 24 * top.k : p.x + (f.rand() - 0.5) * 6;
+            sp.eggs.push({ x: xx, y, vy: 3 + f.rand() * 3, phase: f.rand() * 6, c: f.rand() < 0.5 ? 0 : 1 });
+          }
+        }
+      } else if (day) sp.until = 0;
+      for (const e of sp.eggs) {
+        e.y -= e.vy * dt;
+        e.x += Math.sin(f.time * 0.9 + e.phase) * 1.2 * dt;
+      }
+      sp.eggs = sp.eggs.filter((e) => e.y > 2);
+    },
   },
-};
-
-// One swimmer at a time crossing the water, as critters' flyBy (its slot holds a fish, not a
-// bird), with its height from y().
-function flyBySlot(f, slot, dt, { every, speed, y, margin = 16 }) {
-  if (slot.fish) {
-    slot.fish.x += slot.fish.dir * speed * dt;
-    if (slot.fish.x < -margin || slot.fish.x > f.cols + margin) {
-      slot.fish = null;
-      slot.next = f.time + every[0] + f.rand() * every[1];
-    }
-  } else if (f.time >= slot.next) {
-    const dir = f.rand() < 0.5 ? 1 : -1;
-    slot.fish = { dir, x: dir > 0 ? -margin + 2 : f.cols + margin - 2, y: y(), phase: f.rand() * 6 };
-  }
-  slot.active = Boolean(slot.fish);
-}
+);
 
 // A parrotfish's mucus cocoon: a faint shell round it that it blows each night.
 function cocoon(g, cx, cy, hw, hh, time) {
@@ -1114,10 +1240,80 @@ function cocoon(g, cx, cy, hw, hh, time) {
   ctx.globalAlpha = 1;
 }
 
-export default {
+const SPRITES = {
+  mantle: (g, frame) =>
+    octopusAt(g, walk(frame, { mode: "crawl", c: frame.time / 0.9, m: 1, phase: 1 }), g.groundY, frame.time),
+  "mantle-sitting": (g, frame) => octopusAt(g, walk(frame, { mode: "sit", phase: 1 }), g.groundY, frame.time),
+  "mantle-camouflaged": (g, frame) =>
+    octopusAt(g, walk(frame, { mode: "sit", camo: 1, phase: 1 }), g.groundY, frame.time),
+  "mantle-reaching": (g, frame) =>
+    octopusAt(g, walk(frame, { mode: "sit", rest: "reach", phase: 1 }), g.groundY, frame.time),
+  "mantle-in-den": (g, frame) => octopusAt(g, walk(frame, { mode: "den", phase: 1 }), g.groundY, frame.time),
+  "mantle-jetting": (g, frame) => {
+    inkAt(g, { x: 30, y: 38, age: 0.8 });
+    octopusAt(g, walk(frame, { mode: "jet", flash: 1, lift: 8, phase: 1 }), g.groundY, frame.time);
+  },
+  clownfish: (g, frame) => fishAt(g, "clownfish", bird(frame), frame.time),
+  chromis: (g, frame) => fishAt(g, "chromis", bird(frame), frame.time),
+  anthias: (g, frame) => fishAt(g, "anthias", bird(frame), frame.time),
+  wrasse: (g, frame) => fishAt(g, "wrasse", bird(frame), frame.time),
+  parrotfish: (g, frame) => fishAt(g, "parrotfish", bird(frame, { y: 38 }), frame.time, g.groundY),
+  trevally: (g, frame) => fishAt(g, "trevally", bird(frame), frame.time),
+  blacktip: (g, frame) => fishAt(g, "blacktip", bird(frame), frame.time),
+  epaulette: (g, frame) => epauletteAt(g, walk(frame, { c: frame.time / 0.7, m: 1 }), g.groundY, frame.time),
+  turtle: (g, frame) => honuShellAt(g, { x: 40, dir: 1 }, 34, frame.time),
+  manta: (g, frame) => {
+    mantaShadow(g, 40, g.groundY);
+    mantaAt(g, bird(frame, { y: 24 }), frame.time);
+  },
+};
+
+const PLANT_FAMILIES = {
+  bommie: "corals",
+  tableCoral: "corals",
+  staghorn: "corals",
+  boulderCoral: "corals",
+  softCoral: "corals",
+  seaFan: "corals",
+  seagrass: "corals",
+  anemone: "corals",
+  giantClam: "corals",
+  stylophora: "corals",
+  goniopora: "corals",
+  mushroom: "corals",
+  organPipe: "corals",
+  acroporaBush: "corals",
+  softTree: "corals",
+};
+
+export const META = {
   id: "greatbarrier",
   label: "Great Barrier Reef",
   group: "underwater",
+  tint: ["#9be0ea", "rgb(42 152 178)"],
+  backdrop: {
+    light: {
+      green: "#8fdbe8",
+      "green-soft": "#bfeef2",
+      peach: "#f5d8c8",
+      blush: "#d6edf7",
+      bloom: "#72d2dc",
+    },
+    dark: {
+      green: "rgb(42 152 178 / 0.42)",
+      "green-soft": "rgb(32 110 156 / 0.24)",
+      peach: "rgb(186 112 96 / 0.16)",
+      blush: "rgb(62 188 196 / 0.16)",
+      bloom: "rgb(56 202 204 / 0.32)",
+    },
+  },
+};
+
+export default {
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.45, 0.72], dark: [0.5, 0.75] },
   mature: MATURE,

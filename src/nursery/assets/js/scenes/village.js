@@ -13,33 +13,12 @@
 // ridge; a barn swallow, a hooded crow and a golden eagle fly over, and a common buzzard circles. Every
 // 30 to 50 s the rooster crows, and a sleeping cat near him startles awake. At night the chickens
 // and day birds go in, the windows and the oven glow, and fireflies come out over the meadow.
-import {
-  catPlayAt,
-  felidAt,
-  felidPoses,
-  groundBirdAt,
-  groundBirdStep,
-  groundPoses,
-  groundSpeed,
-  PLAY_SECONDS,
-} from "../kit/animals.js";
+
 import { broadleafLayout, broadleafTree, leafClump } from "../kit/broadleaf.js";
-import {
-  doing,
-  enter,
-  fidget,
-  flyBy,
-  isNight,
-  narrow,
-  percher,
-  rest,
-  soarer,
-  walker,
-  wander,
-} from "../kit/critters.js";
-import { HOUSECAT_COAT_NAMES, HOUSECAT_COATS } from "../kit/felid.js";
+import { doing, enter, fidget, isNight, narrow, percher, rest, walker, wander } from "../kit/critters.js";
+import { catPlayAt, felidAt, felidPoses, HOUSECAT_COAT_NAMES, HOUSECAT_COATS, PLAY_SECONDS } from "../kit/felid.js";
 import { circlerAt, eagleFlyAt, flyerAt } from "../kit/flyers.js";
-import { CROW_SECONDS } from "../kit/groundbird.js";
+import { CROW_SECONDS, groundBirdAt, groundBirdStep, groundPoses, groundSpeed } from "../kit/groundbird.js";
 import { butterflyAt, butterflyPick, fireflyAt } from "../kit/insect.js";
 import { peak, ridge } from "../kit/landforms.js";
 import {
@@ -58,7 +37,17 @@ import {
   sortPlants,
 } from "../kit/pixel.js";
 import { meadowFlower, meadowFlowerHead } from "../kit/plants.js";
-import { footOf, groundOf, movePose, perchedSmall, SPECIES as SMALL, SMALL_MOVES } from "../kit/smallbird.js";
+import { bird, butterfly, soarSprites, walk } from "../kit/poses.js";
+import { circlerActor, crossingActor, drawStep, runCast } from "../kit/runner.js";
+import {
+  blendPose,
+  footOf,
+  groundOf,
+  movePose,
+  perchedSmall,
+  SPECIES as SMALL,
+  SMALL_MOVES,
+} from "../kit/smallbird.js";
 
 const MATURE = {
   range: 2.5,
@@ -880,206 +869,412 @@ function crowRings(g, r, time) {
   }
 }
 
-const extras = {
-  init(f) {
-    const coats = [...HOUSECAT_COAT_NAMES].sort(() => f.rand() - 0.5);
-    const coat = (i) => `housecat-${coats[i % coats.length]}`;
-    const restCat = (i) => ({
-      kind: "housecat",
-      pal: coat(i),
-      x: 0,
-      y: 0,
-      dir: 1,
-      state: "rest",
-      since: -10,
-      seed: i * 3.7,
-    });
-    const cats = {};
-    SPOT_CATS.forEach(([name, , , pose], i) => {
-      cats[name] = { ...restCat(i + 3), pose, startle: -99 };
-    });
-    const ax = f.cols * (0.15 + f.rand() * 0.2) + (f.rand() < 0.5 ? 0 : f.cols * 0.5);
-    return {
-      cat: { ...walker(f), pal: coat(0), seed: 1.3 },
-      cats,
-      play: {
-        active: false,
-        phase: "rest",
-        next: f.time + 6,
-        cats: [
-          { ...restCat(1), x: ax, pose: "sit" },
-          { ...restCat(2), x: ax + 28, dir: -1, pose: "loaf" },
-        ],
-      },
-      rooster: { ...walker(f), crowAt: -99 },
-      hen: walker(f),
-      crowNext: 25 + f.rand() * 10,
-      sparrows: [0, 1].map((i) => ({ ...percher(f, 0, 0, i ? -1 : 1, SMALL_MOVES), i })),
-      swallow: { next: 2, bird: null },
-      crow: { next: 8, bird: null },
-      eagle: { next: 14, bird: null },
-      buzzard: soarer(f, 40 + f.rand() * 14),
-      flies: Array.from({ length: BUTTERFLIES }, (_, i) => ({
-        homeX: (0.12 + 0.76 * ((i + f.rand() * 0.8) / BUTTERFLIES)) * f.cols,
-        homeY: f.groundY - 10 - f.rand() * 16,
-        phase: f.rand() * 6.28,
-        speed: 0.5 + f.rand() * 0.4,
-        colour: i % 2,
-        cycle: 15 + f.rand() * 6,
-        from: Infinity,
-        at: Infinity,
-        n: null,
-      })),
-      fireflies: Array.from({ length: FIREFLIES }, () => ({
-        homeX: f.rand() * f.cols,
-        homeY: f.groundY - 4 - f.rand() * 22,
-        phase: f.rand() * 6.28,
-        speed: 0.2 + f.rand() * 0.3,
-        reach: 6 + f.rand() * 10,
-      })),
-    };
-  },
-
-  onGrow(f) {
-    const x = f.extra;
-    if (f.stage >= 1) enter(f, x.cat);
-    if (f.stage >= 4) {
-      enter(f, x.rooster);
-      enter(f, x.hen);
-    }
-    if (f.stage >= 5 && !narrow(f)) x.play.active = true;
-    x.buzzard.active = f.stage >= 7 && !narrow(f);
-    x.flies.forEach((fly, i) => {
-      if (f.stage >= 5 && fly.from === Infinity) {
-        fly.from = f.time + i * 2;
-        fly.at = fly.from;
-      }
-    });
-  },
-
-  busy: () => true,
-
-  update(f, dt) {
-    const x = f.extra;
-    const day = !isNight(f);
-    wander(f, x.cat, dt, { speed: 7, stride: 7, sit: [5, 12], walk: [3, 6] });
-    rest(f, x.cat, felidPoses("housecat"));
-    for (const [name, stage, phone] of SPOT_CATS) x.cats[name].active = f.stage >= stage && (phone || !narrow(f));
-    if (x.play.active) playStep(f, x.play, dt);
-    // The chickens peck about by day; the rooster crows every 30 to 50 s, and a sleeping cat near him
-    // wakes with a start.
-    for (const [b, kind] of [
-      [x.rooster, "moa"],
-      [x.hen, "hen"],
-    ]) {
-      const crowing = kind === "moa" && f.time - b.crowAt < CROW_SECONDS;
-      const x0 = b.x;
-      if (!crowing) {
-        wander(f, b, dt, { speed: groundSpeed(kind), stride: 1, sit: [2.6, 6], walk: [1.5, 3] });
-        rest(f, b, groundPoses(b, kind));
-      }
-      groundBirdStep(f, b, dt, kind, x0);
-    }
-    const r = x.rooster;
-    if (r.active && day && f.stage >= 4 && f.time >= x.crowNext) {
-      Object.assign(r, { state: "sit", was: "sit", pose: "crow", since: f.time, crowAt: f.time, timer: 1 });
-      x.crowNext = f.time + CROW_EVERY[0] + f.rand() * CROW_EVERY[1];
-      for (const c of Object.values(x.cats)) {
-        if (c.active && (c.pose === "curl" || c.pose === "doze") && Math.abs(c.x - r.x) < 70) c.startle = f.time + 1.2;
-      }
-    }
-    // The sparrows sit on the roof ridge once the house is up.
-    const home = landmark(f, "house");
-    for (const s of x.sparrows) {
-      s.active = day && f.stage >= 2 && grown(home);
-      if (s.active) fidget(f, s);
-    }
-    const flyers = [
-      [f.stage >= 3, x.swallow, { every: [5, 7], speed: 40, spawn: () => ({ y: f.groundY - 30 - f.rand() * 30 }) }],
-      [f.stage >= 4, x.crow, { every: [8, 8], speed: 22, spawn: () => ({ y: f.groundY - 60 - f.rand() * 30 }) }],
-      [
-        f.stage >= 6 && !narrow(f),
-        x.eagle,
-        { every: [12, 10], speed: 12, spawn: () => ({ y: f.groundY - 100 - f.rand() * 30 }) },
+const extras = runCast(
+  [
+    {
+      label: "farm cat that wanders, in one of eleven coats",
+      kind: "animal",
+      family: "cats",
+      presence: ["cat"],
+      sprites: [
+        "cat",
+        "cat-sitting",
+        "cat-arching",
+        "cat-lying",
+        "cat-stretching",
+        "cat-loafing",
+        "cat-curled",
+        "cat-dozing",
+        "cat-grooming",
       ],
-    ];
-    for (const [on, slot, o] of flyers) if (on && day) flyBy(f, slot, dt, o);
-    const spots = f.plants.filter((p) => p.kind === "flower" && flowerSize(p) >= 0.9);
-    for (const fly of x.flies) {
-      if (fly.at !== Infinity)
-        butterflyPick(
-          fly,
-          f.time,
-          spots,
-          x.flies.map((o) => o.flower).filter((o) => o && o !== fly.flower),
-        );
-    }
-  },
-
-  draw(g, f) {
-    const x = f.extra;
-    const time = f.time;
-    const day = !isNight(f);
-    const home = landmark(f, "house");
-    if (home && day) {
-      const spot = houseSpots(home.x, baseOf(f, home));
-      const foot = footOf(g, "sparrow");
-      const gv = groundOf(SMALL.sparrow);
-      x.sparrows.forEach((s, i) => {
-        if (!s.active) return;
-        const m = movePose(Object.fromEntries(Object.keys(SMALL_MOVES).map((k) => [k, doing(s, k, time)])));
-        const dir = m.turned ? -s.dir : s.dir;
-        const sx = spot.ridge[i];
-        perchedSmall(
-          g,
-          "sparrow",
-          Math.round(dir > 0 ? sx - foot.u : sx + foot.u + 1),
-          spot.ridgeTop + foot.v - gv,
-          time,
-          m.pose,
-          { dir },
-        );
+    },
+    {
+      label: "farm cats at their spots (logs, under the bench, walnut, apple, doorstep, veranda)",
+      kind: "animal",
+      family: "cats",
+      arrives: 3,
+      fixed: "up to 7, one more with each landmark; 2 on a phone",
+      sprites: ["cat-loafing", "cat-curled", "cat-dozing", "cat-grooming", "cat-sitting"],
+    },
+    {
+      label: "farm cats at play (stalk, pounce, swats, a chase)",
+      kind: "animal",
+      family: "cats",
+      presence: ["play"],
+      sprites: ["cat-stalking", "cat-leaping", "cat-swatting"],
+    },
+    {
+      label: "rooster, who crows every 30 to 50 s",
+      kind: "animal",
+      family: "ground-birds",
+      presence: ["rooster"],
+      sprites: ["rooster", "rooster-pecking", "rooster-scratching", "rooster-flapping", "rooster-crowing"],
+    },
+    {
+      label: "hen",
+      kind: "animal",
+      family: "ground-birds",
+      presence: ["hen"],
+      sprites: ["hen", "hen-pecking", "hen-scratching"],
+    },
+    {
+      label: "house sparrows on the roof ridge",
+      kind: "bird",
+      family: "small-flyers",
+      presence: ["sparrows[0]", "sparrows[1]"],
+      sprites: ["sparrow-perched"],
+    },
+    drawStep("sparrows-and-cats", (g, f) => {
+      const x = f.extra;
+      const time = f.time;
+      const day = !isNight(f);
+      const home = landmark(f, "house");
+      if (home && day) {
+        const spot = houseSpots(home.x, baseOf(f, home));
+        const foot = footOf(g, "sparrow");
+        const gv = groundOf(SMALL.sparrow);
+        x.sparrows.forEach((s, i) => {
+          if (!s.active) return;
+          const m = movePose(Object.fromEntries(Object.keys(SMALL_MOVES).map((k) => [k, doing(s, k, time)])));
+          const dir = m.turned ? -s.dir : s.dir;
+          const sx = spot.ridge[i];
+          perchedSmall(
+            g,
+            "sparrow",
+            Math.round(dir > 0 ? sx - foot.u : sx + foot.u + 1),
+            spot.ridgeTop + foot.v - gv,
+            time,
+            m.pose,
+            { dir },
+          );
+        });
+      }
+      for (const [name] of SPOT_CATS) {
+        const c = x.cats[name];
+        if (!c.active) continue;
+        const at = SPOT_CATS.find((s) => s[0] === name)[4](f, g.time);
+        if (!at) continue;
+        felidAt(g, { ...c, ...at, ...(startled(c, time) ?? {}) }, time);
+      }
+      if (x.cat.active) felidAt(g, { ...x.cat, kind: "housecat" }, time);
+      if (x.play.active) for (const c of x.play.cats) felidAt(g, { ...c, y: f.groundY + 8 }, time);
+    }),
+    drawStep("chickens-butterflies-fireflies", (g, f) => {
+      const x = f.extra;
+      const time = f.time;
+      if (!isNight(f)) {
+        if (x.rooster.active) {
+          groundBirdAt(g, x.rooster, "moa", time);
+          crowRings(g, { ...x.rooster, y: g.groundY + 7 }, time);
+        }
+        if (x.hen.active) groundBirdAt(g, x.hen, "hen", time);
+        for (const fly of x.flies) {
+          if (time < fly.from) continue;
+          const p = fly.flower;
+          const s = p ? flowerSize(p) : 0;
+          butterflyAt(g, fly, time, s > 0.5 ? meadowFlowerHead(g, p, s, baseOf(f, p)) : null);
+        }
+      } else if (f.stage >= 2) {
+        for (const fly of x.fireflies) {
+          const fx = fly.homeX + Math.sin(time * fly.speed + fly.phase) * fly.reach;
+          const fy = fly.homeY + Math.sin(time * fly.speed * 1.4 + fly.phase * 2) * 5;
+          fireflyAt(g, fx, fy, time, fly.phase, g.pal.glow);
+        }
+      }
+    }),
+    crossingActor({
+      id: "swallow",
+      label: "barn swallow (fast flyby)",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["swallow"],
+      arrives: 3,
+      when: "day",
+      first: 2,
+      every: [5, 7],
+      speed: 40,
+      spawn: (f) => ({ y: f.groundY - 30 - f.rand() * 30 }),
+      draw: (g, b, f) => flyerAt(g, b, f.time, "swallow"),
+    }),
+    crossingActor({
+      id: "crow",
+      label: "hooded crow (medium flyby)",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["crow"],
+      arrives: 4,
+      when: "day",
+      first: 8,
+      every: [8, 8],
+      speed: 22,
+      spawn: (f) => ({ y: f.groundY - 60 - f.rand() * 30 }),
+      draw: (g, b, f) => flyerAt(g, b, f.time, "crow"),
+    }),
+    crossingActor({
+      id: "eagle",
+      label: "golden eagle (slow flyby)",
+      kind: "bird",
+      family: "soaring-birds",
+      sprites: ["eagle-side", "eagle-side-flapping"],
+      arrives: 6,
+      when: "day",
+      phone: "hide",
+      first: 14,
+      every: [12, 10],
+      speed: 12,
+      spawn: (f) => ({ y: f.groundY - 100 - f.rand() * 30 }),
+      draw: (g, b, f) => eagleFlyAt(g, "golden", b, f.time),
+    }),
+    circlerActor({
+      id: "buzzard",
+      label: "common buzzard (circling)",
+      kind: "bird",
+      family: "soaring-birds",
+      sprites: ["buzzard", "buzzard-bank", "buzzard-flapping"],
+      arrives: 7,
+      when: "day",
+      phone: "hide",
+      cy: (f) => 40 + f.rand() * 14,
+      draw: (g, s, f) => circlerAt(g, "hawk", s, f.time),
+    }),
+    {
+      label: "cabbage-white butterfly",
+      kind: "effect",
+      family: "insects",
+      arrives: 5,
+      fixed: `up to ${BUTTERFLIES}`,
+      sprites: ["butterfly"],
+    },
+    {
+      label: "fireflies (night)",
+      kind: "effect",
+      family: "insects",
+      arrives: 2,
+      fixed: `${FIREFLIES}`,
+      sprites: ["firefly"],
+    },
+  ],
+  {
+    init(f) {
+      const coats = [...HOUSECAT_COAT_NAMES].sort(() => f.rand() - 0.5);
+      const coat = (i) => `housecat-${coats[i % coats.length]}`;
+      const restCat = (i) => ({
+        kind: "housecat",
+        pal: coat(i),
+        x: 0,
+        y: 0,
+        dir: 1,
+        state: "rest",
+        since: -10,
+        seed: i * 3.7,
       });
-    }
-    for (const [name] of SPOT_CATS) {
-      const c = x.cats[name];
-      if (!c.active) continue;
-      const at = SPOT_CATS.find((s) => s[0] === name)[4](f, g.time);
-      if (!at) continue;
-      felidAt(g, { ...c, ...at, ...(startled(c, time) ?? {}) }, time);
-    }
-    if (x.cat.active) felidAt(g, { ...x.cat, kind: "housecat" }, time);
-    if (x.play.active) for (const c of x.play.cats) felidAt(g, { ...c, y: f.groundY + 8 }, time);
-    if (day) {
-      if (x.rooster.active) {
-        groundBirdAt(g, x.rooster, "moa", time);
-        crowRings(g, { ...x.rooster, y: g.groundY + 7 }, time);
+      const cats = {};
+      SPOT_CATS.forEach(([name, , , pose], i) => {
+        cats[name] = { ...restCat(i + 3), pose, startle: -99 };
+      });
+      const ax = f.cols * (0.15 + f.rand() * 0.2) + (f.rand() < 0.5 ? 0 : f.cols * 0.5);
+      return {
+        cat: { ...walker(f), pal: coat(0), seed: 1.3 },
+        cats,
+        play: {
+          active: false,
+          phase: "rest",
+          next: f.time + 6,
+          cats: [
+            { ...restCat(1), x: ax, pose: "sit" },
+            { ...restCat(2), x: ax + 28, dir: -1, pose: "loaf" },
+          ],
+        },
+        rooster: { ...walker(f), crowAt: -99 },
+        hen: walker(f),
+        crowNext: 25 + f.rand() * 10,
+        sparrows: [0, 1].map((i) => ({ ...percher(f, 0, 0, i ? -1 : 1, SMALL_MOVES), i })),
+        flies: Array.from({ length: BUTTERFLIES }, (_, i) => ({
+          homeX: (0.12 + 0.76 * ((i + f.rand() * 0.8) / BUTTERFLIES)) * f.cols,
+          homeY: f.groundY - 10 - f.rand() * 16,
+          phase: f.rand() * 6.28,
+          speed: 0.5 + f.rand() * 0.4,
+          colour: i % 2,
+          cycle: 15 + f.rand() * 6,
+          from: Infinity,
+          at: Infinity,
+          n: null,
+        })),
+        fireflies: Array.from({ length: FIREFLIES }, () => ({
+          homeX: f.rand() * f.cols,
+          homeY: f.groundY - 4 - f.rand() * 22,
+          phase: f.rand() * 6.28,
+          speed: 0.2 + f.rand() * 0.3,
+          reach: 6 + f.rand() * 10,
+        })),
+      };
+    },
+
+    onGrow(f) {
+      const x = f.extra;
+      if (f.stage >= 1) enter(f, x.cat);
+      if (f.stage >= 4) {
+        enter(f, x.rooster);
+        enter(f, x.hen);
       }
-      if (x.hen.active) groundBirdAt(g, x.hen, "hen", time);
+      if (f.stage >= 5 && !narrow(f)) x.play.active = true;
+      x.flies.forEach((fly, i) => {
+        if (f.stage >= 5 && fly.from === Infinity) {
+          fly.from = f.time + i * 2;
+          fly.at = fly.from;
+        }
+      });
+    },
+
+    busy: () => true,
+
+    update(f, dt) {
+      const x = f.extra;
+      const day = !isNight(f);
+      wander(f, x.cat, dt, { speed: 7, stride: 7, sit: [5, 12], walk: [3, 6] });
+      rest(f, x.cat, felidPoses("housecat"));
+      for (const [name, stage, phone] of SPOT_CATS) x.cats[name].active = f.stage >= stage && (phone || !narrow(f));
+      if (x.play.active) playStep(f, x.play, dt);
+      // The chickens peck about by day; the rooster crows every 30 to 50 s, and a sleeping cat near him
+      // wakes with a start.
+      for (const [b, kind] of [
+        [x.rooster, "moa"],
+        [x.hen, "hen"],
+      ]) {
+        const crowing = kind === "moa" && f.time - b.crowAt < CROW_SECONDS;
+        const x0 = b.x;
+        if (!crowing) {
+          wander(f, b, dt, { speed: groundSpeed(kind), stride: 1, sit: [2.6, 6], walk: [1.5, 3] });
+          rest(f, b, groundPoses(b, kind));
+        }
+        groundBirdStep(f, b, dt, kind, x0);
+      }
+      const r = x.rooster;
+      if (r.active && day && f.stage >= 4 && f.time >= x.crowNext) {
+        Object.assign(r, { state: "sit", was: "sit", pose: "crow", since: f.time, crowAt: f.time, timer: 1 });
+        x.crowNext = f.time + CROW_EVERY[0] + f.rand() * CROW_EVERY[1];
+        for (const c of Object.values(x.cats)) {
+          if (c.active && (c.pose === "curl" || c.pose === "doze") && Math.abs(c.x - r.x) < 70)
+            c.startle = f.time + 1.2;
+        }
+      }
+      // The sparrows sit on the roof ridge once the house is up.
+      const home = landmark(f, "house");
+      for (const s of x.sparrows) {
+        s.active = day && f.stage >= 2 && grown(home);
+        if (s.active) fidget(f, s);
+      }
+
+      const spots = f.plants.filter((p) => p.kind === "flower" && flowerSize(p) >= 0.9);
       for (const fly of x.flies) {
-        if (time < fly.from) continue;
-        const p = fly.flower;
-        const s = p ? flowerSize(p) : 0;
-        butterflyAt(g, fly, time, s > 0.5 ? meadowFlowerHead(g, p, s, baseOf(f, p)) : null);
+        if (fly.at !== Infinity)
+          butterflyPick(
+            fly,
+            f.time,
+            spots,
+            x.flies.map((o) => o.flower).filter((o) => o && o !== fly.flower),
+          );
       }
-      if (x.swallow.bird) flyerAt(g, x.swallow.bird, time, "swallow");
-      if (x.crow.bird) flyerAt(g, x.crow.bird, time, "crow");
-      if (x.eagle.bird) eagleFlyAt(g, "golden", x.eagle.bird, time);
-      if (x.buzzard.active) circlerAt(g, "hawk", x.buzzard, time);
-    } else if (f.stage >= 2) {
-      for (const fly of x.fireflies) {
-        const fx = fly.homeX + Math.sin(time * fly.speed + fly.phase) * fly.reach;
-        const fy = fly.homeY + Math.sin(time * fly.speed * 1.4 + fly.phase * 2) * 5;
-        fireflyAt(g, fx, fy, time, fly.phase, g.pal.glow);
-      }
-    }
+    },
+  },
+);
+
+const SPRITES = {
+  ...soarSprites("eagle", "golden", { side: true, below: false, perch: false }),
+  ...soarSprites("buzzard", "hawk", { perch: false }),
+  cat: (g, frame) => felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-ginger" }), 0),
+  ...Object.fromEntries(
+    [
+      ["sitting", "sit"],
+      ["arching", "arch"],
+      ["lying", "lie"],
+      ["stretching", "bow"],
+      ["loafing", "loaf"],
+      ["curled", "curl"],
+      ["dozing", "doze"],
+      ["grooming", "groom"],
+    ].map(([name, pose]) => [
+      `cat-${name}`,
+      (g, frame) => felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-ginger", state: "sit", pose }), 0),
+    ]),
+  ),
+  "cat-stalking": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-silver-tabby", ...catPlayAt(1, 40)[0], since: -10 }), 0),
+  "cat-leaping": (g, frame) =>
+    felidAt(
+      g,
+      walk(frame, { kind: "housecat", pal: "housecat-silver-tabby", ...catPlayAt(3.3, 30)[0], since: -10 }),
+      0,
+    ),
+  "cat-swatting": (g, frame) =>
+    felidAt(
+      g,
+      walk(frame, {
+        kind: "housecat",
+        pal: "housecat-tuxedo",
+        state: "sit",
+        pose: "swat",
+        rest: { from: "swat", to: "swat", u: 1 },
+      }),
+      0,
+    ),
+  rooster: (g, frame) => groundBirdAt(g, walk(frame, { c: frame.phase * 0.25, amp: 1 }), "moa", 0),
+  "rooster-pecking": (g, frame) =>
+    groundBirdAt(g, walk(frame, { state: "sit", pose: "peck", since: 0, timer: 6, amp: 0 }), "moa", 0.5),
+  "rooster-scratching": (g, frame) =>
+    groundBirdAt(g, walk(frame, { state: "sit", pose: "scratch", since: 0, timer: 6, amp: 0 }), "moa", 1.2),
+  "rooster-flapping": (g, frame) =>
+    groundBirdAt(g, walk(frame, { state: "sit", pose: "flap", since: 0, timer: 6, amp: 0 }), "moa", 1.3),
+  "rooster-crowing": (g, frame) =>
+    groundBirdAt(g, walk(frame, { state: "sit", pose: "crow", since: 0, timer: 6, amp: 0 }), "moa", 2),
+  hen: (g, frame) => groundBirdAt(g, walk(frame, { c: frame.phase * 0.25, amp: 1 }), "hen", 0),
+  "hen-pecking": (g, frame) =>
+    groundBirdAt(g, walk(frame, { state: "sit", pose: "peck", since: 0, timer: 6, amp: 0 }), "hen", 0.5),
+  "hen-scratching": (g, frame) =>
+    groundBirdAt(g, walk(frame, { state: "sit", pose: "scratch", since: 0, timer: 6, amp: 0 }), "hen", 1.2),
+  "sparrow-perched": (g) => perchedSmall(g, "sparrow", 40, 40, 0, blendPose({})),
+  swallow: (g, frame) => flyerAt(g, bird(frame), 0, "swallow"),
+  crow: (g, frame) => flyerAt(g, bird(frame), 0, "crow"),
+  butterfly: (g) => butterflyAt(g, butterfly({ colour: 0 }), 0),
+  firefly: (g) => fireflyAt(g, 40, 30, 0.75, 0, g.pal.glow),
+};
+
+const PLANT_FAMILIES = {
+  "tree-beech": "broadleaf",
+  "tree-hornbeam": "broadleaf",
+  "tree-oak": "broadleaf",
+  walnut: "broadleaf",
+  apple: "broadleaf",
+};
+
+export const META = {
+  id: "village",
+  label: "Rural Village",
+  group: "woods",
+  tint: ["#cfe4a8", "rgb(120 150 80)"],
+  backdrop: {
+    light: {
+      green: "#c4dea0",
+      "green-soft": "#e0eccb",
+      peach: "#f6d8b8",
+      blush: "#dbe6ee",
+      bloom: "#f2b878",
+    },
+    dark: {
+      green: "rgb(110 150 80 / 0.36)",
+      "green-soft": "rgb(90 120 70 / 0.18)",
+      peach: "rgb(220 120 50 / 0.2)",
+      blush: "rgb(90 110 150 / 0.16)",
+      bloom: "rgb(240 150 60 / 0.3)",
+    },
   },
 };
 
 export default {
-  id: "village",
-  label: "Rural Village",
-  group: "woods",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.35, 0.55], dark: [0.45, 0.65] },
   mature: MATURE,

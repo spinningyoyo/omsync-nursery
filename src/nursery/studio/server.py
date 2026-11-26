@@ -24,15 +24,13 @@ new run, replays a finding with the checker's own harness (served from nursery/v
 the owner's triage marks to .nursery/verify/triage.json.
 
 Pages are served with no caching, so a reload shows the code as it is on disk. The modules come
-from js/; the scene copies (painters exported) and the poses in studio/shared/sprites.js are shared
-with nursery.catalog.
+directly from js/ (each scene declares its own cast and sprites).
 """
 
 import base64
 import errno
 import hashlib
 import http.server
-import importlib
 import json
 import re
 import shutil
@@ -43,7 +41,7 @@ import time
 from pathlib import Path
 from urllib.parse import urlparse
 
-from nursery import brand, catalog, catalog_elements
+from nursery import brand, catalog
 from nursery.headless import studio_result
 from nursery.launcher import open_app
 from nursery.paths import (
@@ -74,14 +72,6 @@ TYPES = {
 }
 
 
-def scene_module(sid: str) -> str:
-    """The scene module with its imports rewritten and its painters and animals exported."""
-    if sid not in catalog.SCENE_IDS:
-        raise KeyError(sid)
-    text = module_path(sid).read_text(encoding="utf-8")
-    return catalog.exported_copy(text)
-
-
 def head_file(path: Path) -> str | None:
     """A file as it is in the last commit, or None when it is new or git is missing."""
     try:
@@ -95,22 +85,11 @@ def head_file(path: Path) -> str | None:
     return done.stdout.decode("utf-8")
 
 
-def head_scene_module(sid: str) -> str | None:
-    """The scene module as last committed, rewritten and exported like scene_module."""
-    if sid not in catalog.SCENE_IDS:
-        raise KeyError(sid)
-    text = head_file(module_path(sid))
-    if text is None:
-        return None
-    return catalog.exported_copy(text)
-
-
 def version() -> str:
     """A fingerprint of the code the studio draws and runs, so an open studio can reload itself
     when any of it changes on disk."""
     digest = hashlib.sha256()
-    code = Path(catalog.__file__).parent
-    watched = [JS_DIR, CSS_DIR, BRAND_DIR, STUDIO, SCENES_JSON, *code.glob("catalog*")]
+    watched = [JS_DIR, CSS_DIR, BRAND_DIR, STUDIO, SCENES_JSON]
     for root in watched:
         files = [root] if root.is_file() else sorted(root.rglob("*"))
         for path in files:
@@ -119,54 +98,32 @@ def version() -> str:
     return digest.hexdigest()[:16]
 
 
-def where(path: Path, pattern: str) -> dict | None:
-    """The first line of a module that matches, as a path from the repository root and a line."""
-    lines = catalog.find_lines(path.read_text(encoding="utf-8"), pattern)
-    if not lines:
-        return None
-    return {"path": str(path.relative_to(ROOT)), "line": lines[0]}
+def source_lines(path: Path) -> dict:
+    """Where a scene module defines each function and declares each cast label, so the studio can
+    link an element to its line. Only for the links: what a scene draws comes from the module."""
+    functions: dict[str, int] = {}
+    labels: dict[str, int] = {}
+    for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if found := re.match(r"(?:export )?function (\w+)\(", line):
+            functions.setdefault(found.group(1), n)
+        if found := re.match(r'\s*label: "((?:[^"\\]|\\.)*)",', line):
+            labels.setdefault(json.loads(f'"{found.group(1)}"'), n)
+    return {"functions": functions, "labels": labels}
 
 
 def meta() -> dict:
-    """The scenes, each element's label, kind, sprites and drawing function, and each painter."""
-    # The catalogue is read afresh each time, so a studio that reloaded after a change sees an
-    # element list that changed after the server started.
-    importlib.reload(catalog_elements)
-    importlib.reload(catalog)
-    scenes = []
-    for sid in catalog.SCENE_IDS:
-        path = module_path(sid)
-        text = path.read_text(encoding="utf-8")
-        elements = []
-        for el in catalog_elements.ELEMENTS[sid]:
-            module = module_path(el.module) if el.module else path
-            found = None
-            if el.fn:
-                found = where(module, rf"^(export )?function {el.fn}\(")
-            if not found and el.draw:
-                found = where(path, el.draw[0])
-            elements.append(
-                {
-                    "label": el.label,
-                    "kind": el.kind,
-                    "sprites": list(el.sprites),
-                    "fn": el.fn,
-                    "layer": el.layer,
-                    "where": found,
-                }
-            )
-        painters = {}
-        for kind, fn in catalog.paint_kinds(text).items():
-            painters[kind] = {"fn": fn, "where": where(path, rf"^function {fn}\(")}
-        scenes.append(
+    """Each scene's id, source path and the lines its functions and cast labels are on. Elements
+    and painters come from the JS modules directly."""
+    return {
+        "scenes": [
             {
                 "id": sid,
-                "path": str(path.relative_to(ROOT)),
-                "elements": elements,
-                "painters": painters,
+                "path": str(module_path(sid).relative_to(ROOT)),
+                **source_lines(module_path(sid)),
             }
-        )
-    return {"scenes": scenes}
+            for sid in catalog.SCENE_IDS
+        ]
+    }
 
 
 def scene_dir(sid: str) -> Path:
@@ -384,16 +341,8 @@ class Studio(http.server.BaseHTTPRequestHandler):
         self.send(200, path.read_bytes(), TYPES.get(path.suffix, "application/octet-stream"))
 
     def send_head(self, parts: list[str]) -> None:
-        """The last commit's code, for showing what changed since: /head/js/... and
-        /head/copies/SCENE.js. A file that is new since the commit is a 404. /head/sprites.js is
-        today's poses, whose relative imports then load the committed kit, so a pose is drawn
-        the same way by both versions of the code."""
-        if parts == ["sprites.js"]:
-            self.send_file(SHARED / "sprites.js", SHARED)
-            return
-        if parts[:1] == ["copies"] and len(parts) == 2 and parts[1].endswith(".js"):
-            text = head_scene_module(parts[1][:-3])
-        elif parts[:1] == ["js"] and parts[1:]:
+        """The last commit's code under /head/js/..., for showing what changed since HEAD."""
+        if parts[:1] == ["js"] and parts[1:]:
             path = JS_DIR.joinpath(*parts[1:]).resolve()
             text = head_file(path) if path.is_relative_to(JS_DIR.resolve()) else None
         else:
@@ -492,8 +441,6 @@ class Studio(http.server.BaseHTTPRequestHandler):
                 return
             if parts[0] == "head":
                 self.send_head(parts[1:])
-            elif parts[0] == "copies" and len(parts) == 2 and parts[1].endswith(".js"):
-                self.send(200, scene_module(parts[1][:-3]).encode(), TYPES[".js"])
             elif len(parts) == 3 and parts[0] == "proposals" and parts[2].endswith(".js"):
                 folder = scene_dir(parts[1]) / "proposals"
                 self.send_file(folder / parts[2], folder)

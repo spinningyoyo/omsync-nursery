@@ -1,0 +1,941 @@
+{
+  "scene": "yellowstone",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "back:step:stars": 108,
+        "front:bearAt": 24,
+        "front:bighornAt": 48,
+        "front:bisonAt": 60,
+        "front:canidAt": 48,
+        "front:cervidAt": 96,
+        "front:circlerAt": 36,
+        "front:eagleFlyAt": 82,
+        "front:felidAt": 36,
+        "front:flyerAt": 26,
+        "front:step:bighorn": 108,
+        "front:step:geyser": 108,
+        "front:step:herd": 108,
+        "front:swanAt": 36,
+        "plants": 108
+      },
+      "order": [
+        "back:step:stars < front:bearAt",
+        "back:step:stars < front:bighornAt",
+        "back:step:stars < front:bisonAt",
+        "back:step:stars < front:canidAt",
+        "back:step:stars < front:cervidAt",
+        "back:step:stars < front:circlerAt",
+        "back:step:stars < front:eagleFlyAt",
+        "back:step:stars < front:felidAt",
+        "back:step:stars < front:flyerAt",
+        "back:step:stars < front:step:bighorn",
+        "back:step:stars < front:step:geyser",
+        "back:step:stars < front:step:herd",
+        "back:step:stars < front:swanAt",
+        "back:step:stars < plants",
+        "front:bearAt < front:circlerAt",
+        "front:bearAt < front:eagleFlyAt",
+        "front:bearAt < front:swanAt",
+        "front:bighornAt < front:bearAt",
+        "front:bighornAt < front:bisonAt",
+        "front:bighornAt < front:canidAt",
+        "front:bighornAt < front:cervidAt",
+        "front:bighornAt < front:circlerAt",
+        "front:bighornAt < front:eagleFlyAt",
+        "front:bighornAt < front:flyerAt",
+        "front:bighornAt < front:step:herd",
+        "front:bighornAt < front:swanAt",
+        "front:bisonAt < front:bearAt",
+        "front:bisonAt < front:canidAt",
+        "front:bisonAt < front:circlerAt",
+        "front:bisonAt < front:eagleFlyAt",
+        "front:bisonAt < front:flyerAt",
+        "front:bisonAt < front:swanAt",
+        "front:canidAt < front:bearAt",
+        "front:canidAt < front:circlerAt",
+        "front:canidAt < front:eagleFlyAt",
+        "front:canidAt < front:flyerAt",
+        "front:canidAt < front:swanAt",
+        "front:cervidAt < front:bearAt",
+        "front:cervidAt < front:bisonAt",
+        "front:cervidAt < front:canidAt",
+        "front:cervidAt < front:circlerAt",
+        "front:cervidAt < front:eagleFlyAt",
+        "front:cervidAt < front:flyerAt",
+        "front:cervidAt < front:step:herd",
+        "front:cervidAt < front:swanAt",
+        "front:circlerAt < front:swanAt",
+        "front:eagleFlyAt < front:circlerAt",
+        "front:eagleFlyAt < front:flyerAt",
+        "front:eagleFlyAt < front:swanAt",
+        "front:felidAt < front:bearAt",
+        "front:felidAt < front:bighornAt",
+        "front:felidAt < front:bisonAt",
+        "front:felidAt < front:canidAt",
+        "front:felidAt < front:cervidAt",
+        "front:felidAt < front:circlerAt",
+        "front:felidAt < front:eagleFlyAt",
+        "front:felidAt < front:step:bighorn",
+        "front:felidAt < front:step:geyser",
+        "front:felidAt < front:step:herd",
+        "front:felidAt < front:swanAt",
+        "front:step:bighorn < front:bearAt",
+        "front:step:bighorn < front:bighornAt",
+        "front:step:bighorn < front:bisonAt",
+        "front:step:bighorn < front:canidAt",
+        "front:step:bighorn < front:cervidAt",
+        "front:step:bighorn < front:circlerAt",
+        "front:step:bighorn < front:eagleFlyAt",
+        "front:step:bighorn < front:flyerAt",
+        "front:step:bighorn < front:step:herd",
+        "front:step:bighorn < front:swanAt",
+        "front:step:geyser < front:bearAt",
+        "front:step:geyser < front:bighornAt",
+        "front:step:geyser < front:bisonAt",
+        "front:step:geyser < front:canidAt",
+        "front:step:geyser < front:cervidAt",
+        "front:step:geyser < front:circlerAt",
+        "front:step:geyser < front:eagleFlyAt",
+        "front:step:geyser < front:flyerAt",
+        "front:step:geyser < front:step:bighorn",
+        "front:step:geyser < front:step:herd",
+        "front:step:geyser < front:swanAt",
+        "front:step:herd < front:bearAt",
+        "front:step:herd < front:bisonAt",
+        "front:step:herd < front:canidAt",
+        "front:step:herd < front:circlerAt",
+        "front:step:herd < front:eagleFlyAt",
+        "front:step:herd < front:flyerAt",
+        "front:step:herd < front:swanAt",
+        "plants < front:bearAt",
+        "plants < front:bighornAt",
+        "plants < front:bisonAt",
+        "plants < front:canidAt",
+        "plants < front:cervidAt",
+        "plants < front:circlerAt",
+        "plants < front:eagleFlyAt",
+        "plants < front:felidAt",
+        "plants < front:flyerAt",
+        "plants < front:step:bighorn",
+        "plants < front:step:geyser",
+        "plants < front:step:herd",
+        "plants < front:swanAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            225,
+            249.8
+          ],
+          "speed": 9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "pronghorn": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -8,
+            240
+          ],
+          "speed": 16,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "elk[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            234,
+            250.5
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "elk[1]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            254,
+            271.4
+          ],
+          "speed": 3.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "bison": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            237,
+            251
+          ],
+          "speed": 4,
+          "poses": [
+            "walk",
+            "wallow"
+          ]
+        },
+        "calf": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            255.3,
+            257
+          ],
+          "speed": 2.3,
+          "poses": [
+            "walk",
+            "wallow"
+          ]
+        },
+        "wolves[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -9.2,
+            78.8
+          ],
+          "speed": 11,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "wolves[1]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -25,
+            61.9
+          ],
+          "speed": 7.9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "grizzly": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -10.7,
+            3
+          ],
+          "speed": 5,
+          "poses": [
+            "rear",
+            "walk"
+          ]
+        },
+        "eagle": {
+          "firstStage": 2,
+          "activeSteps": 82,
+          "xRange": [
+            -12,
+            251.3
+          ],
+          "yRange": [
+            43.6,
+            43.6
+          ],
+          "speed": 13,
+          "poses": [
+            "fly"
+          ]
+        },
+        "soarer": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            157.4,
+            157.4
+          ],
+          "yRange": [
+            52.9,
+            52.9
+          ]
+        },
+        "bluebird": {
+          "firstStage": 3,
+          "activeSteps": 26,
+          "xRange": [
+            -12,
+            250.5
+          ],
+          "yRange": [
+            61.2,
+            61.2
+          ],
+          "speed": 42,
+          "poses": [
+            "fly"
+          ]
+        },
+        "swan": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -12,
+            180.5
+          ],
+          "yRange": [
+            59.1,
+            59.1
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "back:step:stars": 108,
+        "front:bearAt": 24,
+        "front:bighornAt": 48,
+        "front:bisonAt": 60,
+        "front:canidAt": 48,
+        "front:cervidAt": 96,
+        "front:circlerAt": 36,
+        "front:eagleFlyAt": 36,
+        "front:flyerAt": 17,
+        "front:step:bighorn": 108,
+        "front:step:geyser": 108,
+        "front:step:herd": 108,
+        "front:swanAt": 22,
+        "plants": 108
+      },
+      "order": [
+        "back:step:stars < front:bearAt",
+        "back:step:stars < front:bighornAt",
+        "back:step:stars < front:bisonAt",
+        "back:step:stars < front:canidAt",
+        "back:step:stars < front:cervidAt",
+        "back:step:stars < front:circlerAt",
+        "back:step:stars < front:eagleFlyAt",
+        "back:step:stars < front:flyerAt",
+        "back:step:stars < front:step:bighorn",
+        "back:step:stars < front:step:geyser",
+        "back:step:stars < front:step:herd",
+        "back:step:stars < front:swanAt",
+        "back:step:stars < plants",
+        "front:bearAt < front:circlerAt",
+        "front:bearAt < front:flyerAt",
+        "front:bearAt < front:swanAt",
+        "front:bighornAt < front:bearAt",
+        "front:bighornAt < front:bisonAt",
+        "front:bighornAt < front:canidAt",
+        "front:bighornAt < front:cervidAt",
+        "front:bighornAt < front:circlerAt",
+        "front:bighornAt < front:flyerAt",
+        "front:bighornAt < front:step:herd",
+        "front:bighornAt < front:swanAt",
+        "front:bisonAt < front:bearAt",
+        "front:bisonAt < front:canidAt",
+        "front:bisonAt < front:circlerAt",
+        "front:bisonAt < front:eagleFlyAt",
+        "front:bisonAt < front:flyerAt",
+        "front:bisonAt < front:swanAt",
+        "front:canidAt < front:bearAt",
+        "front:canidAt < front:circlerAt",
+        "front:canidAt < front:flyerAt",
+        "front:canidAt < front:swanAt",
+        "front:cervidAt < front:bearAt",
+        "front:cervidAt < front:bisonAt",
+        "front:cervidAt < front:canidAt",
+        "front:cervidAt < front:circlerAt",
+        "front:cervidAt < front:eagleFlyAt",
+        "front:cervidAt < front:flyerAt",
+        "front:cervidAt < front:step:herd",
+        "front:cervidAt < front:swanAt",
+        "front:circlerAt < front:flyerAt",
+        "front:circlerAt < front:swanAt",
+        "front:eagleFlyAt < front:flyerAt",
+        "front:step:bighorn < front:bearAt",
+        "front:step:bighorn < front:bighornAt",
+        "front:step:bighorn < front:bisonAt",
+        "front:step:bighorn < front:canidAt",
+        "front:step:bighorn < front:cervidAt",
+        "front:step:bighorn < front:circlerAt",
+        "front:step:bighorn < front:eagleFlyAt",
+        "front:step:bighorn < front:flyerAt",
+        "front:step:bighorn < front:step:herd",
+        "front:step:bighorn < front:swanAt",
+        "front:step:geyser < front:bearAt",
+        "front:step:geyser < front:bighornAt",
+        "front:step:geyser < front:bisonAt",
+        "front:step:geyser < front:canidAt",
+        "front:step:geyser < front:cervidAt",
+        "front:step:geyser < front:circlerAt",
+        "front:step:geyser < front:eagleFlyAt",
+        "front:step:geyser < front:flyerAt",
+        "front:step:geyser < front:step:bighorn",
+        "front:step:geyser < front:step:herd",
+        "front:step:geyser < front:swanAt",
+        "front:step:herd < front:bearAt",
+        "front:step:herd < front:bisonAt",
+        "front:step:herd < front:canidAt",
+        "front:step:herd < front:circlerAt",
+        "front:step:herd < front:eagleFlyAt",
+        "front:step:herd < front:flyerAt",
+        "front:step:herd < front:swanAt",
+        "plants < front:bearAt",
+        "plants < front:bighornAt",
+        "plants < front:bisonAt",
+        "plants < front:canidAt",
+        "plants < front:cervidAt",
+        "plants < front:circlerAt",
+        "plants < front:eagleFlyAt",
+        "plants < front:flyerAt",
+        "plants < front:step:bighorn",
+        "plants < front:step:geyser",
+        "plants < front:step:herd",
+        "plants < front:swanAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "pronghorn": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -8,
+            88
+          ],
+          "speed": 16,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "elk[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            84,
+            100.5
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "elk[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "bison": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            87,
+            101
+          ],
+          "speed": 4,
+          "poses": [
+            "walk",
+            "wallow"
+          ]
+        },
+        "calf": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "wolves[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -9.2,
+            78.8
+          ],
+          "speed": 11,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "wolves[1]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -25,
+            61.9
+          ],
+          "speed": 7.9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "grizzly": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -10.7,
+            3
+          ],
+          "speed": 5,
+          "poses": [
+            "rear",
+            "walk"
+          ]
+        },
+        "eagle": {
+          "firstStage": 2,
+          "activeSteps": 36,
+          "xRange": [
+            -12,
+            101.8
+          ],
+          "yRange": [
+            43.6,
+            43.6
+          ],
+          "speed": 13,
+          "poses": [
+            "fly"
+          ]
+        },
+        "soarer": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            59,
+            59
+          ],
+          "yRange": [
+            52.9,
+            52.9
+          ]
+        },
+        "bluebird": {
+          "firstStage": 3,
+          "activeSteps": 17,
+          "xRange": [
+            -12,
+            103.5
+          ],
+          "yRange": [
+            59.2,
+            61.2
+          ],
+          "speed": 42,
+          "poses": [
+            "fly"
+          ]
+        },
+        "swan": {
+          "firstStage": 6,
+          "activeSteps": 22,
+          "xRange": [
+            -12,
+            103.5
+          ],
+          "yRange": [
+            59.1,
+            59.1
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "back:step:stars": 108,
+        "front:bearAt": 24,
+        "front:bighornAt": 48,
+        "front:bisonAt": 60,
+        "front:canidAt": 48,
+        "front:cervidAt": 96,
+        "front:felidAt": 36,
+        "front:step:bighorn": 108,
+        "front:step:geyser": 108,
+        "front:step:herd": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:step:stars < front:bearAt",
+        "back:step:stars < front:bighornAt",
+        "back:step:stars < front:bisonAt",
+        "back:step:stars < front:canidAt",
+        "back:step:stars < front:cervidAt",
+        "back:step:stars < front:felidAt",
+        "back:step:stars < front:step:bighorn",
+        "back:step:stars < front:step:geyser",
+        "back:step:stars < front:step:herd",
+        "back:step:stars < plants",
+        "front:bighornAt < front:bearAt",
+        "front:bighornAt < front:bisonAt",
+        "front:bighornAt < front:canidAt",
+        "front:bighornAt < front:cervidAt",
+        "front:bighornAt < front:step:herd",
+        "front:bisonAt < front:bearAt",
+        "front:bisonAt < front:canidAt",
+        "front:canidAt < front:bearAt",
+        "front:cervidAt < front:bearAt",
+        "front:cervidAt < front:bisonAt",
+        "front:cervidAt < front:canidAt",
+        "front:cervidAt < front:step:herd",
+        "front:felidAt < front:bearAt",
+        "front:felidAt < front:bighornAt",
+        "front:felidAt < front:bisonAt",
+        "front:felidAt < front:canidAt",
+        "front:felidAt < front:cervidAt",
+        "front:felidAt < front:step:bighorn",
+        "front:felidAt < front:step:geyser",
+        "front:felidAt < front:step:herd",
+        "front:step:bighorn < front:bearAt",
+        "front:step:bighorn < front:bighornAt",
+        "front:step:bighorn < front:bisonAt",
+        "front:step:bighorn < front:canidAt",
+        "front:step:bighorn < front:cervidAt",
+        "front:step:bighorn < front:step:herd",
+        "front:step:geyser < front:bearAt",
+        "front:step:geyser < front:bighornAt",
+        "front:step:geyser < front:bisonAt",
+        "front:step:geyser < front:canidAt",
+        "front:step:geyser < front:cervidAt",
+        "front:step:geyser < front:step:bighorn",
+        "front:step:geyser < front:step:herd",
+        "front:step:herd < front:bearAt",
+        "front:step:herd < front:bisonAt",
+        "front:step:herd < front:canidAt",
+        "plants < front:bearAt",
+        "plants < front:bighornAt",
+        "plants < front:bisonAt",
+        "plants < front:canidAt",
+        "plants < front:cervidAt",
+        "plants < front:felidAt",
+        "plants < front:step:bighorn",
+        "plants < front:step:geyser",
+        "plants < front:step:herd"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            225,
+            249.8
+          ],
+          "speed": 9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "pronghorn": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -8,
+            240
+          ],
+          "speed": 16,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "elk[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            234,
+            250.5
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "elk[1]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            254,
+            271.4
+          ],
+          "speed": 3.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "bison": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            237,
+            251
+          ],
+          "speed": 4,
+          "poses": [
+            "walk",
+            "wallow"
+          ]
+        },
+        "calf": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            255.3,
+            257
+          ],
+          "speed": 2.3,
+          "poses": [
+            "walk",
+            "wallow"
+          ]
+        },
+        "wolves[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -9.2,
+            29.3
+          ],
+          "speed": 11,
+          "poses": [
+            "howl",
+            "sit",
+            "walk"
+          ]
+        },
+        "wolves[1]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -25,
+            15.2
+          ],
+          "speed": 4.5,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "grizzly": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -10.7,
+            3
+          ],
+          "speed": 5,
+          "poses": [
+            "rear",
+            "walk"
+          ]
+        },
+        "eagle": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "soarer": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "bluebird": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "swan": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "back:step:stars": 108,
+        "front:bearAt": 24,
+        "front:bighornAt": 48,
+        "front:bisonAt": 60,
+        "front:canidAt": 48,
+        "front:cervidAt": 96,
+        "front:step:bighorn": 108,
+        "front:step:geyser": 108,
+        "front:step:herd": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:step:stars < front:bearAt",
+        "back:step:stars < front:bighornAt",
+        "back:step:stars < front:bisonAt",
+        "back:step:stars < front:canidAt",
+        "back:step:stars < front:cervidAt",
+        "back:step:stars < front:step:bighorn",
+        "back:step:stars < front:step:geyser",
+        "back:step:stars < front:step:herd",
+        "back:step:stars < plants",
+        "front:bighornAt < front:bearAt",
+        "front:bighornAt < front:bisonAt",
+        "front:bighornAt < front:canidAt",
+        "front:bighornAt < front:cervidAt",
+        "front:bighornAt < front:step:herd",
+        "front:bisonAt < front:bearAt",
+        "front:bisonAt < front:canidAt",
+        "front:canidAt < front:bearAt",
+        "front:cervidAt < front:bearAt",
+        "front:cervidAt < front:bisonAt",
+        "front:cervidAt < front:canidAt",
+        "front:cervidAt < front:step:herd",
+        "front:step:bighorn < front:bearAt",
+        "front:step:bighorn < front:bighornAt",
+        "front:step:bighorn < front:bisonAt",
+        "front:step:bighorn < front:canidAt",
+        "front:step:bighorn < front:cervidAt",
+        "front:step:bighorn < front:step:herd",
+        "front:step:geyser < front:bearAt",
+        "front:step:geyser < front:bighornAt",
+        "front:step:geyser < front:bisonAt",
+        "front:step:geyser < front:canidAt",
+        "front:step:geyser < front:cervidAt",
+        "front:step:geyser < front:step:bighorn",
+        "front:step:geyser < front:step:herd",
+        "front:step:herd < front:bearAt",
+        "front:step:herd < front:bisonAt",
+        "front:step:herd < front:canidAt",
+        "plants < front:bearAt",
+        "plants < front:bighornAt",
+        "plants < front:bisonAt",
+        "plants < front:canidAt",
+        "plants < front:cervidAt",
+        "plants < front:step:bighorn",
+        "plants < front:step:geyser",
+        "plants < front:step:herd"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "pronghorn": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -8,
+            88
+          ],
+          "speed": 16,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "elk[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            84,
+            100.5
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "elk[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "bison": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            87,
+            101
+          ],
+          "speed": 4,
+          "poses": [
+            "walk",
+            "wallow"
+          ]
+        },
+        "calf": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "wolves[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -9.2,
+            29.3
+          ],
+          "speed": 11,
+          "poses": [
+            "howl",
+            "sit",
+            "walk"
+          ]
+        },
+        "wolves[1]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -25,
+            15.2
+          ],
+          "speed": 4.5,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "grizzly": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -10.7,
+            3
+          ],
+          "speed": 5,
+          "poses": [
+            "rear",
+            "walk"
+          ]
+        },
+        "eagle": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "soarer": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "bluebird": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "swan": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    }
+  }
+}

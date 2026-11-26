@@ -4,11 +4,12 @@
 // shades the ground under it. Members differ in shell and length, and each moves in its own gait:
 // the tortoise's diagonal crawl with its shell rocking, the snake's slither as a travelling wave that
 // stays put on the ground while the body slides through it, the honu's flipper strokes in water (and
-// its heaving crawl on sand), the crab's sideways scuttle. animals.js's tortoiseAt, snakeAt,
-// honuShellAt and crabAt place and pose them; the *Frame functions here choose the pose from a
+// its heaving crawl on sand), the crab's sideways scuttle. tortoiseAt, snakeAt,
+// honuShellAt and crabAt (below) place and pose them; the *Frame functions here choose the pose from a
 // walker's state.
 import { bone, bump, ease, joint, rowFill } from "./build.js";
-import { clamp, frac, lerp, mix, rgba } from "./pixel.js";
+import { clamp, frac, lerp, mix, rgba, shadowColour } from "./pixel.js";
+import { paintAt, tonesFor } from "./place.js";
 
 // A value along keyframes [[time, value], ...], eased between them.
 function keys(t, frames) {
@@ -779,3 +780,103 @@ export function crabFrame(c, time) {
   }
   return { pose, at };
 }
+
+// Shelled and scaled
+
+// Built from parts (shell.js): a desert tortoise that plods in diagonal pairs with its shell rocking,
+// a snake that slithers through bends fixed to the ground, a honu that swims on strokes of its fore
+// flippers, and a ghost crab that scuttles sideways. Each palette is the scene's array under the
+// animal's name (tortoise, snake, turtle, crab) with the scene's `groundShadow` beside it (and the
+// snake's `snakeTongue` and `snakeBuzz`). Tones are made once per array and animal, so the honu and its
+// hatchling, which share the turtle array, keep their own.
+const shellTones = (colours, key, make) => tonesFor(colours, key, () => make(colours));
+
+// Paints an animal whose own units are laid at origin `ox` (in its mirrored coordinates, so the animal
+// faces `dir`), its feet on row y - 1, over a soft shadow on row y from column s0 to s1 (exclusive).
+function shellAt(g, ox, y, dir, [s0, s1], draw) {
+  paintAt(g, ox * dir, y, dir, draw, { colour: shadowColour(g.pal), span: [s0, s1 - 1] });
+}
+
+// A desert tortoise walking, or stopped: it pulls its head in and settles on its plastron (the
+// default), grazes or lifts its head to look, as t.pose (TORTOISE_POSES) says. Its feet stand on row
+// y - 1. Its palette is tortoise: [shell, seam, skin, rim].
+export const tortoisePoses = TORTOISE_POSES;
+export function tortoiseAt(g, t, y, time = 0) {
+  if (g.trace) return g.trace.draw(tortoiseAt, g, t, y, time);
+  const f = tortoiseFrame(t, time);
+  const pal = shellTones(g.pal.tortoise, "tortoise", tortoiseTones);
+  shellAt(g, Math.round(f.at), y, t.dir, TORTOISE.shadow, (plot) => drawTortoise(pal, plot, f.pose));
+}
+
+// A snake slithering, or stopped: stretched flicking its tongue, coiled, or reared with its rattle
+// buzzing, as s.pose (SNAKE_POSES) says. Its palette is snake: [sand, brown].
+export const snakePoses = SNAKE_POSES;
+export function snakeAt(g, s, time = 0) {
+  if (g.trace) return g.trace.draw(snakeAt, g, s, time);
+  const f = snakeFrame(s, time);
+  const pal = shellTones(g.pal.snake, "snake", (c) => snakeTones(c, g.pal.snakeTongue));
+  shellAt(g, f.at, s.y ?? g.groundY + 6, s.dir, SNAKE_UNITS.shadow, (plot) => {
+    drawSnake(pal, plot, f.nodes, f.pose);
+    if (f.pose.buzz != null) drawBuzz(plot, g.pal.snakeBuzz, f.nodes[0], f.pose.buzz);
+  });
+}
+
+// A sea turtle swimming with its shell's bottom row at y, or its hatchling at scale k below 1. Its
+// palette is turtle: [shell, dark, skin].
+export function honuShellAt(g, t, y, time, k = 1) {
+  if (g.trace) return g.trace.draw(honuShellAt, g, t, y, time, k);
+  const hatch = k < 1;
+  const unit = hatch ? HATCHLING : HONU;
+  // Its shell's bottom row is y, the row its feet would stand on; its middle is at t.x.
+  const x = Math.round(t.x) - t.dir * unit.mid;
+  if (hatch) {
+    const stroke = strokeAt(time / HATCHLING.cycle + 0.3 + (t.phase ?? 0) * 0.1).stroke;
+    paintAt(g, x, y + 1, t.dir, (plot) =>
+      drawHatchling(shellTones(g.pal.turtle, "hatchling", hatchTones), plot, stroke),
+    );
+  } else {
+    const swim = swimAt(time);
+    const pal = shellTones(g.pal.turtle, "honu", honuTones);
+    paintAt(g, x, y + 1, t.dir, (plot) => drawHonu(pal, (px, h, colour) => plot(px, h + swim.bob, colour), swim.pose));
+  }
+}
+
+// A honu hauled out on the sand with its feet on row y - 1: t.mode "crawl" heaves itself along on both
+// fore flippers (t.age seconds in; the scene moves its x with crawlX), "bask" lies flat blinking,
+// gasping and flicking sand onto its back (t.age seconds into the bask). Its palette is turtle:
+// [shell, dark, skin], with sand grains of the scene's soil[2].
+export function honuAshoreAt(g, t, y) {
+  if (g.trace) return g.trace.draw(honuAshoreAt, g, t, y);
+  const crawling = t.mode === "crawl";
+  const pose = crawling ? crawlAt(t.age / CRAWL) : baskAt(t.age);
+  const pal = shellTones(g.pal.turtle, "honu", honuTones);
+  shellAt(g, Math.round(t.x) * t.dir - HONU.mid, y, t.dir, HONU.shadow, (plot) => {
+    drawHonu(pal, plot, pose);
+    if (!crawling) drawGrains(plot, g.pal.soil[2], t.age);
+  });
+}
+
+// A ghost crab scuttling sideways, or stopped (alert, crouched or threatening with its claws raised,
+// as c.pose says, CRAB_POSES), its legs on row y. Its palette is crab: [shell, dark].
+export const crabPoses = CRAB_POSES;
+export function crabAt(g, c, y, time = 0) {
+  if (g.trace) return g.trace.draw(crabAt, g, c, y, time);
+  const f = crabFrame(c, time);
+  const pal = shellTones(g.pal.crab, "crab", crabTones);
+  shellAt(g, Math.round(f.at), y + 1, c.dir ?? 1, CRAB.shadow, (plot) => drawCrab(pal, plot, f.pose));
+}
+
+export const FAMILY = {
+  id: "shelled-scaled",
+  title: "Shelled and scaled",
+  group: "Animals",
+  differ: "shell, length",
+  drivers: {
+    crabAt: { role: "walker", member: () => "crab" },
+    tortoiseAt: { role: "walker", member: () => "tortoise" },
+    snakeAt: { role: "walker", member: () => "snake" },
+    honuAshoreAt: { role: "walker", member: () => "honu" },
+    honuAt: { role: "swimmer", member: () => "honu" },
+    honuShellAt: { role: "swimmer", member: () => "honu" },
+  },
+};

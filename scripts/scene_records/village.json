@@ -1,0 +1,521 @@
+{
+  "scene": "village",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "front:butterflyAt": 48,
+        "front:circlerAt": 24,
+        "front:eagleFlyAt": 36,
+        "front:felidAt": 96,
+        "front:flyerAt": 67,
+        "front:groundBirdAt": 60,
+        "front:step:chickens-butterflies-fireflies": 108,
+        "front:step:sparrows-and-cats": 108,
+        "plants": 108
+      },
+      "order": [
+        "front:butterflyAt < front:circlerAt",
+        "front:butterflyAt < front:eagleFlyAt",
+        "front:butterflyAt < front:flyerAt",
+        "front:eagleFlyAt < front:circlerAt",
+        "front:felidAt < front:butterflyAt",
+        "front:felidAt < front:circlerAt",
+        "front:felidAt < front:eagleFlyAt",
+        "front:felidAt < front:flyerAt",
+        "front:felidAt < front:groundBirdAt",
+        "front:felidAt < front:step:chickens-butterflies-fireflies",
+        "front:flyerAt < front:circlerAt",
+        "front:flyerAt < front:eagleFlyAt",
+        "front:groundBirdAt < front:butterflyAt",
+        "front:groundBirdAt < front:circlerAt",
+        "front:groundBirdAt < front:eagleFlyAt",
+        "front:groundBirdAt < front:flyerAt",
+        "front:step:chickens-butterflies-fireflies < front:butterflyAt",
+        "front:step:chickens-butterflies-fireflies < front:circlerAt",
+        "front:step:chickens-butterflies-fireflies < front:eagleFlyAt",
+        "front:step:chickens-butterflies-fireflies < front:flyerAt",
+        "front:step:chickens-butterflies-fireflies < front:groundBirdAt",
+        "front:step:sparrows-and-cats < front:butterflyAt",
+        "front:step:sparrows-and-cats < front:circlerAt",
+        "front:step:sparrows-and-cats < front:eagleFlyAt",
+        "front:step:sparrows-and-cats < front:felidAt",
+        "front:step:sparrows-and-cats < front:flyerAt",
+        "front:step:sparrows-and-cats < front:groundBirdAt",
+        "front:step:sparrows-and-cats < front:step:chickens-butterflies-fireflies",
+        "plants < front:butterflyAt",
+        "plants < front:circlerAt",
+        "plants < front:eagleFlyAt",
+        "plants < front:felidAt",
+        "plants < front:flyerAt",
+        "plants < front:groundBirdAt",
+        "plants < front:step:chickens-butterflies-fireflies",
+        "plants < front:step:sparrows-and-cats"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            192.5,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "groom",
+            "sit",
+            "walk"
+          ]
+        },
+        "play": {
+          "firstStage": 5,
+          "activeSteps": 48
+        },
+        "rooster": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -9.4,
+            52.8
+          ],
+          "speed": 10.4,
+          "poses": [
+            "peck",
+            "preen",
+            "walk"
+          ]
+        },
+        "hen": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            213.1,
+            249.4
+          ],
+          "speed": 10.4,
+          "poses": [
+            "flap",
+            "peck",
+            "walk"
+          ]
+        },
+        "sparrows[0]": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            0,
+            0
+          ],
+          "yRange": [
+            0,
+            0
+          ]
+        },
+        "sparrows[1]": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            0,
+            0
+          ],
+          "yRange": [
+            0,
+            0
+          ]
+        },
+        "swallow": {
+          "firstStage": 3,
+          "activeSteps": 33,
+          "xRange": [
+            -12,
+            252
+          ],
+          "yRange": [
+            66.9,
+            73.8
+          ],
+          "speed": 40,
+          "poses": [
+            "fly"
+          ]
+        },
+        "crow": {
+          "firstStage": 4,
+          "activeSteps": 49,
+          "xRange": [
+            -12,
+            252
+          ],
+          "yRange": [
+            18,
+            18
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "eagle": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -12,
+            93
+          ],
+          "yRange": [
+            -17.5,
+            -17.5
+          ],
+          "speed": 12,
+          "poses": [
+            "fly"
+          ]
+        },
+        "buzzard": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            130.7,
+            130.7
+          ],
+          "yRange": [
+            50,
+            50
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "front:butterflyAt": 48,
+        "front:felidAt": 96,
+        "front:flyerAt": 47,
+        "front:groundBirdAt": 60,
+        "front:step:chickens-butterflies-fireflies": 108,
+        "front:step:sparrows-and-cats": 108,
+        "plants": 108
+      },
+      "order": [
+        "front:butterflyAt < front:flyerAt",
+        "front:felidAt < front:butterflyAt",
+        "front:felidAt < front:flyerAt",
+        "front:felidAt < front:groundBirdAt",
+        "front:felidAt < front:step:chickens-butterflies-fireflies",
+        "front:groundBirdAt < front:butterflyAt",
+        "front:groundBirdAt < front:flyerAt",
+        "front:step:chickens-butterflies-fireflies < front:butterflyAt",
+        "front:step:chickens-butterflies-fireflies < front:flyerAt",
+        "front:step:chickens-butterflies-fireflies < front:groundBirdAt",
+        "front:step:sparrows-and-cats < front:butterflyAt",
+        "front:step:sparrows-and-cats < front:felidAt",
+        "front:step:sparrows-and-cats < front:flyerAt",
+        "front:step:sparrows-and-cats < front:groundBirdAt",
+        "front:step:sparrows-and-cats < front:step:chickens-butterflies-fireflies",
+        "plants < front:butterflyAt",
+        "plants < front:felidAt",
+        "plants < front:flyerAt",
+        "plants < front:groundBirdAt",
+        "plants < front:step:chickens-butterflies-fireflies",
+        "plants < front:step:sparrows-and-cats"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            42.5,
+            100.3
+          ],
+          "speed": 7,
+          "poses": [
+            "groom",
+            "sit",
+            "walk"
+          ]
+        },
+        "play": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "rooster": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -9.4,
+            52.8
+          ],
+          "speed": 10.4,
+          "poses": [
+            "peck",
+            "preen",
+            "walk"
+          ]
+        },
+        "hen": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            63.1,
+            99.4
+          ],
+          "speed": 10.4,
+          "poses": [
+            "flap",
+            "peck",
+            "preen",
+            "walk"
+          ]
+        },
+        "sparrows[0]": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            0,
+            0
+          ],
+          "yRange": [
+            0,
+            0
+          ]
+        },
+        "sparrows[1]": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            0,
+            0
+          ],
+          "yRange": [
+            0,
+            0
+          ]
+        },
+        "swallow": {
+          "firstStage": 3,
+          "activeSteps": 24,
+          "xRange": [
+            -12,
+            102
+          ],
+          "yRange": [
+            66.9,
+            73.8
+          ],
+          "speed": 40,
+          "poses": [
+            "fly"
+          ]
+        },
+        "crow": {
+          "firstStage": 4,
+          "activeSteps": 23,
+          "xRange": [
+            -12,
+            103.5
+          ],
+          "yRange": [
+            18,
+            22.2
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "eagle": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "buzzard": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "front:felidAt": 96,
+        "front:fireflyAt": 84,
+        "front:step:chickens-butterflies-fireflies": 108,
+        "front:step:sparrows-and-cats": 108,
+        "plants": 108
+      },
+      "order": [
+        "front:felidAt < front:fireflyAt",
+        "front:felidAt < front:step:chickens-butterflies-fireflies",
+        "front:step:chickens-butterflies-fireflies < front:fireflyAt",
+        "front:step:sparrows-and-cats < front:felidAt",
+        "front:step:sparrows-and-cats < front:fireflyAt",
+        "front:step:sparrows-and-cats < front:step:chickens-butterflies-fireflies",
+        "plants < front:felidAt",
+        "plants < front:fireflyAt",
+        "plants < front:step:chickens-butterflies-fireflies",
+        "plants < front:step:sparrows-and-cats"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            196,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "groom",
+            "sit",
+            "walk"
+          ]
+        },
+        "play": {
+          "firstStage": 5,
+          "activeSteps": 48
+        },
+        "rooster": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -9.4,
+            19.1
+          ],
+          "speed": 10.4,
+          "poses": [
+            "peck",
+            "preen",
+            "walk"
+          ]
+        },
+        "hen": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            220.9,
+            249.4
+          ],
+          "speed": 10.4,
+          "poses": [
+            "peck",
+            "preen",
+            "walk"
+          ]
+        },
+        "sparrows[0]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "sparrows[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "swallow": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "crow": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "eagle": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "buzzard": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "front:felidAt": 96,
+        "front:fireflyAt": 84,
+        "front:step:chickens-butterflies-fireflies": 108,
+        "front:step:sparrows-and-cats": 108,
+        "plants": 108
+      },
+      "order": [
+        "front:felidAt < front:fireflyAt",
+        "front:felidAt < front:step:chickens-butterflies-fireflies",
+        "front:step:chickens-butterflies-fireflies < front:fireflyAt",
+        "front:step:sparrows-and-cats < front:felidAt",
+        "front:step:sparrows-and-cats < front:fireflyAt",
+        "front:step:sparrows-and-cats < front:step:chickens-butterflies-fireflies",
+        "plants < front:felidAt",
+        "plants < front:fireflyAt",
+        "plants < front:step:chickens-butterflies-fireflies",
+        "plants < front:step:sparrows-and-cats"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            46,
+            100.3
+          ],
+          "speed": 7,
+          "poses": [
+            "groom",
+            "sit",
+            "walk"
+          ]
+        },
+        "play": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "rooster": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -9.4,
+            19.1
+          ],
+          "speed": 10.4,
+          "poses": [
+            "peck",
+            "preen",
+            "walk"
+          ]
+        },
+        "hen": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            70.9,
+            99.4
+          ],
+          "speed": 10.4,
+          "poses": [
+            "peck",
+            "preen",
+            "walk"
+          ]
+        },
+        "sparrows[0]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "sparrows[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "swallow": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "crow": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "eagle": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "buzzard": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    }
+  }
+}

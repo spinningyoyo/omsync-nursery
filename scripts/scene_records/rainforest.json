@@ -1,0 +1,968 @@
+{
+  "scene": "rainforest",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "front:circlerAt": 60,
+        "front:elephantAt": 36,
+        "front:felidAt": 48,
+        "front:gibbonAt": 48,
+        "front:kingfisherAt": 36,
+        "front:langurAt": 36,
+        "front:macaqueAt": 60,
+        "front:otterAt": 96,
+        "front:pairAt": 64,
+        "front:step:fireflies": 108,
+        "front:step:gibbon": 108,
+        "front:step:herd": 108,
+        "front:step:hornbills": 108,
+        "front:step:langur": 108,
+        "front:step:mist": 108,
+        "front:step:serpent": 108,
+        "plants": 108
+      },
+      "order": [
+        "front:circlerAt < front:elephantAt",
+        "front:circlerAt < front:gibbonAt",
+        "front:circlerAt < front:kingfisherAt",
+        "front:circlerAt < front:langurAt",
+        "front:circlerAt < front:macaqueAt",
+        "front:circlerAt < front:otterAt",
+        "front:circlerAt < front:pairAt",
+        "front:circlerAt < front:step:fireflies",
+        "front:circlerAt < front:step:gibbon",
+        "front:circlerAt < front:step:herd",
+        "front:circlerAt < front:step:hornbills",
+        "front:circlerAt < front:step:langur",
+        "front:elephantAt < front:gibbonAt",
+        "front:elephantAt < front:kingfisherAt",
+        "front:elephantAt < front:langurAt",
+        "front:elephantAt < front:macaqueAt",
+        "front:elephantAt < front:otterAt",
+        "front:elephantAt < front:pairAt",
+        "front:elephantAt < front:step:fireflies",
+        "front:elephantAt < front:step:gibbon",
+        "front:elephantAt < front:step:hornbills",
+        "front:elephantAt < front:step:langur",
+        "front:felidAt < front:circlerAt",
+        "front:felidAt < front:elephantAt",
+        "front:felidAt < front:gibbonAt",
+        "front:felidAt < front:kingfisherAt",
+        "front:felidAt < front:langurAt",
+        "front:felidAt < front:macaqueAt",
+        "front:felidAt < front:otterAt",
+        "front:felidAt < front:pairAt",
+        "front:felidAt < front:step:fireflies",
+        "front:felidAt < front:step:gibbon",
+        "front:felidAt < front:step:herd",
+        "front:felidAt < front:step:hornbills",
+        "front:felidAt < front:step:langur",
+        "front:felidAt < front:step:mist",
+        "front:felidAt < front:step:serpent",
+        "front:gibbonAt < front:kingfisherAt",
+        "front:gibbonAt < front:pairAt",
+        "front:gibbonAt < front:step:hornbills",
+        "front:langurAt < front:gibbonAt",
+        "front:langurAt < front:kingfisherAt",
+        "front:langurAt < front:pairAt",
+        "front:langurAt < front:step:fireflies",
+        "front:langurAt < front:step:gibbon",
+        "front:langurAt < front:step:hornbills",
+        "front:macaqueAt < front:gibbonAt",
+        "front:macaqueAt < front:kingfisherAt",
+        "front:macaqueAt < front:langurAt",
+        "front:macaqueAt < front:pairAt",
+        "front:macaqueAt < front:step:fireflies",
+        "front:macaqueAt < front:step:gibbon",
+        "front:macaqueAt < front:step:hornbills",
+        "front:macaqueAt < front:step:langur",
+        "front:otterAt < front:gibbonAt",
+        "front:otterAt < front:kingfisherAt",
+        "front:otterAt < front:langurAt",
+        "front:otterAt < front:macaqueAt",
+        "front:otterAt < front:pairAt",
+        "front:otterAt < front:step:fireflies",
+        "front:otterAt < front:step:gibbon",
+        "front:otterAt < front:step:hornbills",
+        "front:otterAt < front:step:langur",
+        "front:pairAt < front:kingfisherAt",
+        "front:step:fireflies < front:gibbonAt",
+        "front:step:fireflies < front:kingfisherAt",
+        "front:step:fireflies < front:pairAt",
+        "front:step:fireflies < front:step:gibbon",
+        "front:step:fireflies < front:step:hornbills",
+        "front:step:gibbon < front:gibbonAt",
+        "front:step:gibbon < front:kingfisherAt",
+        "front:step:gibbon < front:pairAt",
+        "front:step:gibbon < front:step:hornbills",
+        "front:step:herd < front:elephantAt",
+        "front:step:herd < front:gibbonAt",
+        "front:step:herd < front:kingfisherAt",
+        "front:step:herd < front:langurAt",
+        "front:step:herd < front:macaqueAt",
+        "front:step:herd < front:otterAt",
+        "front:step:herd < front:pairAt",
+        "front:step:herd < front:step:fireflies",
+        "front:step:herd < front:step:gibbon",
+        "front:step:herd < front:step:hornbills",
+        "front:step:herd < front:step:langur",
+        "front:step:hornbills < front:kingfisherAt",
+        "front:step:hornbills < front:pairAt",
+        "front:step:langur < front:gibbonAt",
+        "front:step:langur < front:kingfisherAt",
+        "front:step:langur < front:langurAt",
+        "front:step:langur < front:pairAt",
+        "front:step:langur < front:step:fireflies",
+        "front:step:langur < front:step:gibbon",
+        "front:step:langur < front:step:hornbills",
+        "front:step:mist < front:circlerAt",
+        "front:step:mist < front:elephantAt",
+        "front:step:mist < front:gibbonAt",
+        "front:step:mist < front:kingfisherAt",
+        "front:step:mist < front:langurAt",
+        "front:step:mist < front:macaqueAt",
+        "front:step:mist < front:otterAt",
+        "front:step:mist < front:pairAt",
+        "front:step:mist < front:step:fireflies",
+        "front:step:mist < front:step:gibbon",
+        "front:step:mist < front:step:herd",
+        "front:step:mist < front:step:hornbills",
+        "front:step:mist < front:step:langur",
+        "front:step:mist < front:step:serpent",
+        "front:step:serpent < front:circlerAt",
+        "front:step:serpent < front:elephantAt",
+        "front:step:serpent < front:gibbonAt",
+        "front:step:serpent < front:kingfisherAt",
+        "front:step:serpent < front:langurAt",
+        "front:step:serpent < front:macaqueAt",
+        "front:step:serpent < front:otterAt",
+        "front:step:serpent < front:pairAt",
+        "front:step:serpent < front:step:fireflies",
+        "front:step:serpent < front:step:gibbon",
+        "front:step:serpent < front:step:herd",
+        "front:step:serpent < front:step:hornbills",
+        "front:step:serpent < front:step:langur",
+        "plants < front:circlerAt",
+        "plants < front:elephantAt",
+        "plants < front:felidAt",
+        "plants < front:gibbonAt",
+        "plants < front:kingfisherAt",
+        "plants < front:langurAt",
+        "plants < front:macaqueAt",
+        "plants < front:otterAt",
+        "plants < front:pairAt",
+        "plants < front:step:fireflies",
+        "plants < front:step:gibbon",
+        "plants < front:step:herd",
+        "plants < front:step:hornbills",
+        "plants < front:step:langur",
+        "plants < front:step:mist",
+        "plants < front:step:serpent"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            211.8,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "arch",
+            "walk"
+          ]
+        },
+        "elephants[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            189,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "walk"
+          ]
+        },
+        "elephants[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            208.9,
+            226.3
+          ],
+          "speed": 6.3,
+          "poses": [
+            "walk"
+          ]
+        },
+        "otters[0]": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -9.5,
+            78
+          ],
+          "speed": 10,
+          "poses": [
+            "stand",
+            "stay",
+            "walk"
+          ]
+        },
+        "otters[1]": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            41,
+            70.1
+          ],
+          "speed": 5.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "otters[2]": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            59.1,
+            88.6
+          ],
+          "speed": 5.1,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "monkey": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            161.3,
+            249.3
+          ],
+          "speed": 11,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "gibbon": {
+          "firstStage": 5,
+          "activeSteps": 48
+        },
+        "hornbills": {
+          "firstStage": 3,
+          "activeSteps": 64,
+          "xRange": [
+            -31.5,
+            252
+          ],
+          "yRange": [
+            18.5,
+            18.5
+          ],
+          "speed": 18,
+          "poses": [
+            "fly"
+          ]
+        },
+        "kingfisher": {
+          "firstStage": 2,
+          "activeSteps": 36,
+          "xRange": [
+            -11.5,
+            252
+          ],
+          "yRange": [
+            86.1,
+            89.1
+          ],
+          "speed": 62,
+          "poses": [
+            "fly"
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "front:circlerAt": 60,
+        "front:elephantAt": 36,
+        "front:gibbonAt": 47,
+        "front:kingfisherAt": 19,
+        "front:langurAt": 36,
+        "front:macaqueAt": 60,
+        "front:otterAt": 96,
+        "front:pairAt": 31,
+        "front:step:fireflies": 108,
+        "front:step:gibbon": 108,
+        "front:step:herd": 108,
+        "front:step:hornbills": 108,
+        "front:step:langur": 108,
+        "front:step:mist": 108,
+        "front:step:serpent": 108,
+        "plants": 108
+      },
+      "order": [
+        "front:circlerAt < front:elephantAt",
+        "front:circlerAt < front:gibbonAt",
+        "front:circlerAt < front:kingfisherAt",
+        "front:circlerAt < front:langurAt",
+        "front:circlerAt < front:macaqueAt",
+        "front:circlerAt < front:otterAt",
+        "front:circlerAt < front:pairAt",
+        "front:circlerAt < front:step:fireflies",
+        "front:circlerAt < front:step:gibbon",
+        "front:circlerAt < front:step:herd",
+        "front:circlerAt < front:step:hornbills",
+        "front:circlerAt < front:step:langur",
+        "front:elephantAt < front:gibbonAt",
+        "front:elephantAt < front:kingfisherAt",
+        "front:elephantAt < front:langurAt",
+        "front:elephantAt < front:macaqueAt",
+        "front:elephantAt < front:otterAt",
+        "front:elephantAt < front:step:fireflies",
+        "front:elephantAt < front:step:gibbon",
+        "front:elephantAt < front:step:hornbills",
+        "front:elephantAt < front:step:langur",
+        "front:gibbonAt < front:kingfisherAt",
+        "front:gibbonAt < front:pairAt",
+        "front:gibbonAt < front:step:hornbills",
+        "front:langurAt < front:gibbonAt",
+        "front:langurAt < front:kingfisherAt",
+        "front:langurAt < front:step:fireflies",
+        "front:langurAt < front:step:gibbon",
+        "front:langurAt < front:step:hornbills",
+        "front:macaqueAt < front:gibbonAt",
+        "front:macaqueAt < front:kingfisherAt",
+        "front:macaqueAt < front:langurAt",
+        "front:macaqueAt < front:pairAt",
+        "front:macaqueAt < front:step:fireflies",
+        "front:macaqueAt < front:step:gibbon",
+        "front:macaqueAt < front:step:hornbills",
+        "front:macaqueAt < front:step:langur",
+        "front:otterAt < front:gibbonAt",
+        "front:otterAt < front:kingfisherAt",
+        "front:otterAt < front:langurAt",
+        "front:otterAt < front:macaqueAt",
+        "front:otterAt < front:pairAt",
+        "front:otterAt < front:step:fireflies",
+        "front:otterAt < front:step:gibbon",
+        "front:otterAt < front:step:hornbills",
+        "front:otterAt < front:step:langur",
+        "front:pairAt < front:kingfisherAt",
+        "front:step:fireflies < front:gibbonAt",
+        "front:step:fireflies < front:kingfisherAt",
+        "front:step:fireflies < front:pairAt",
+        "front:step:fireflies < front:step:gibbon",
+        "front:step:fireflies < front:step:hornbills",
+        "front:step:gibbon < front:gibbonAt",
+        "front:step:gibbon < front:kingfisherAt",
+        "front:step:gibbon < front:pairAt",
+        "front:step:gibbon < front:step:hornbills",
+        "front:step:herd < front:elephantAt",
+        "front:step:herd < front:gibbonAt",
+        "front:step:herd < front:kingfisherAt",
+        "front:step:herd < front:langurAt",
+        "front:step:herd < front:macaqueAt",
+        "front:step:herd < front:otterAt",
+        "front:step:herd < front:pairAt",
+        "front:step:herd < front:step:fireflies",
+        "front:step:herd < front:step:gibbon",
+        "front:step:herd < front:step:hornbills",
+        "front:step:herd < front:step:langur",
+        "front:step:hornbills < front:kingfisherAt",
+        "front:step:hornbills < front:pairAt",
+        "front:step:langur < front:gibbonAt",
+        "front:step:langur < front:kingfisherAt",
+        "front:step:langur < front:langurAt",
+        "front:step:langur < front:pairAt",
+        "front:step:langur < front:step:fireflies",
+        "front:step:langur < front:step:gibbon",
+        "front:step:langur < front:step:hornbills",
+        "front:step:mist < front:circlerAt",
+        "front:step:mist < front:elephantAt",
+        "front:step:mist < front:gibbonAt",
+        "front:step:mist < front:kingfisherAt",
+        "front:step:mist < front:langurAt",
+        "front:step:mist < front:macaqueAt",
+        "front:step:mist < front:otterAt",
+        "front:step:mist < front:pairAt",
+        "front:step:mist < front:step:fireflies",
+        "front:step:mist < front:step:gibbon",
+        "front:step:mist < front:step:herd",
+        "front:step:mist < front:step:hornbills",
+        "front:step:mist < front:step:langur",
+        "front:step:mist < front:step:serpent",
+        "front:step:serpent < front:circlerAt",
+        "front:step:serpent < front:elephantAt",
+        "front:step:serpent < front:gibbonAt",
+        "front:step:serpent < front:kingfisherAt",
+        "front:step:serpent < front:langurAt",
+        "front:step:serpent < front:macaqueAt",
+        "front:step:serpent < front:otterAt",
+        "front:step:serpent < front:pairAt",
+        "front:step:serpent < front:step:fireflies",
+        "front:step:serpent < front:step:gibbon",
+        "front:step:serpent < front:step:herd",
+        "front:step:serpent < front:step:hornbills",
+        "front:step:serpent < front:step:langur",
+        "plants < front:circlerAt",
+        "plants < front:elephantAt",
+        "plants < front:gibbonAt",
+        "plants < front:kingfisherAt",
+        "plants < front:langurAt",
+        "plants < front:macaqueAt",
+        "plants < front:otterAt",
+        "plants < front:pairAt",
+        "plants < front:step:fireflies",
+        "plants < front:step:gibbon",
+        "plants < front:step:herd",
+        "plants < front:step:hornbills",
+        "plants < front:step:langur",
+        "plants < front:step:mist",
+        "plants < front:step:serpent"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "elephants[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            39,
+            100.3
+          ],
+          "speed": 7,
+          "poses": [
+            "walk"
+          ]
+        },
+        "elephants[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            58.9,
+            76.3
+          ],
+          "speed": 6.3,
+          "poses": [
+            "walk"
+          ]
+        },
+        "otters[0]": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -9.5,
+            78
+          ],
+          "speed": 10,
+          "poses": [
+            "stand",
+            "stay",
+            "walk"
+          ]
+        },
+        "otters[1]": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            45.1,
+            70.1
+          ],
+          "speed": 4.5,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "otters[2]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "monkey": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            11.3,
+            99.3
+          ],
+          "speed": 11,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "gibbon": {
+          "firstStage": 5,
+          "activeSteps": 47
+        },
+        "hornbills": {
+          "firstStage": 3,
+          "activeSteps": 31,
+          "xRange": [
+            -33,
+            102
+          ],
+          "yRange": [
+            18.5,
+            18.5
+          ],
+          "speed": 18,
+          "poses": [
+            "fly"
+          ]
+        },
+        "kingfisher": {
+          "firstStage": 2,
+          "activeSteps": 19,
+          "xRange": [
+            -6.5,
+            102
+          ],
+          "yRange": [
+            86.1,
+            89.1
+          ],
+          "speed": 62,
+          "poses": [
+            "fly"
+          ]
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "front:elephantAt": 36,
+        "front:felidAt": 48,
+        "front:fireflyAt": 96,
+        "front:gibbonAt": 48,
+        "front:langurAt": 36,
+        "front:macaqueAt": 60,
+        "front:otterAt": 96,
+        "front:step:fireflies": 108,
+        "front:step:gibbon": 108,
+        "front:step:herd": 108,
+        "front:step:hornbills": 108,
+        "front:step:langur": 108,
+        "front:step:mist": 108,
+        "front:step:serpent": 108,
+        "plants": 108
+      },
+      "order": [
+        "front:elephantAt < front:fireflyAt",
+        "front:elephantAt < front:gibbonAt",
+        "front:elephantAt < front:langurAt",
+        "front:elephantAt < front:macaqueAt",
+        "front:elephantAt < front:otterAt",
+        "front:elephantAt < front:step:fireflies",
+        "front:elephantAt < front:step:gibbon",
+        "front:elephantAt < front:step:hornbills",
+        "front:elephantAt < front:step:langur",
+        "front:felidAt < front:elephantAt",
+        "front:felidAt < front:fireflyAt",
+        "front:felidAt < front:gibbonAt",
+        "front:felidAt < front:langurAt",
+        "front:felidAt < front:macaqueAt",
+        "front:felidAt < front:otterAt",
+        "front:felidAt < front:step:fireflies",
+        "front:felidAt < front:step:gibbon",
+        "front:felidAt < front:step:herd",
+        "front:felidAt < front:step:hornbills",
+        "front:felidAt < front:step:langur",
+        "front:felidAt < front:step:mist",
+        "front:felidAt < front:step:serpent",
+        "front:fireflyAt < front:gibbonAt",
+        "front:fireflyAt < front:step:gibbon",
+        "front:fireflyAt < front:step:hornbills",
+        "front:gibbonAt < front:step:hornbills",
+        "front:langurAt < front:fireflyAt",
+        "front:langurAt < front:gibbonAt",
+        "front:langurAt < front:step:fireflies",
+        "front:langurAt < front:step:gibbon",
+        "front:langurAt < front:step:hornbills",
+        "front:macaqueAt < front:fireflyAt",
+        "front:macaqueAt < front:gibbonAt",
+        "front:macaqueAt < front:langurAt",
+        "front:macaqueAt < front:step:fireflies",
+        "front:macaqueAt < front:step:gibbon",
+        "front:macaqueAt < front:step:hornbills",
+        "front:macaqueAt < front:step:langur",
+        "front:otterAt < front:fireflyAt",
+        "front:otterAt < front:gibbonAt",
+        "front:otterAt < front:langurAt",
+        "front:otterAt < front:macaqueAt",
+        "front:otterAt < front:step:fireflies",
+        "front:otterAt < front:step:gibbon",
+        "front:otterAt < front:step:hornbills",
+        "front:otterAt < front:step:langur",
+        "front:step:fireflies < front:fireflyAt",
+        "front:step:fireflies < front:gibbonAt",
+        "front:step:fireflies < front:step:gibbon",
+        "front:step:fireflies < front:step:hornbills",
+        "front:step:gibbon < front:gibbonAt",
+        "front:step:gibbon < front:step:hornbills",
+        "front:step:herd < front:elephantAt",
+        "front:step:herd < front:fireflyAt",
+        "front:step:herd < front:gibbonAt",
+        "front:step:herd < front:langurAt",
+        "front:step:herd < front:macaqueAt",
+        "front:step:herd < front:otterAt",
+        "front:step:herd < front:step:fireflies",
+        "front:step:herd < front:step:gibbon",
+        "front:step:herd < front:step:hornbills",
+        "front:step:herd < front:step:langur",
+        "front:step:langur < front:fireflyAt",
+        "front:step:langur < front:gibbonAt",
+        "front:step:langur < front:langurAt",
+        "front:step:langur < front:step:fireflies",
+        "front:step:langur < front:step:gibbon",
+        "front:step:langur < front:step:hornbills",
+        "front:step:mist < front:elephantAt",
+        "front:step:mist < front:fireflyAt",
+        "front:step:mist < front:gibbonAt",
+        "front:step:mist < front:langurAt",
+        "front:step:mist < front:macaqueAt",
+        "front:step:mist < front:otterAt",
+        "front:step:mist < front:step:fireflies",
+        "front:step:mist < front:step:gibbon",
+        "front:step:mist < front:step:herd",
+        "front:step:mist < front:step:hornbills",
+        "front:step:mist < front:step:langur",
+        "front:step:mist < front:step:serpent",
+        "front:step:serpent < front:elephantAt",
+        "front:step:serpent < front:fireflyAt",
+        "front:step:serpent < front:gibbonAt",
+        "front:step:serpent < front:langurAt",
+        "front:step:serpent < front:macaqueAt",
+        "front:step:serpent < front:otterAt",
+        "front:step:serpent < front:step:fireflies",
+        "front:step:serpent < front:step:gibbon",
+        "front:step:serpent < front:step:herd",
+        "front:step:serpent < front:step:hornbills",
+        "front:step:serpent < front:step:langur",
+        "plants < front:elephantAt",
+        "plants < front:felidAt",
+        "plants < front:fireflyAt",
+        "plants < front:gibbonAt",
+        "plants < front:langurAt",
+        "plants < front:macaqueAt",
+        "plants < front:otterAt",
+        "plants < front:step:fireflies",
+        "plants < front:step:gibbon",
+        "plants < front:step:herd",
+        "plants < front:step:hornbills",
+        "plants < front:step:langur",
+        "plants < front:step:mist",
+        "plants < front:step:serpent"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            211.8,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "arch",
+            "walk"
+          ]
+        },
+        "elephants[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            189,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "walk"
+          ]
+        },
+        "elephants[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            208.9,
+            226.3
+          ],
+          "speed": 6.3,
+          "poses": [
+            "walk"
+          ]
+        },
+        "otters[0]": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -9.5,
+            133
+          ],
+          "speed": 10,
+          "poses": [
+            "stand",
+            "walk"
+          ]
+        },
+        "otters[1]": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            93.4,
+            141.1
+          ],
+          "speed": 8.5,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "otters[2]": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            74.9,
+            154.1
+          ],
+          "speed": 13.8,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "monkey": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            161.3,
+            249.3
+          ],
+          "speed": 11,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "gibbon": {
+          "firstStage": 5,
+          "activeSteps": 48
+        },
+        "hornbills": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "kingfisher": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "front:elephantAt": 36,
+        "front:fireflyAt": 96,
+        "front:gibbonAt": 47,
+        "front:langurAt": 36,
+        "front:macaqueAt": 60,
+        "front:otterAt": 96,
+        "front:step:fireflies": 108,
+        "front:step:gibbon": 108,
+        "front:step:herd": 108,
+        "front:step:hornbills": 108,
+        "front:step:langur": 108,
+        "front:step:mist": 108,
+        "front:step:serpent": 108,
+        "plants": 108
+      },
+      "order": [
+        "front:elephantAt < front:fireflyAt",
+        "front:elephantAt < front:gibbonAt",
+        "front:elephantAt < front:langurAt",
+        "front:elephantAt < front:macaqueAt",
+        "front:elephantAt < front:otterAt",
+        "front:elephantAt < front:step:fireflies",
+        "front:elephantAt < front:step:gibbon",
+        "front:elephantAt < front:step:hornbills",
+        "front:elephantAt < front:step:langur",
+        "front:fireflyAt < front:gibbonAt",
+        "front:fireflyAt < front:step:gibbon",
+        "front:fireflyAt < front:step:hornbills",
+        "front:gibbonAt < front:step:hornbills",
+        "front:langurAt < front:fireflyAt",
+        "front:langurAt < front:gibbonAt",
+        "front:langurAt < front:step:fireflies",
+        "front:langurAt < front:step:gibbon",
+        "front:langurAt < front:step:hornbills",
+        "front:macaqueAt < front:fireflyAt",
+        "front:macaqueAt < front:gibbonAt",
+        "front:macaqueAt < front:langurAt",
+        "front:macaqueAt < front:step:fireflies",
+        "front:macaqueAt < front:step:gibbon",
+        "front:macaqueAt < front:step:hornbills",
+        "front:macaqueAt < front:step:langur",
+        "front:otterAt < front:fireflyAt",
+        "front:otterAt < front:gibbonAt",
+        "front:otterAt < front:langurAt",
+        "front:otterAt < front:macaqueAt",
+        "front:otterAt < front:step:fireflies",
+        "front:otterAt < front:step:gibbon",
+        "front:otterAt < front:step:hornbills",
+        "front:otterAt < front:step:langur",
+        "front:step:fireflies < front:fireflyAt",
+        "front:step:fireflies < front:gibbonAt",
+        "front:step:fireflies < front:step:gibbon",
+        "front:step:fireflies < front:step:hornbills",
+        "front:step:gibbon < front:gibbonAt",
+        "front:step:gibbon < front:step:hornbills",
+        "front:step:herd < front:elephantAt",
+        "front:step:herd < front:fireflyAt",
+        "front:step:herd < front:gibbonAt",
+        "front:step:herd < front:langurAt",
+        "front:step:herd < front:macaqueAt",
+        "front:step:herd < front:otterAt",
+        "front:step:herd < front:step:fireflies",
+        "front:step:herd < front:step:gibbon",
+        "front:step:herd < front:step:hornbills",
+        "front:step:herd < front:step:langur",
+        "front:step:langur < front:fireflyAt",
+        "front:step:langur < front:gibbonAt",
+        "front:step:langur < front:langurAt",
+        "front:step:langur < front:step:fireflies",
+        "front:step:langur < front:step:gibbon",
+        "front:step:langur < front:step:hornbills",
+        "front:step:mist < front:elephantAt",
+        "front:step:mist < front:fireflyAt",
+        "front:step:mist < front:gibbonAt",
+        "front:step:mist < front:langurAt",
+        "front:step:mist < front:macaqueAt",
+        "front:step:mist < front:otterAt",
+        "front:step:mist < front:step:fireflies",
+        "front:step:mist < front:step:gibbon",
+        "front:step:mist < front:step:herd",
+        "front:step:mist < front:step:hornbills",
+        "front:step:mist < front:step:langur",
+        "front:step:mist < front:step:serpent",
+        "front:step:serpent < front:elephantAt",
+        "front:step:serpent < front:fireflyAt",
+        "front:step:serpent < front:gibbonAt",
+        "front:step:serpent < front:langurAt",
+        "front:step:serpent < front:macaqueAt",
+        "front:step:serpent < front:otterAt",
+        "front:step:serpent < front:step:fireflies",
+        "front:step:serpent < front:step:gibbon",
+        "front:step:serpent < front:step:herd",
+        "front:step:serpent < front:step:hornbills",
+        "front:step:serpent < front:step:langur",
+        "plants < front:elephantAt",
+        "plants < front:fireflyAt",
+        "plants < front:gibbonAt",
+        "plants < front:langurAt",
+        "plants < front:macaqueAt",
+        "plants < front:otterAt",
+        "plants < front:step:fireflies",
+        "plants < front:step:gibbon",
+        "plants < front:step:herd",
+        "plants < front:step:hornbills",
+        "plants < front:step:langur",
+        "plants < front:step:mist",
+        "plants < front:step:serpent"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "elephants[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            39,
+            100.3
+          ],
+          "speed": 7,
+          "poses": [
+            "walk"
+          ]
+        },
+        "elephants[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            58.9,
+            76.3
+          ],
+          "speed": 6.3,
+          "poses": [
+            "walk"
+          ]
+        },
+        "otters[0]": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -9.5,
+            88
+          ],
+          "speed": 10,
+          "poses": [
+            "stand",
+            "stay",
+            "walk"
+          ]
+        },
+        "otters[1]": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            61.4,
+            96.2
+          ],
+          "speed": 8.2,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "otters[2]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "monkey": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            11.3,
+            99.3
+          ],
+          "speed": 11,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "gibbon": {
+          "firstStage": 5,
+          "activeSteps": 47
+        },
+        "hornbills": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "kingfisher": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    }
+  }
+}

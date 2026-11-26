@@ -458,3 +458,41 @@ export function mantaShadow(g, x, row, span = MANTA.span) {
   }
   g.ctx.globalAlpha = a;
 }
+
+export const FAMILIES = [
+  {
+    id: "fish",
+    title: "Fish and sharks",
+    group: "Animals",
+    differ: "size, body profile, tail, fins, markings; the epaulette walks on its fins",
+    members: {
+      chromis: { spec: FISH.chromis, realLength: 0.07 },
+      clownfish: { spec: FISH.clownfish, realLength: 0.08 },
+      anthias: { spec: FISH.anthias, realLength: 0.1 },
+      wrasse: { spec: FISH.wrasse, realLength: 0.1 },
+      parrotfish: { spec: FISH.parrotfish, realLength: 0.6 },
+      trevally: { spec: FISH.trevally, realLength: 1.2, predator: true },
+      blacktip: { spec: FISH.blacktip, realLength: 1.4, predator: true },
+      epaulette: { spec: EPAULETTE, realLength: 0.7, predator: true },
+    },
+    drivers: {
+      epauletteAt: { role: "walker", member: () => "epaulette", day: false },
+      fishAt: {
+        role: "swimmer",
+        member: (_a, args) => args[0],
+        day: (a, args) => args[0] !== "blacktip" && !a?.asleep,
+      },
+      schoolAt: { role: "group", member: (_a, args) => `${args[0]} school`, day: true },
+    },
+  },
+  {
+    id: "rays",
+    title: "Rays",
+    group: "Animals",
+    differ: "span, colour, belly spots",
+    drivers: {
+      mantaAt: { role: "swimmer", member: () => "manta", day: true },
+      mantaShadow: { role: "prop", member: () => "manta shadow" },
+    },
+  },
+];

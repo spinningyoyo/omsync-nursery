@@ -216,3 +216,72 @@ export function owlFlyAt(g, b, time, species = "shortEared", night = true) {
   const t = owlTones(g.pal[b.pal ?? "owl"], night ? "dark" : "light");
   drawFlight(g, Math.round(b.x), Math.round(b.y), b.dir ?? 1, t, sp, flightPose(time + (b.phase ?? 0), sp));
 }
+
+const visitRole = (a) => (a?.visit?.mode === "perch" ? "perched" : "flyer");
+
+export const FAMILIES = [
+  {
+    id: "soaring-birds",
+    title: "Soaring birds",
+    group: "Birds",
+    differ: "size, colour, head",
+    members: {
+      hawk: { predator: true },
+      "eagle-golden": { predator: true },
+      "eagle-bald": { predator: true },
+      vulture: { predator: true },
+    },
+    drivers: {
+      eagleFlyAt: { member: (_a, args) => `eagle-${args[0]}`, role: visitRole, day: true },
+      circlerAt: { member: (_a, args) => `eagle-${args[0]}`, role: visitRole, day: true },
+      glideAt: {
+        member: (_a, args) => args[0],
+        role: (a) => (a?.visit && a.visit.mode !== "wait" ? visitRole(a) : a?.members ? "group" : "flyer"),
+        day: true,
+      },
+      hawkAt: { role: "flyer", member: () => "hawk", day: true },
+    },
+  },
+  {
+    id: "small-flyers",
+    title: "Small flyers",
+    group: "Birds",
+    differ: "size, colour, bill",
+    drivers: {
+      visitAt: { member: (_a, args) => args[0], role: visitRole, day: true },
+      smallVisitAt: { member: (_a, args) => args[0], role: visitRole, day: true },
+      flyerAt: { member: (_a, args) => args[args.length - 1], role: visitRole, day: true },
+      kingfisherAt: { member: () => "kingfisher", role: visitRole, day: true },
+      tropicbirdAt: { member: () => "tropicbird", role: visitRole, day: true },
+      rollerAt: { role: "flyer", member: () => "roller", day: true },
+      kessieAt: { role: "flyer", member: () => "kessie", day: true },
+      puffinAt: { role: "flyer", member: () => "puffin", day: true },
+      hornbillAt: { role: "flyer", member: () => "hornbill", day: true },
+      nesterAt: {
+        role: (a, args) => (a?.moves && doing(a, "fish", args[1] ?? 0) >= 0 ? "flyer" : "perched"),
+        member: () => "puffin",
+        day: false,
+      },
+      flockAt: { role: "group", member: () => "puffin flock", day: true },
+      pairAt: { role: "group", member: () => "hornbill pair", day: true },
+    },
+  },
+  {
+    id: "owls",
+    title: "Owls",
+    group: "Birds",
+    differ: "size, ear tufts",
+    members: {
+      owl: { predator: true },
+    },
+    drivers: {
+      owlFlyAt: { role: "flyer", member: () => "owl", day: false },
+      owlPerchAt: { role: "perched", member: () => "owl", day: false },
+      owlHomeAt: {
+        role: (_a, args) => (args.some((x) => x?.glide) ? "flyer" : "perched"),
+        member: () => "owl",
+        day: false,
+      },
+    },
+  },
+];

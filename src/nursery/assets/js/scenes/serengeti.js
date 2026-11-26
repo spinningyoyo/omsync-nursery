@@ -5,39 +5,18 @@
 // plain, and by day a cheetah stalks through the grass and rests in it; a roller and a flamingo fly
 // over. At night it is an indigo savanna under a moon.
 // When a cub strays to an edge of the page, the lion roars from his ledge and calls it home.
-import {
-  elephantAt,
-  felidAt,
-  felidPoses,
-  flamingoAt,
-  giraffeAt,
-  giraffeMuzzle,
-  groundBirdAt,
-  groundBirdStep,
-  groundPoses,
-  groundSpeed,
-  zebraAt,
-  zebraPoses,
-} from "../kit/animals.js";
+
 import { drawBody, STANCE } from "../kit/body.js";
-import {
-  circlingPair,
-  enter,
-  enterBehind,
-  flyBy,
-  follow,
-  isNight,
-  narrow,
-  rest,
-  settle,
-  stride,
-  walker,
-  wander,
-} from "../kit/critters.js";
+import { enter, enterBehind, follow, narrow, rest, settle, stride, walker, wander } from "../kit/critters.js";
 import { mistAt, mistBand } from "../kit/effects.js";
-import { LION_CUB, LION_CUB_UP } from "../kit/felid.js";
+import { elephantAt } from "../kit/elephant.js";
+import { felidAt, felidPoses, LION_CUB, LION_CUB_UP } from "../kit/felid.js";
 import { circlerAt, flyerAt } from "../kit/flyers.js";
-import { circlerPerch, flyByPerch, goHome, unhidden } from "../kit/perch.js";
+import { giraffeAt, giraffeMuzzle } from "../kit/giraffe.js";
+import { groundBirdAt, groundBirdStep, groundPoses, groundSpeed } from "../kit/groundbird.js";
+import { zebraAt, zebraPoses } from "../kit/horse.js";
+import { flamingoAt } from "../kit/longneck.js";
+import { unhidden } from "../kit/perch.js";
 import {
   blob,
   clamp,
@@ -54,6 +33,9 @@ import {
   stroke,
 } from "../kit/pixel.js";
 import { crossFlower } from "../kit/plants.js";
+import { ANIMAL_BOX, bird, soarSprites, walk } from "../kit/poses.js";
+import { circlerActor, crossingActor, drawStep, followerActor, runCast, walkerActor } from "../kit/runner.js";
+import { blendPose, perchedSmall } from "../kit/smallbird.js";
 import { acaciaGeom, acaciaTree } from "../kit/widecanopy.js";
 
 const KOPJE_ROWS = 20;
@@ -817,170 +799,368 @@ function puddleAt(g, p, time) {
   g.ctx.globalAlpha = 1;
 }
 
-const extras = {
-  init(f) {
-    return {
-      motes: Array.from({ length: MOTES }, () => mote(f)),
-      mists: Array.from({ length: MISTS }, () => mistBand(f, 26, 30)),
-      ledge: ledgeOf(f),
-      zebra: walker(f),
-      foal: walker(f, 0.6),
-      giraffe: walker(f),
-      puddle: null,
-      secretary: walker(f),
-      elephant: walker(f),
-      calf: walker(f, 0.5),
-      lion: walker(f),
-      cheetah: walker(f),
-      cubs: Array.from({ length: 3 }, () => ({ ...walker(f), pose: null, armed: false, seed: f.rand() })),
-      call: null,
-      roar: { next: Infinity },
-      roller: { next: 3, bird: null },
-      flamingo: { next: 6, bird: null },
-      vultures: circlingPair(f, 40 + f.rand() * 8, { rate: 0.18, gap: 6 }),
-    };
-  },
-
-  // The secretary bird comes at stage 1. The lion comes on last, at stage 8, on the pride rock, and
-  // his cubs with him (one on a phone); his first call comes a little after. The elephant pair
-  // comes at 7. The cheetah comes at 6, by day and not on a phone: the plain is already full.
-  onGrow(f) {
-    const x = f.extra;
-    if (f.stage >= 1) enter(f, x.secretary);
-    if (f.stage >= 2) enter(f, x.zebra);
-    if (f.stage >= 4) {
-      enter(f, x.giraffe);
-      if (!narrow(f)) enterBehind(f, x.foal, x.zebra, ZEBRA_GAP);
-    }
-    if (f.stage >= 6 && !narrow(f)) enter(f, x.cheetah);
-    if (f.stage >= 7) {
-      enter(f, x.elephant);
-      enterBehind(f, x.calf, x.elephant, 12);
-    }
-    if (f.stage >= 8 && !x.lion.active) {
-      const [lo, hi] = x.ledge.span;
-      x.lion.active = true;
-      x.lion.x = (lo + hi) / 2 - x.lion.dir * LION_MID;
-      x.roar.next = f.time + 20;
-    }
-    if (f.stage >= 8) for (const cub of narrow(f) ? x.cubs.slice(0, 1) : x.cubs) enter(f, cub);
-  },
-
-  busy: () => true,
-
-  update(f, dt) {
-    const x = f.extra;
-    for (const m of x.motes) {
-      m.x += m.vx * dt;
-      m.y += Math.sin(f.time * 0.6 + m.phase) * 2 * dt;
-      if (m.x > f.cols + 2) {
-        m.x = -2;
-        m.y = f.groundY - 4 - f.rand() * 46;
-      }
-    }
-    wander(f, x.zebra, dt, { speed: 7, stride: 8, sit: [4, 10], walk: [3, 7] });
-    rest(f, x.zebra, zebraPoses(x.zebra));
-    follow(x.foal, x.zebra, dt, ZEBRA_GAP);
-    for (const k of ["state", "phase", "timer", "pose"]) x.foal[k] = x.zebra[k];
-    settle(f, x.foal);
-    const giraffe = x.giraffe;
-    wander(f, giraffe, dt, { speed: 5, stride: 5, sit: [5, 9], walk: [3, 6] });
-    rest(f, giraffe, giraffe.state !== "walk" && !giraffe.pose ? giraffeStop(f, giraffe) : []);
-    drink(f, giraffe);
-    const secretaryX = x.secretary.x;
-    wander(f, x.secretary, dt, { speed: groundSpeed("secretary"), stride: 1, sit: [3.2, 8], walk: [2, 4] });
-    rest(f, x.secretary, groundPoses(x.secretary, "secretary"));
-    groundBirdStep(f, x.secretary, dt, "secretary", secretaryX);
-    wander(f, x.elephant, dt, { speed: 4, stride: 4, sit: [4, 8], walk: [4, 8] });
-    settle(f, x.elephant);
-    follow(x.calf, x.elephant, dt, 12);
-    x.calf.state = x.elephant.state;
-    x.calf.phase = x.elephant.phase;
-    x.calf.timer = x.elephant.timer;
-    settle(f, x.calf);
-    const before = new Map(x.cubs.map((c) => [c, c.x]));
-    const called = call(f, dt);
-    if (called.includes(x.lion)) settle(f, x.lion);
-    else {
-      pace(f, x.lion, dt);
-      rest(f, x.lion, felidPoses("lion"));
-    }
-    // The cheetah stalks slowly, then lies up in the grass or stretches; it is out by day only.
-    if (!isNight(f)) {
-      wander(f, x.cheetah, dt, { speed: 9, stride: 7, sit: [4, 9], walk: [3, 6] });
-      rest(f, x.cheetah, felidPoses("cheetah"));
-    }
-    for (const cub of x.cubs) {
-      if (!cub.active) continue;
-      if (!called.includes(cub)) {
-        wander(f, cub, dt, { speed: 6, stride: 8, sit: [2, 6], walk: [2, 5] });
-        rest(f, cub, CUB_RESTS);
-      }
-      cubStep(f, cub, before.get(cub), dt);
-    }
-    if (f.stage >= 3 && !isNight(f)) {
-      // Now and then the roller stops on an acacia's crown, then flies on.
-      const spawn = () => ({ y: 26 + f.rand() * 36 });
-      flyByPerch(f, x.roller, dt, {
-        every: [5, 6],
-        speed: 20,
-        spawn,
-        spots: perchSpots,
-        small: "roller",
-        drop: 2,
-        odds: 0.3,
-        stay: [8, 16],
-      });
-    } else if (x.roller.bird?.visit) goHome(f, x.roller.bird);
-    if (f.stage >= 6 && !isNight(f)) {
-      const spawn = () => ({ y: 22 + f.rand() * 30 });
-      flyBy(f, x.flamingo, dt, { every: [8, 9], speed: 13, spawn });
-    }
-    for (const v of x.vultures) {
-      v.active = f.stage >= 5 && !isNight(f);
-      if (v.active) circlerPerch(f, v, dt, { first: [15, 25], every: [50, 40], stay: [14, 26], spots: perchSpots });
-      else goHome(f, v);
-    }
-  },
-
-  // A low sun, or the moon at night, is in the sky behind everything.
-  drawBack(g, f) {
-    sunAt(g, f);
-  },
-
-  draw(g, f) {
-    const x = f.extra;
-    if (f.stage >= 1) {
+const extras = runCast(
+  [
+    drawStep("sun", (g, f) => sunAt(g, f), { back: true }),
+    {
+      label: "sun (a moon in the dark theme)",
+      kind: "effect",
+      layer: "behind the plants (drawBack)",
+      arrives: 0,
+      fixed: "1",
+      sprites: ["sun"],
+    },
+    drawStep("haze-and-motes", (g, f) => {
+      const x = f.extra;
+      if (f.stage < 1) return;
       for (const m of x.mists) mistAt(g, m, f.time, f.cols);
       for (const m of x.motes) {
         g.ctx.globalAlpha = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(f.time * 1.5 + m.phase));
         rect(g, g.pal.dust[m.tone], Math.round(m.x), Math.round(m.y), 1, 1);
       }
       g.ctx.globalAlpha = 1;
-    }
-    if (x.roller.bird && !isNight(f)) rollerAt(g, x.roller.bird, f.time);
-    if (x.flamingo.bird && !isNight(f)) flamingoAt(g, x.flamingo.bird, f.time);
-    for (const v of x.vultures) {
-      if (!v.active) continue;
-      circlerAt(g, "vultureAf", v, f.time);
-    }
-    if (x.puddle) puddleAt(g, x.puddle, f.time);
-    if (x.zebra.active) zebraAt(g, x.zebra, f.time);
-    if (x.foal.active) zebraAt(g, x.foal, f.time);
-    if (x.giraffe.active) giraffeAt(g, x.giraffe, f.time);
-    if (x.secretary.active) secretaryAt(g, x.secretary, f.time);
-    if (x.elephant.active) elephantAt(g, { ...x.elephant, kind: "african" }, f.time);
-    if (x.calf.active) elephantAt(g, { ...x.calf, kind: "african" }, f.time);
-    if (x.cheetah.active && !isNight(f)) felidAt(g, { ...x.cheetah, kind: "cheetah" }, f.time);
-    if (x.lion.active) lionAt(g, x.lion, x.ledge.y, f.time);
-    for (const c of x.cubs) if (c.active) cubAt(g, c, f.time);
+    }),
+    {
+      label: "dust haze",
+      kind: "effect",
+      arrives: 1,
+      fixed: `${MISTS} bands`,
+      sprites: ["haze"],
+    },
+    {
+      label: "dust motes",
+      kind: "effect",
+      arrives: 1,
+      fixed: `${MOTES} motes`,
+      sprites: ["dust"],
+    },
+    crossingActor({
+      id: "roller",
+      label: "lilac-breasted roller",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["roller", "roller-up", "roller-perched"],
+      arrives: 3,
+      when: "day",
+      first: 3,
+      mode: "perch",
+      every: [5, 6],
+      speed: 20,
+      spawn: (f) => ({ y: 26 + f.rand() * 36 }),
+      spots: perchSpots,
+      small: "roller",
+      drop: 2,
+      odds: 0.3,
+      stay: [8, 16],
+      draw: (g, b, f) => rollerAt(g, b, f.time),
+    }),
+    crossingActor({
+      id: "flamingo",
+      label: "flamingo",
+      kind: "bird",
+      family: "long-necked-birds",
+      sprites: ["flamingo", "flamingo-up"],
+      arrives: 6,
+      when: "day",
+      first: 6,
+      every: [8, 9],
+      speed: 13,
+      spawn: (f) => ({ y: 22 + f.rand() * 30 }),
+      draw: (g, b, f) => flamingoAt(g, b, f.time),
+    }),
+    circlerActor({
+      id: "vultures",
+      label: "white-backed vultures (a circling pair; one perches on an acacia now and then)",
+      kind: "bird",
+      sprites: [
+        "vulture",
+        "vulture-rocking",
+        "vulture-landing",
+        "vulture-takeoff",
+        "vulture-perched",
+        "vulture-perched-preening",
+        "vulture-perched-stretching",
+      ],
+      arrives: 5,
+      when: "day",
+      cy: (f) => 40 + f.rand() * 8,
+      pair: { rate: 0.18, gap: 6 },
+      perch: { first: [15, 25], every: [50, 40], stay: [14, 26], spots: perchSpots },
+      draw: (g, s, f) => circlerAt(g, "vultureAf", s, f.time),
+    }),
+    drawStep("puddle-zebra-giraffe", (g, f) => {
+      const x = f.extra;
+      if (x.puddle) puddleAt(g, x.puddle, f.time);
+      if (x.zebra.active) zebraAt(g, x.zebra, f.time);
+      if (x.foal.active) zebraAt(g, x.foal, f.time);
+      if (x.giraffe.active) giraffeAt(g, x.giraffe, f.time);
+    }),
+    {
+      label: "zebra and foal",
+      kind: "animal",
+      family: "horses",
+      presence: ["zebra", "foal"],
+      sprites: ["zebra", "zebra-foal", "zebra-grazing", "zebra-lying", "zebra-rolling", "zebra-foal-lying"],
+    },
+    {
+      label: "giraffe",
+      kind: "animal",
+      family: "giraffes",
+      presence: ["giraffe"],
+      sprites: ["giraffe", "giraffe-browsing", "giraffe-drinking"],
+    },
+    walkerActor({
+      id: "secretary",
+      label: "secretary bird",
+      kind: "animal",
+      family: "ground-birds",
+      sprites: ["secretary", "secretary-stamping", "secretary-eating", "secretary-preening", "secretary-stretching"],
+      arrives: 1,
+      move: { speed: groundSpeed("secretary"), stride: 1, sit: [3.2, 8], walk: [2, 4] },
+      poses: (w) => groundPoses(w, "secretary"),
+      step: (f, w, dt, x0) => groundBirdStep(f, w, dt, "secretary", x0),
+      draw: (g, w, f) => secretaryAt(g, w, f.time),
+    }),
+    walkerActor({
+      id: "elephant",
+      label: "elephant and calf",
+      kind: "animal",
+      family: "elephants",
+      presence: ["elephant", "calf"],
+      sprites: [
+        "elephant",
+        "elephant-calf",
+        "elephant-trumpeting",
+        "elephant-curling",
+        "elephant-dust-bath",
+        "elephant-calf-lying",
+      ],
+      arrives: 7,
+      move: { speed: 4, stride: 4, sit: [4, 8], walk: [4, 8] },
+      draw: (g, w, f) => elephantAt(g, { ...w, kind: "african" }, f.time),
+    }),
+    followerActor({
+      id: "calf",
+      lead: "elephant",
+      gap: 12,
+      arrives: 7,
+      scale: 0.5,
+      draw: (g, w, f) => elephantAt(g, { ...w, kind: "african" }, f.time),
+    }),
+    walkerActor({
+      id: "cheetah",
+      label: "cheetah, by day",
+      kind: "animal",
+      family: "cats",
+      sprites: ["cheetah", "cheetah-sitting", "cheetah-lying", "cheetah-stretching"],
+      arrives: 6,
+      when: "day",
+      phone: "hide",
+      move: { speed: 9, stride: 7, sit: [4, 9], walk: [3, 6] },
+      poses: () => felidPoses("cheetah"),
+      draw: (g, w, f) => felidAt(g, { ...w, kind: "cheetah" }, f.time),
+    }),
+    drawStep("lion-cubs", (g, f) => {
+      const x = f.extra;
+      if (x.lion.active) lionAt(g, x.lion, x.ledge.y, f.time);
+      for (const c of x.cubs) if (c.active) cubAt(g, c, f.time);
+    }),
+    {
+      label: "lion, roaring when he calls a cub home",
+      kind: "animal",
+      family: "cats",
+      presence: ["lion"],
+      sprites: ["lion", "lion-sitting", "lion-lying", "lion-stretching", "lion-raised", "lion-roaring"],
+    },
+    {
+      label: "lion cubs",
+      kind: "animal",
+      family: "cats",
+      presence: ["cubs[0]", "cubs[1]", "cubs[2]"],
+      sprites: ["cub", "cub-sitting", "cub-looking-up", "cub-pounce", "cub-bounding"],
+    },
+  ],
+  {
+    init(f) {
+      return {
+        motes: Array.from({ length: MOTES }, () => mote(f)),
+        mists: Array.from({ length: MISTS }, () => mistBand(f, 26, 30)),
+        ledge: ledgeOf(f),
+        zebra: walker(f),
+        foal: walker(f, 0.6),
+        giraffe: walker(f),
+        puddle: null,
+        lion: walker(f),
+        cubs: Array.from({ length: 3 }, () => ({ ...walker(f), pose: null, armed: false, seed: f.rand() })),
+        call: null,
+        roar: { next: Infinity },
+      };
+    },
+
+    // The secretary bird comes at stage 1. The lion comes on last, at stage 8, on the pride rock, and
+    // his cubs with him (one on a phone); his first call comes a little after. The elephant pair
+    // comes at 7. The cheetah comes at 6, by day and not on a phone: the plain is already full.
+    onGrow(f) {
+      const x = f.extra;
+      if (f.stage >= 2) enter(f, x.zebra);
+      if (f.stage >= 4) {
+        enter(f, x.giraffe);
+        if (!narrow(f)) enterBehind(f, x.foal, x.zebra, ZEBRA_GAP);
+      }
+      if (f.stage >= 8 && !x.lion.active) {
+        const [lo, hi] = x.ledge.span;
+        x.lion.active = true;
+        x.lion.x = (lo + hi) / 2 - x.lion.dir * LION_MID;
+        x.roar.next = f.time + 20;
+      }
+      if (f.stage >= 8) for (const cub of narrow(f) ? x.cubs.slice(0, 1) : x.cubs) enter(f, cub);
+    },
+
+    busy: () => true,
+
+    update(f, dt) {
+      const x = f.extra;
+      for (const m of x.motes) {
+        m.x += m.vx * dt;
+        m.y += Math.sin(f.time * 0.6 + m.phase) * 2 * dt;
+        if (m.x > f.cols + 2) {
+          m.x = -2;
+          m.y = f.groundY - 4 - f.rand() * 46;
+        }
+      }
+      wander(f, x.zebra, dt, { speed: 7, stride: 8, sit: [4, 10], walk: [3, 7] });
+      rest(f, x.zebra, zebraPoses(x.zebra));
+      follow(x.foal, x.zebra, dt, ZEBRA_GAP);
+      for (const k of ["state", "phase", "timer", "pose"]) x.foal[k] = x.zebra[k];
+      settle(f, x.foal);
+      const giraffe = x.giraffe;
+      wander(f, giraffe, dt, { speed: 5, stride: 5, sit: [5, 9], walk: [3, 6] });
+      rest(f, giraffe, giraffe.state !== "walk" && !giraffe.pose ? giraffeStop(f, giraffe) : []);
+      drink(f, giraffe);
+      const before = new Map(x.cubs.map((c) => [c, c.x]));
+      const called = call(f, dt);
+      if (called.includes(x.lion)) settle(f, x.lion);
+      else {
+        pace(f, x.lion, dt);
+        rest(f, x.lion, felidPoses("lion"));
+      }
+      for (const cub of x.cubs) {
+        if (!cub.active) continue;
+        if (!called.includes(cub)) {
+          wander(f, cub, dt, { speed: 6, stride: 8, sit: [2, 6], walk: [2, 5] });
+          rest(f, cub, CUB_RESTS);
+        }
+        cubStep(f, cub, before.get(cub), dt);
+      }
+    },
+  },
+);
+
+const SPRITES = {
+  ...soarSprites("vulture", "vultureAf", { vulture: true }),
+  cheetah: (g, frame) => felidAt(g, walk(frame, { kind: "cheetah" }), 0),
+  "cheetah-sitting": (g, frame) => felidAt(g, walk(frame, { kind: "cheetah", state: "sit", pose: "sit" }), 0),
+  "cheetah-lying": (g, frame) => felidAt(g, walk(frame, { kind: "cheetah", state: "sit", pose: "lie" }), 0),
+  "cheetah-stretching": (g, frame) => felidAt(g, walk(frame, { kind: "cheetah", state: "sit", pose: "bow" }), 0),
+  zebra: (g, frame) => zebraAt(g, walk(frame), 0),
+  "zebra-foal": (g, frame) => zebraAt(g, walk(frame, { scale: 0.6 }), 0),
+  "zebra-grazing": (g, frame) => zebraAt(g, walk(frame, { state: "sit", pose: "graze", since: 0, timer: 5 }), 2.5),
+  "zebra-lying": (g, frame) => zebraAt(g, walk(frame, { state: "sit", pose: "lie", since: 0, timer: 3 }), 3),
+  "zebra-rolling": (g, frame) => zebraAt(g, walk(frame, { state: "sit", pose: "roll", since: 0, timer: 5 }), 3.2),
+  "zebra-foal-lying": (g, frame) =>
+    zebraAt(g, walk(frame, { scale: 0.6, state: "sit", pose: "lie", since: 0, timer: 3.5 }), 3),
+  giraffe: (g, frame) => giraffeAt(g, walk(frame), 0),
+  "giraffe-browsing": (g, frame) => {
+    acacia(g, { x: 78, scale: 1.3, seed: 2, depth: 7 }, 1, ANIMAL_BOX.ground);
+    giraffeAt(g, walk(frame, { state: "sit", pose: "browse", since: 0, timer: 4 }), 3);
+  },
+  "giraffe-drinking": (g, frame) => giraffeAt(g, walk(frame, { state: "sit", pose: "drink", since: 0, timer: 4 }), 3),
+  secretary: (g, frame) => secretaryAt(g, walk(frame, { c: frame.phase * 0.25, amp: 1 }), 0),
+  "secretary-stamping": (g, frame) =>
+    secretaryAt(g, walk(frame, { state: "sit", pose: "stamp", since: 0, timer: 8, amp: 0 }), 2.3),
+  "secretary-eating": (g, frame) =>
+    secretaryAt(g, walk(frame, { state: "sit", pose: "stamp", since: 0, timer: 8, amp: 0 }), 4.8),
+  "secretary-preening": (g, frame) =>
+    secretaryAt(g, walk(frame, { state: "sit", pose: "preen", since: 0, timer: 6, amp: 0 }), 1.5),
+  "secretary-stretching": (g, frame) =>
+    secretaryAt(g, walk(frame, { state: "sit", pose: "stretch", since: 0, timer: 6, amp: 0 }), 1.5),
+  elephant: (g, frame) => elephantAt(g, walk(frame, { kind: "african" }), 0),
+  "elephant-calf": (g, frame) => elephantAt(g, walk(frame, { kind: "african", scale: 0.5 }), 0),
+  "elephant-trumpeting": (g, frame) =>
+    elephantAt(g, walk(frame, { kind: "african", state: "sit", act: "trumpet", actAt: 1.2 }), 0),
+  "elephant-curling": (g, frame) =>
+    elephantAt(g, walk(frame, { kind: "african", state: "sit", act: "curl", actAt: 1.1 }), 0),
+  "elephant-dust-bath": (g, frame) =>
+    elephantAt(g, walk(frame, { kind: "african", state: "sit", act: "dust", actAt: 2.2 }), 0),
+  "elephant-calf-lying": (g, frame) =>
+    elephantAt(g, walk(frame, { kind: "african", scale: 0.5, state: "sit", pose: "lie" }), 0),
+  lion: (g, frame) => lionAt(g, walk(frame), ANIMAL_BOX.ground + 7, 0),
+  "lion-sitting": (g, frame) => lionAt(g, walk(frame, { state: "sit" }), ANIMAL_BOX.ground + 7, 0),
+  "lion-lying": (g, frame) => lionAt(g, walk(frame, { state: "sit", pose: "lie" }), ANIMAL_BOX.ground + 7, 0),
+  "lion-stretching": (g, frame) => lionAt(g, walk(frame, { state: "sit", pose: "bow" }), ANIMAL_BOX.ground + 7, 0),
+  "lion-raised": (g, frame) => lionAt(g, walk(frame, { state: "stand", roar: 0.1 }), ANIMAL_BOX.ground + 7, 0),
+  "lion-roaring": (g, frame) => lionAt(g, walk(frame, { state: "stand", roar: 0.5 }), ANIMAL_BOX.ground + 7, 0),
+  cub: (g, frame) => cubAt(g, walk(frame, { moving: true, c: frame.phase * 0.25, amp: 1 }), 0),
+  "cub-sitting": (g, frame) => cubAt(g, walk(frame, { state: "sit", still: 5 }), 0),
+  "cub-looking-up": (g, frame) => cubAt(g, walk(frame, { state: "sit", pose: "sitUp", still: 5, look: 1 }), 0),
+  "cub-pounce": (g, frame) => cubAt(g, walk(frame, { state: "sit", pose: "pounce", still: 5, poseAt: -1.7 }), 0),
+  "cub-bounding": (g, frame) => cubAt(g, walk(frame, { pose: "bound", bd: 0.3 + frame.phase * 0.25 }), 0),
+  roller: (g, frame) => rollerAt(g, bird(frame), 0),
+  "roller-up": (g, frame) => rollerAt(g, bird(frame), 0.3),
+  "roller-perched": (g) => perchedSmall(g, "roller", 40, 40, 0, blendPose({})),
+  flamingo: (g, frame) => flamingoAt(g, bird(frame), 0),
+  "flamingo-up": (g, frame) => flamingoAt(g, bird(frame), 0.5),
+  sun: (g) => sunAt(g, { cols: ANIMAL_BOX.w, groundY: ANIMAL_BOX.ground }),
+  haze: (g) => mistAt(g, { x0: 90, y: 30, w: 40, h: 6, speed: 0 }, 0, 80),
+  dust: (g) => {
+    const motes = [
+      [6, 30],
+      [11, 24],
+      [17, 34],
+      [23, 27],
+      [30, 20],
+      [36, 31],
+      [44, 26],
+      [52, 22],
+      [59, 33],
+    ];
+    for (const [x, y] of motes) rect(g, g.pal.dust[(x + y) % 2], x, y, 1, 1);
+  },
+};
+
+const PLANT_FAMILIES = {
+  acacia: "wide-canopy",
+};
+
+export const META = {
+  id: "serengeti",
+  label: "Serengeti Savanna",
+  group: "drylands",
+  density: "open",
+  tint: ["#f7d28f", "rgb(120 100 180)"],
+  backdrop: {
+    light: {
+      green: "#f2c879",
+      "green-soft": "#f7e3a6",
+      peach: "#f5a77a",
+      blush: "#d7e0ea",
+      bloom: "#e9a14f",
+    },
+    dark: {
+      green: "rgb(200 150 70 / 0.3)",
+      "green-soft": "rgb(90 90 170 / 0.2)",
+      peach: "rgb(170 90 60 / 0.18)",
+      blush: "rgb(60 70 130 / 0.2)",
+      bloom: "rgb(210 150 70 / 0.22)",
+    },
   },
 };
 
 export default {
-  id: "serengeti",
-  label: "Serengeti Savanna",
-  group: "drylands",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.62], dark: [0.45, 0.66] },
   mature: {

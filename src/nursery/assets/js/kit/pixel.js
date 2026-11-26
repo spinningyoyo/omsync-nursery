@@ -56,6 +56,16 @@ export function rng(seed) {
   };
 }
 
+// Deterministic 32-bit child seed from a base seed and string key (FNV-1a), so each actor can own
+// an independent random stream that does not shift when other actors are added or reordered.
+export function seedOf(base, key) {
+  let h = (base >>> 0) ^ 0x811c9dc5;
+  for (let i = 0; i < key.length; i += 1) {
+    h = Math.imul(h ^ key.charCodeAt(i), 0x01000193) >>> 0;
+  }
+  return h;
+}
+
 // A stable value in [0, 1) for a pixel, so a plant keeps its texture from frame to frame.
 export function hash(x, y, seed) {
   let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(seed, 2147483647);

@@ -3,11 +3,12 @@
 // up from the ground, facing right): a capsule is a thick line with a radius at each end, filled cell by
 // cell, so a body that bends, arches, rises or rolls stays one joined shape. Each cell takes its tone
 // from how far it faces the light (from above), so four tones follow the body whatever its pose. A last
-// pass (tidy) fills gaps and drops stray or corner-only cells. animals.js's sealAt, otterAt and whaleAt
+// pass (tidy) fills gaps and drops stray or corner-only cells. sealAt, otterAt and whaleAt (below)
 // place and pose them; sealCycle and boundBeat give the walks, sealRest, otterRest and the whale's
 // event time the rest. Palettes: the scene's seal ([back, belly, eye]), otter ([brown, dark, pale]) and
 // whale ([back, light]) with sea and groundShadow (the soft shadow on land) beside them.
 import { clamp, lerp, mix, shadowColour, smooth } from "./pixel.js";
+import { stillOf, tonesFor } from "./place.js";
 
 // ---- Cells ---------------------------------------------------------------------------------------
 
@@ -618,3 +619,103 @@ export function otterRest(stand, t, total) {
   const breath = Math.sin(t * 2.2) > 0.3 ? 1 : 0;
   return { up: clamp(up, 0, 1), look: clamp(look, -1, 1), sniff: clamp(sniff, 0, 1), blink, breath };
 }
+
+// Seals, otters and whales
+
+// Built from parts (swimmer.js): the Hawaiian monk seal, her pup (scale below 0.8), the Asian
+// small-clawed otter and the humpback whale. A walker's s.c (critters.js stride) is its stride clock, so
+// the seal's belly and flipper and the otter's paws hold still on the ground; its x is the centre of the
+// body. SEAL_STRIDE and OTTER_STRIDE are [px a stride, seconds a stride] for stride(): the seal hitches
+// 3 px (the pup 2.3) in 0.75 s (0.575), the otter bounds 5 px in 0.5 s. A stopped animal rests in the
+// pose rest() picked (sealPoses, "lie" or "roll"; the lead otter "stand" or "stay"); s.still is the
+// seconds it has been at rest and s.timer the seconds its stop has left, as the sprites show it.
+export const SEAL_STRIDE = [3, SEAL_CYCLE];
+export const PUP_STRIDE = [2.3, 0.575];
+export const OTTER_STRIDE = [5, BOUND_CYCLE];
+export const sealPoses = (s) => ((s.timer ?? 0) >= SEAL_ROLL_SECONDS ? ["lie", "lie", "roll", "roll"] : ["lie"]);
+
+export function sealAt(g, s, time = 0) {
+  if (g.trace) return g.trace.draw(sealAt, g, s, time);
+  const pup = (s.scale ?? 1) < 0.8;
+  const k = pup ? 0.7 : 1;
+  const [px] = pup ? PUP_STRIDE : SEAL_STRIDE;
+  const c = s.c ?? (s.phase ?? 0) * 0.3;
+  const dir = s.dir;
+  let pose;
+  let off = 0;
+  if ((s.moving ?? s.state === "walk") || c - Math.floor(c) > 1e-6) {
+    const w = sealCycle(c, { k, reach: px / k, base: 17 });
+    pose = { ...w.pose, breath: 0, blink: (time / 3.7 + (s.phase ?? 0)) % 1 < 0.04 };
+    off = w.rear - c * px;
+  } else {
+    const still = stillOf(s, time);
+    const e = smooth(Math.min(1, still / 0.35));
+    pose = { k, len: 17 + e, ...sealRest(s.pose ?? "lie", still, still + (s.timer ?? 0), pup) };
+    if (e < 1) Object.assign(pose, { fore: "push", ftip: 3.4 - 2.6 * e, lift: 0 });
+  }
+  const half = Math.round(9 * k);
+  const tones = tonesFor(g.pal, pup ? "seal:pup" : "seal", () => sealTones(g, pup ? 0.3 : 0));
+  drawSeal(g, Math.round(s.x - dir * half + dir * off), s.y ?? g.groundY + 7, dir, pose, tones);
+}
+
+export function otterAt(g, o, time = 0) {
+  if (g.trace) return g.trace.draw(otterAt, g, o, time);
+  const dir = o.dir;
+  const c = o.c ?? (o.phase ?? 0) * 0.3;
+  let pose;
+  let off = 0;
+  let shift = 0;
+  if ((o.moving ?? o.state === "walk") || c - Math.floor(c) > 1e-6) {
+    const b = boundBeat(c);
+    pose = {
+      legs: b.legs,
+      arch: b.arch,
+      ext: b.ext,
+      air: b.air,
+      tl: b.tl,
+      blink: (time / 3.1 + (o.phase ?? 0)) % 1 < 0.04,
+    };
+    off = boundX(c) - c * OTTER_STRIDE[0];
+  } else {
+    const still = stillOf(o, time);
+    const e = smooth(Math.min(1, still / 0.35));
+    const b = boundBeat(c);
+    pose = otterRest(o.pose === "stand", still, still + (o.timer ?? 0));
+    if (e < 1)
+      Object.assign(pose, {
+        arch: b.arch * (1 - e),
+        ext: b.ext * (1 - e),
+        tl: b.tl * (1 - e),
+        legs: e < 0.5 ? b.legs : undefined,
+      });
+    if (pose.up > 0.2) shift = 2;
+  }
+  drawOtter(
+    g,
+    Math.round(o.x - dir * 7 + dir * (off + shift)),
+    o.y ?? g.groundY + 6,
+    dir,
+    pose,
+    tonesFor(g.pal, "otter", () => otterTones(g)),
+  );
+}
+
+// The whale's surfacing: w.start the time it came up, w.x the middle of its back, w.dir the way it faces
+// and w.dive whether this one dives with its flukes. wy is the water line's row.
+export function whaleAt(g, w, wy, time = 0) {
+  if (g.trace) return g.trace.draw(whaleAt, g, w, wy, time);
+  const dir = w.dir ?? 1;
+  drawWhale(g, Math.round(w.x) - dir * 7, wy, dir, time - w.start, { fluke: !!w.dive });
+}
+
+export const FAMILY = {
+  id: "swimmers",
+  title: "Seals, otters and whales",
+  group: "Animals",
+  differ: "size, colour, flippers or paws",
+  drivers: {
+    sealAt: { role: "walker", member: () => "seal" },
+    otterAt: { role: "walker", member: () => "otter" },
+    whaleAt: { role: "swimmer", member: () => "whale" },
+  },
+};

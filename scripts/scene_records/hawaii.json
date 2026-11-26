@@ -1,0 +1,908 @@
+{
+  "scene": "hawaii",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "back:honuAt": 48,
+        "back:step:sea": 108,
+        "back:whaleAt": 96,
+        "front:crabAt": 96,
+        "front:felidAt": 60,
+        "front:flyerAt": 49,
+        "front:moaAt": 72,
+        "front:puaaAt": 12,
+        "front:sealAt": 60,
+        "front:step:crabs-and-seals": 108,
+        "front:step:honu-ashore": 108,
+        "front:step:puaa": 108,
+        "front:step:tropicbirds": 108,
+        "front:tropicbirdAt": 84,
+        "plants": 108
+      },
+      "order": [
+        "back:honuAt < back:whaleAt",
+        "back:honuAt < front:crabAt",
+        "back:honuAt < front:felidAt",
+        "back:honuAt < front:flyerAt",
+        "back:honuAt < front:moaAt",
+        "back:honuAt < front:puaaAt",
+        "back:honuAt < front:sealAt",
+        "back:honuAt < front:step:crabs-and-seals",
+        "back:honuAt < front:step:honu-ashore",
+        "back:honuAt < front:step:puaa",
+        "back:honuAt < front:step:tropicbirds",
+        "back:honuAt < front:tropicbirdAt",
+        "back:honuAt < plants",
+        "back:step:sea < back:honuAt",
+        "back:step:sea < back:whaleAt",
+        "back:step:sea < front:crabAt",
+        "back:step:sea < front:felidAt",
+        "back:step:sea < front:flyerAt",
+        "back:step:sea < front:moaAt",
+        "back:step:sea < front:puaaAt",
+        "back:step:sea < front:sealAt",
+        "back:step:sea < front:step:crabs-and-seals",
+        "back:step:sea < front:step:honu-ashore",
+        "back:step:sea < front:step:puaa",
+        "back:step:sea < front:step:tropicbirds",
+        "back:step:sea < front:tropicbirdAt",
+        "back:step:sea < plants",
+        "back:whaleAt < front:crabAt",
+        "back:whaleAt < front:felidAt",
+        "back:whaleAt < front:flyerAt",
+        "back:whaleAt < front:moaAt",
+        "back:whaleAt < front:puaaAt",
+        "back:whaleAt < front:sealAt",
+        "back:whaleAt < front:step:crabs-and-seals",
+        "back:whaleAt < front:step:honu-ashore",
+        "back:whaleAt < front:step:puaa",
+        "back:whaleAt < front:step:tropicbirds",
+        "back:whaleAt < front:tropicbirdAt",
+        "back:whaleAt < plants",
+        "front:crabAt < front:moaAt",
+        "front:crabAt < front:puaaAt",
+        "front:crabAt < front:sealAt",
+        "front:crabAt < front:step:puaa",
+        "front:felidAt < front:crabAt",
+        "front:felidAt < front:flyerAt",
+        "front:felidAt < front:moaAt",
+        "front:felidAt < front:puaaAt",
+        "front:felidAt < front:sealAt",
+        "front:felidAt < front:step:crabs-and-seals",
+        "front:felidAt < front:step:puaa",
+        "front:felidAt < front:step:tropicbirds",
+        "front:felidAt < front:tropicbirdAt",
+        "front:flyerAt < front:crabAt",
+        "front:flyerAt < front:moaAt",
+        "front:flyerAt < front:puaaAt",
+        "front:flyerAt < front:sealAt",
+        "front:flyerAt < front:step:crabs-and-seals",
+        "front:flyerAt < front:step:puaa",
+        "front:moaAt < front:puaaAt",
+        "front:moaAt < front:step:puaa",
+        "front:sealAt < front:moaAt",
+        "front:sealAt < front:puaaAt",
+        "front:sealAt < front:step:puaa",
+        "front:step:crabs-and-seals < front:crabAt",
+        "front:step:crabs-and-seals < front:moaAt",
+        "front:step:crabs-and-seals < front:puaaAt",
+        "front:step:crabs-and-seals < front:sealAt",
+        "front:step:crabs-and-seals < front:step:puaa",
+        "front:step:honu-ashore < front:crabAt",
+        "front:step:honu-ashore < front:felidAt",
+        "front:step:honu-ashore < front:flyerAt",
+        "front:step:honu-ashore < front:moaAt",
+        "front:step:honu-ashore < front:puaaAt",
+        "front:step:honu-ashore < front:sealAt",
+        "front:step:honu-ashore < front:step:crabs-and-seals",
+        "front:step:honu-ashore < front:step:puaa",
+        "front:step:honu-ashore < front:step:tropicbirds",
+        "front:step:honu-ashore < front:tropicbirdAt",
+        "front:step:puaa < front:puaaAt",
+        "front:step:tropicbirds < front:crabAt",
+        "front:step:tropicbirds < front:flyerAt",
+        "front:step:tropicbirds < front:moaAt",
+        "front:step:tropicbirds < front:puaaAt",
+        "front:step:tropicbirds < front:sealAt",
+        "front:step:tropicbirds < front:step:crabs-and-seals",
+        "front:step:tropicbirds < front:step:puaa",
+        "front:step:tropicbirds < front:tropicbirdAt",
+        "front:tropicbirdAt < front:crabAt",
+        "front:tropicbirdAt < front:flyerAt",
+        "front:tropicbirdAt < front:moaAt",
+        "front:tropicbirdAt < front:puaaAt",
+        "front:tropicbirdAt < front:sealAt",
+        "front:tropicbirdAt < front:step:crabs-and-seals",
+        "front:tropicbirdAt < front:step:puaa",
+        "plants < front:crabAt",
+        "plants < front:felidAt",
+        "plants < front:flyerAt",
+        "plants < front:moaAt",
+        "plants < front:puaaAt",
+        "plants < front:sealAt",
+        "plants < front:step:crabs-and-seals",
+        "plants < front:step:honu-ashore",
+        "plants < front:step:puaa",
+        "plants < front:step:tropicbirds",
+        "plants < front:tropicbirdAt"
+      ],
+      "actors": {
+        "tropicbirds[0]": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            -12,
+            237
+          ],
+          "yRange": [
+            49.9,
+            49.9
+          ],
+          "speed": 12,
+          "poses": [
+            "fly"
+          ]
+        },
+        "tropicbirds[1]": {
+          "firstStage": 6,
+          "activeSteps": 29,
+          "xRange": [
+            -12,
+            254
+          ],
+          "yRange": [
+            77.3,
+            77.3
+          ],
+          "speed": 38,
+          "poses": [
+            "fly"
+          ]
+        },
+        "cat": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            208.3,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "iiwi": {
+          "firstStage": 4,
+          "activeSteps": 49,
+          "xRange": [
+            -12,
+            252
+          ],
+          "yRange": [
+            32.4,
+            32.4
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "moa": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -9.4,
+            26.9
+          ],
+          "speed": 10.4,
+          "poses": [
+            "flap",
+            "peck",
+            "walk"
+          ]
+        },
+        "crabs[0]": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -9.7,
+            109.5
+          ],
+          "speed": 9,
+          "poses": [
+            "alert",
+            "crouch",
+            "threat",
+            "walk"
+          ]
+        },
+        "hatchling": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            62.4,
+            108.3
+          ],
+          "speed": 3.9,
+          "poses": [
+            "walk"
+          ]
+        },
+        "seals[0]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            227,
+            251
+          ],
+          "speed": 4,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "seals[1]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            247,
+            271.6
+          ],
+          "speed": 2.3,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "puaa": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "stand",
+            "walk"
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "back:honuAt": 48,
+        "back:step:sea": 108,
+        "back:whaleAt": 96,
+        "front:crabAt": 96,
+        "front:flyerAt": 31,
+        "front:moaAt": 72,
+        "front:puaaAt": 12,
+        "front:sealAt": 60,
+        "front:step:crabs-and-seals": 108,
+        "front:step:honu-ashore": 108,
+        "front:step:puaa": 108,
+        "front:step:tropicbirds": 108,
+        "front:tropicbirdAt": 63,
+        "plants": 108
+      },
+      "order": [
+        "back:honuAt < back:whaleAt",
+        "back:honuAt < front:crabAt",
+        "back:honuAt < front:flyerAt",
+        "back:honuAt < front:moaAt",
+        "back:honuAt < front:puaaAt",
+        "back:honuAt < front:sealAt",
+        "back:honuAt < front:step:crabs-and-seals",
+        "back:honuAt < front:step:honu-ashore",
+        "back:honuAt < front:step:puaa",
+        "back:honuAt < front:step:tropicbirds",
+        "back:honuAt < front:tropicbirdAt",
+        "back:honuAt < plants",
+        "back:step:sea < back:honuAt",
+        "back:step:sea < back:whaleAt",
+        "back:step:sea < front:crabAt",
+        "back:step:sea < front:flyerAt",
+        "back:step:sea < front:moaAt",
+        "back:step:sea < front:puaaAt",
+        "back:step:sea < front:sealAt",
+        "back:step:sea < front:step:crabs-and-seals",
+        "back:step:sea < front:step:honu-ashore",
+        "back:step:sea < front:step:puaa",
+        "back:step:sea < front:step:tropicbirds",
+        "back:step:sea < front:tropicbirdAt",
+        "back:step:sea < plants",
+        "back:whaleAt < front:crabAt",
+        "back:whaleAt < front:flyerAt",
+        "back:whaleAt < front:moaAt",
+        "back:whaleAt < front:puaaAt",
+        "back:whaleAt < front:sealAt",
+        "back:whaleAt < front:step:crabs-and-seals",
+        "back:whaleAt < front:step:honu-ashore",
+        "back:whaleAt < front:step:puaa",
+        "back:whaleAt < front:step:tropicbirds",
+        "back:whaleAt < front:tropicbirdAt",
+        "back:whaleAt < plants",
+        "front:crabAt < front:moaAt",
+        "front:crabAt < front:puaaAt",
+        "front:crabAt < front:sealAt",
+        "front:crabAt < front:step:puaa",
+        "front:flyerAt < front:crabAt",
+        "front:flyerAt < front:moaAt",
+        "front:flyerAt < front:puaaAt",
+        "front:flyerAt < front:sealAt",
+        "front:flyerAt < front:step:crabs-and-seals",
+        "front:flyerAt < front:step:puaa",
+        "front:moaAt < front:puaaAt",
+        "front:moaAt < front:step:puaa",
+        "front:sealAt < front:moaAt",
+        "front:sealAt < front:puaaAt",
+        "front:sealAt < front:step:puaa",
+        "front:step:crabs-and-seals < front:crabAt",
+        "front:step:crabs-and-seals < front:moaAt",
+        "front:step:crabs-and-seals < front:puaaAt",
+        "front:step:crabs-and-seals < front:sealAt",
+        "front:step:crabs-and-seals < front:step:puaa",
+        "front:step:honu-ashore < front:crabAt",
+        "front:step:honu-ashore < front:flyerAt",
+        "front:step:honu-ashore < front:moaAt",
+        "front:step:honu-ashore < front:puaaAt",
+        "front:step:honu-ashore < front:sealAt",
+        "front:step:honu-ashore < front:step:crabs-and-seals",
+        "front:step:honu-ashore < front:step:puaa",
+        "front:step:honu-ashore < front:step:tropicbirds",
+        "front:step:honu-ashore < front:tropicbirdAt",
+        "front:step:puaa < front:puaaAt",
+        "front:step:tropicbirds < front:crabAt",
+        "front:step:tropicbirds < front:flyerAt",
+        "front:step:tropicbirds < front:moaAt",
+        "front:step:tropicbirds < front:puaaAt",
+        "front:step:tropicbirds < front:sealAt",
+        "front:step:tropicbirds < front:step:crabs-and-seals",
+        "front:step:tropicbirds < front:step:puaa",
+        "front:step:tropicbirds < front:tropicbirdAt",
+        "front:tropicbirdAt < front:crabAt",
+        "front:tropicbirdAt < front:flyerAt",
+        "front:tropicbirdAt < front:moaAt",
+        "front:tropicbirdAt < front:puaaAt",
+        "front:tropicbirdAt < front:sealAt",
+        "front:tropicbirdAt < front:step:crabs-and-seals",
+        "front:tropicbirdAt < front:step:puaa",
+        "plants < front:crabAt",
+        "plants < front:flyerAt",
+        "plants < front:moaAt",
+        "plants < front:puaaAt",
+        "plants < front:sealAt",
+        "plants < front:step:crabs-and-seals",
+        "plants < front:step:honu-ashore",
+        "plants < front:step:puaa",
+        "plants < front:step:tropicbirds",
+        "plants < front:tropicbirdAt"
+      ],
+      "actors": {
+        "tropicbirds[0]": {
+          "firstStage": 2,
+          "activeSteps": 50,
+          "xRange": [
+            -12,
+            102
+          ],
+          "yRange": [
+            27.2,
+            49.9
+          ],
+          "speed": 12,
+          "poses": [
+            "fly"
+          ]
+        },
+        "tropicbirds[1]": {
+          "firstStage": 6,
+          "activeSteps": 13,
+          "xRange": [
+            -12,
+            102
+          ],
+          "yRange": [
+            56.5,
+            56.5
+          ],
+          "speed": 38,
+          "poses": [
+            "fly"
+          ]
+        },
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "iiwi": {
+          "firstStage": 4,
+          "activeSteps": 31,
+          "xRange": [
+            -12,
+            103.5
+          ],
+          "yRange": [
+            32.4,
+            38.6
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "moa": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -9.4,
+            26.9
+          ],
+          "speed": 10.4,
+          "poses": [
+            "flap",
+            "peck",
+            "walk"
+          ]
+        },
+        "crabs[0]": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -9.7,
+            71.3
+          ],
+          "speed": 9,
+          "poses": [
+            "crouch",
+            "threat",
+            "walk"
+          ]
+        },
+        "hatchling": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            17.4,
+            63.3
+          ],
+          "speed": 3.9,
+          "poses": [
+            "walk"
+          ]
+        },
+        "seals[0]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            81,
+            101
+          ],
+          "speed": 4,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "seals[1]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            101,
+            121.6
+          ],
+          "speed": 2.2,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "puaa": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "root",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "back:honuAt": 48,
+        "back:step:sea": 108,
+        "back:whaleAt": 96,
+        "front:crabAt": 96,
+        "front:felidAt": 60,
+        "front:moaAt": 72,
+        "front:puaaAt": 12,
+        "front:sealAt": 60,
+        "front:step:crabs-and-seals": 108,
+        "front:step:honu-ashore": 108,
+        "front:step:puaa": 108,
+        "front:step:tropicbirds": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:honuAt < back:whaleAt",
+        "back:honuAt < front:crabAt",
+        "back:honuAt < front:felidAt",
+        "back:honuAt < front:moaAt",
+        "back:honuAt < front:puaaAt",
+        "back:honuAt < front:sealAt",
+        "back:honuAt < front:step:crabs-and-seals",
+        "back:honuAt < front:step:honu-ashore",
+        "back:honuAt < front:step:puaa",
+        "back:honuAt < front:step:tropicbirds",
+        "back:honuAt < plants",
+        "back:step:sea < back:honuAt",
+        "back:step:sea < back:whaleAt",
+        "back:step:sea < front:crabAt",
+        "back:step:sea < front:felidAt",
+        "back:step:sea < front:moaAt",
+        "back:step:sea < front:puaaAt",
+        "back:step:sea < front:sealAt",
+        "back:step:sea < front:step:crabs-and-seals",
+        "back:step:sea < front:step:honu-ashore",
+        "back:step:sea < front:step:puaa",
+        "back:step:sea < front:step:tropicbirds",
+        "back:step:sea < plants",
+        "back:whaleAt < front:crabAt",
+        "back:whaleAt < front:felidAt",
+        "back:whaleAt < front:moaAt",
+        "back:whaleAt < front:puaaAt",
+        "back:whaleAt < front:sealAt",
+        "back:whaleAt < front:step:crabs-and-seals",
+        "back:whaleAt < front:step:honu-ashore",
+        "back:whaleAt < front:step:puaa",
+        "back:whaleAt < front:step:tropicbirds",
+        "back:whaleAt < plants",
+        "front:crabAt < front:moaAt",
+        "front:crabAt < front:puaaAt",
+        "front:crabAt < front:sealAt",
+        "front:crabAt < front:step:puaa",
+        "front:felidAt < front:crabAt",
+        "front:felidAt < front:moaAt",
+        "front:felidAt < front:puaaAt",
+        "front:felidAt < front:sealAt",
+        "front:felidAt < front:step:crabs-and-seals",
+        "front:felidAt < front:step:puaa",
+        "front:felidAt < front:step:tropicbirds",
+        "front:moaAt < front:puaaAt",
+        "front:moaAt < front:step:puaa",
+        "front:sealAt < front:moaAt",
+        "front:sealAt < front:puaaAt",
+        "front:sealAt < front:step:puaa",
+        "front:step:crabs-and-seals < front:crabAt",
+        "front:step:crabs-and-seals < front:moaAt",
+        "front:step:crabs-and-seals < front:puaaAt",
+        "front:step:crabs-and-seals < front:sealAt",
+        "front:step:crabs-and-seals < front:step:puaa",
+        "front:step:honu-ashore < front:crabAt",
+        "front:step:honu-ashore < front:felidAt",
+        "front:step:honu-ashore < front:moaAt",
+        "front:step:honu-ashore < front:puaaAt",
+        "front:step:honu-ashore < front:sealAt",
+        "front:step:honu-ashore < front:step:crabs-and-seals",
+        "front:step:honu-ashore < front:step:puaa",
+        "front:step:honu-ashore < front:step:tropicbirds",
+        "front:step:puaa < front:puaaAt",
+        "front:step:tropicbirds < front:crabAt",
+        "front:step:tropicbirds < front:moaAt",
+        "front:step:tropicbirds < front:puaaAt",
+        "front:step:tropicbirds < front:sealAt",
+        "front:step:tropicbirds < front:step:crabs-and-seals",
+        "front:step:tropicbirds < front:step:puaa",
+        "plants < front:crabAt",
+        "plants < front:felidAt",
+        "plants < front:moaAt",
+        "plants < front:puaaAt",
+        "plants < front:sealAt",
+        "plants < front:step:crabs-and-seals",
+        "plants < front:step:honu-ashore",
+        "plants < front:step:puaa",
+        "plants < front:step:tropicbirds"
+      ],
+      "actors": {
+        "tropicbirds[0]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "tropicbirds[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "cat": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            208.3,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "iiwi": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "moa": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -9.4,
+            26.9
+          ],
+          "speed": 10.4,
+          "poses": [
+            "flap",
+            "peck",
+            "walk"
+          ]
+        },
+        "crabs[0]": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -9.7,
+            48.8
+          ],
+          "speed": 9,
+          "poses": [
+            "alert",
+            "crouch",
+            "threat",
+            "walk"
+          ]
+        },
+        "hatchling": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            62.4,
+            108.3
+          ],
+          "speed": 3.9,
+          "poses": [
+            "walk"
+          ]
+        },
+        "seals[0]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            231,
+            251
+          ],
+          "speed": 4,
+          "poses": [
+            "lie",
+            "roll",
+            "walk"
+          ]
+        },
+        "seals[1]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            251,
+            271.6
+          ],
+          "speed": 2.2,
+          "poses": [
+            "lie",
+            "roll",
+            "walk"
+          ]
+        },
+        "puaa": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "root",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "back:honuAt": 48,
+        "back:step:sea": 108,
+        "back:whaleAt": 96,
+        "front:crabAt": 96,
+        "front:moaAt": 72,
+        "front:puaaAt": 12,
+        "front:sealAt": 60,
+        "front:step:crabs-and-seals": 108,
+        "front:step:honu-ashore": 108,
+        "front:step:puaa": 108,
+        "front:step:tropicbirds": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:honuAt < back:whaleAt",
+        "back:honuAt < front:crabAt",
+        "back:honuAt < front:moaAt",
+        "back:honuAt < front:puaaAt",
+        "back:honuAt < front:sealAt",
+        "back:honuAt < front:step:crabs-and-seals",
+        "back:honuAt < front:step:honu-ashore",
+        "back:honuAt < front:step:puaa",
+        "back:honuAt < front:step:tropicbirds",
+        "back:honuAt < plants",
+        "back:step:sea < back:honuAt",
+        "back:step:sea < back:whaleAt",
+        "back:step:sea < front:crabAt",
+        "back:step:sea < front:moaAt",
+        "back:step:sea < front:puaaAt",
+        "back:step:sea < front:sealAt",
+        "back:step:sea < front:step:crabs-and-seals",
+        "back:step:sea < front:step:honu-ashore",
+        "back:step:sea < front:step:puaa",
+        "back:step:sea < front:step:tropicbirds",
+        "back:step:sea < plants",
+        "back:whaleAt < front:crabAt",
+        "back:whaleAt < front:moaAt",
+        "back:whaleAt < front:puaaAt",
+        "back:whaleAt < front:sealAt",
+        "back:whaleAt < front:step:crabs-and-seals",
+        "back:whaleAt < front:step:honu-ashore",
+        "back:whaleAt < front:step:puaa",
+        "back:whaleAt < front:step:tropicbirds",
+        "back:whaleAt < plants",
+        "front:crabAt < front:moaAt",
+        "front:crabAt < front:puaaAt",
+        "front:crabAt < front:sealAt",
+        "front:crabAt < front:step:puaa",
+        "front:moaAt < front:puaaAt",
+        "front:moaAt < front:step:puaa",
+        "front:sealAt < front:moaAt",
+        "front:sealAt < front:puaaAt",
+        "front:sealAt < front:step:puaa",
+        "front:step:crabs-and-seals < front:crabAt",
+        "front:step:crabs-and-seals < front:moaAt",
+        "front:step:crabs-and-seals < front:puaaAt",
+        "front:step:crabs-and-seals < front:sealAt",
+        "front:step:crabs-and-seals < front:step:puaa",
+        "front:step:honu-ashore < front:crabAt",
+        "front:step:honu-ashore < front:moaAt",
+        "front:step:honu-ashore < front:puaaAt",
+        "front:step:honu-ashore < front:sealAt",
+        "front:step:honu-ashore < front:step:crabs-and-seals",
+        "front:step:honu-ashore < front:step:puaa",
+        "front:step:honu-ashore < front:step:tropicbirds",
+        "front:step:puaa < front:puaaAt",
+        "front:step:tropicbirds < front:crabAt",
+        "front:step:tropicbirds < front:moaAt",
+        "front:step:tropicbirds < front:puaaAt",
+        "front:step:tropicbirds < front:sealAt",
+        "front:step:tropicbirds < front:step:crabs-and-seals",
+        "front:step:tropicbirds < front:step:puaa",
+        "plants < front:crabAt",
+        "plants < front:moaAt",
+        "plants < front:puaaAt",
+        "plants < front:sealAt",
+        "plants < front:step:crabs-and-seals",
+        "plants < front:step:honu-ashore",
+        "plants < front:step:puaa",
+        "plants < front:step:tropicbirds"
+      ],
+      "actors": {
+        "tropicbirds[0]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "tropicbirds[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "iiwi": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "moa": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -9.4,
+            26.9
+          ],
+          "speed": 10.4,
+          "poses": [
+            "flap",
+            "peck",
+            "walk"
+          ]
+        },
+        "crabs[0]": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -9.7,
+            48.8
+          ],
+          "speed": 9,
+          "poses": [
+            "alert",
+            "crouch",
+            "threat",
+            "walk"
+          ]
+        },
+        "hatchling": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            17.4,
+            63.3
+          ],
+          "speed": 3.9,
+          "poses": [
+            "walk"
+          ]
+        },
+        "seals[0]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            81,
+            101
+          ],
+          "speed": 4,
+          "poses": [
+            "lie",
+            "roll",
+            "walk"
+          ]
+        },
+        "seals[1]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            101,
+            121.6
+          ],
+          "speed": 2.2,
+          "poses": [
+            "lie",
+            "roll",
+            "walk"
+          ]
+        },
+        "puaa": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "root",
+            "walk"
+          ]
+        }
+      }
+    }
+  }
+}

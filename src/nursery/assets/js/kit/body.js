@@ -1,6 +1,6 @@
 // Animals built from parts: a body drawn column by column from an outline, legs that bend at a
 // joint (or, when short, step through four drawn poses), a curved tail, a haunch, and a face whose
-// mouth can open. One spec per member (see the cats in animals.js) says where each part goes. The
+// mouth can open. One spec per member (see the cats in felid.js) says where each part goes. The
 // same parts make every pose: walking, standing, sitting, lying, the long stretch and the arched
 // back, and the animal eases from one to the next. Coordinates are the animal's own: x runs from
 // the rump (0) toward the nose and h is the height above the ground; `plot(x, h, colour)` paints a

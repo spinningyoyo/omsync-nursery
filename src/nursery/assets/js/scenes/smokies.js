@@ -8,39 +8,30 @@
 // elk bugles. At night the Milky Way arches over the ridges as it does on an October evening, a
 // barred owl watches from a branch, and the day birds have gone to roost.
 // A bobcat, the park's only wild cat, prowls the floor and rests on it now and then.
-import {
-  bearAt,
-  bearPoses,
-  cervidAt,
-  felidAt,
-  felidPoses,
-  groundBirdAt,
-  groundBirdStep,
-  groundPoses,
-  groundSpeed,
-  hareAt,
-  harePoses,
-} from "../kit/animals.js";
+
+import { bearAt, bearPoses } from "../kit/bear.js";
+import { hareAt, harePoses } from "../kit/beast.js";
 import {
   enter,
   enterBehind,
   fidget,
-  flyBy,
   follow,
   isNight,
   narrow,
   percher,
   rest,
   settle,
-  soarer,
   stroll,
   walker,
   wander,
 } from "../kit/critters.js";
+import { cervidAt } from "../kit/deer.js";
 import { bandPath, milkyWayCanvas, mistAt, mistBand, onBand, starAt, starField, starFieldAt } from "../kit/effects.js";
+import { felidAt, felidPoses } from "../kit/felid.js";
 import { circlerAt, eagleFlyAt, flyerAt, OWL_MOVES, owlPerchAt } from "../kit/flyers.js";
+import { groundBirdAt, groundBirdStep, groundPoses, groundSpeed } from "../kit/groundbird.js";
 import { ridge as softRidge } from "../kit/landforms.js";
-import { flyByPerch, goHome, unhidden } from "../kit/perch.js";
+import { unhidden } from "../kit/perch.js";
 import {
   blob,
   CLEARING,
@@ -49,11 +40,15 @@ import {
   foliage,
   hash,
   rect,
+  rng,
   scatter,
   sortPlants,
   stroke,
   wind,
 } from "../kit/pixel.js";
+import { ANIMAL_BOX, bird, owlPerched, soarSprites, walk } from "../kit/poses.js";
+import { circlerActor, crossingActor, drawStep, runCast, walkerActor } from "../kit/runner.js";
+import { blendPose, perchedSmall } from "../kit/smallbird.js";
 import { broadleafTree, coniferTree } from "../kit/trees.js";
 
 const MATURE = { tree: 3, ridge: 2, rhodo: 2.5, fern: 1.5, flower: 2, boulder: 1.5, log: 1.5 };
@@ -508,258 +503,492 @@ function milkyWay(f) {
 
 const HEAR_AFTER = 0.8; // seconds the deer keep listening after the bull's bugle ends
 
-const extras = {
-  init(f) {
-    return {
-      cat: walker(f),
-      stars: starField(f, STARS, 55),
-      band: milkyWay(f),
-      milky: null,
-      leaves: [],
-      mists: Array.from({ length: MISTS }, () => mistBand(f, 30, 26)),
-      deer: [
-        { ...walker(f), kind: "whitetail", sex: "f" },
-        { ...walker(f), kind: "whitetail", sex: "m" },
+const extras = runCast(
+  [
+    drawStep(
+      "milky-way",
+      (g, f) => {
+        if (f.theme !== "dark") return;
+        const x = f.extra;
+        x.milky ??= milkyWayCanvas(f.cols, f.groundY, x.band);
+        g.ctx.drawImage(x.milky, 0, 0);
+        starFieldAt(g, x.stars, g.time);
+        for (const star of NAMED_STARS) {
+          const { x: sx, y } = onBand(x.band, star.along, star.across);
+          starAt(g, star.colour, sx, y, star.big ? 0.9 : 0.95, star.big);
+        }
+        g.ctx.globalAlpha = 1;
+      },
+      { back: true },
+    ),
+    {
+      label: "falling leaves",
+      kind: "effect",
+      arrives: 1,
+      fixed: `up to ${MAX_LEAVES} at once`,
+      sprites: ["leaf"],
+    },
+    walkerActor({
+      id: "cat",
+      label: "bobcat, the park's only wild cat",
+      kind: "animal",
+      family: "cats",
+      sprites: ["bobcat", "bobcat-sitting", "bobcat-arching", "bobcat-lying", "bobcat-stretching"],
+      arrives: 5,
+      phone: "hide",
+      move: { speed: 8, stride: 7, sit: [4, 9], walk: [3, 6] },
+      poses: () => felidPoses("bobcat"),
+      draw: (g, w, f) => felidAt(g, { ...w, kind: "bobcat" }, f.time),
+    }),
+    drawStep("mists", (g, f) => {
+      for (const m of f.extra.mists) mistAt(g, m, f.time, f.cols);
+    }),
+    walkerActor({
+      id: "turkey",
+      label: "wild turkey",
+      kind: "animal",
+      family: "ground-birds",
+      sprites: ["turkey", "turkey-displaying", "turkey-preening"],
+      arrives: 3,
+      move: { speed: groundSpeed("turkey"), stride: 1, sit: [3.5, 9], walk: [2, 5] },
+      poses: (w) => groundPoses(w, "turkey"),
+      step: (f, w, dt, x0) => groundBirdStep(f, w, dt, "turkey", x0),
+      draw: (g, w, f) => turkeyAt(g, w, f.time),
+    }),
+    drawStep("deer-elk", (g, f) => {
+      const x = f.extra;
+      for (const d of x.deer) if (d.active) cervidAt(g, d, f.time);
+      if (x.elk.active) cervidAt(g, x.elk, f.time);
+    }),
+    walkerActor({
+      id: "groundhog",
+      label: "groundhog",
+      kind: "animal",
+      family: "hares-rodents",
+      sprites: ["groundhog", "groundhog-sitting", "groundhog-eating", "groundhog-sprawling"],
+      arrives: 1,
+      props: { kind: "groundhog" },
+      move: { speed: 6, stride: 4, sit: [6, 12], walk: [2, 4] },
+      poses: () => harePoses("groundhog"),
+      draw: (g, w, f) => hareAt(g, w, f.time),
+    }),
+    drawStep("bears", (g, f) => {
+      const [mother, cub] = f.extra.bears;
+      if (mother.active) bearAt(g, mother, f.time);
+      if (cub.climb) {
+        const { start, x: cx, dir, height } = cub.climb;
+        bearAt(g, { ...cub, x: cx, dir, climb: { ...CLIMB, t: f.time - start, height } }, f.time);
+      } else if (cub.active) bearAt(g, cub, f.time);
+    }),
+    drawStep("owl", (g, f) => {
+      const { owl } = f.extra;
+      if (owl && isNight(f)) {
+        rect(g, g.pal.trunk[1], owl.branch - 2, owl.y, 10, 1);
+        owlPerchAt(g, owl, f.time);
+      }
+    }),
+    crossingActor({
+      id: "eagle",
+      label: "golden eagle (slow flyby, side-on, perches now and then)",
+      kind: "bird",
+      sprites: [
+        "eagle-side",
+        "eagle-side-flapping",
+        "eagle-landing",
+        "eagle-takeoff",
+        "eagle-perched",
+        "eagle-perched-preening",
+        "eagle-perched-stretching",
       ],
-      spook: { next: 20 + f.rand() * 15, until: -1 },
-      elk: { ...walker(f), kind: "elk", sex: "m" },
-      bugle: { next: 10 + f.rand() * 10, until: -1 },
-      turkey: walker(f),
-      bears: [walker(f), { ...walker(f, 0.55), cub: true }],
-      rear: { next: 14 + f.rand() * 10, until: -1 },
-      eagle: { next: 3, bird: null },
-      soarer: soarer(f, 48 + f.rand() * 10, 1),
-      cardinal: { next: 6, bird: null },
-      swift: { next: 2, bird: null },
-      groundhog: { ...walker(f), kind: "groundhog" },
-      owl: null,
-    };
-  },
-
-  onGrow(f) {
-    if (f.stage >= 5 && !narrow(f)) enter(f, f.extra.cat);
-    const x = f.extra;
-    if (f.stage >= 1) enter(f, x.groundhog);
-    if (f.stage >= 3) enter(f, x.turkey);
-    if (f.stage >= 4) enter(f, x.deer[0]);
-    if (f.stage >= 7 && !narrow(f)) enterBehind(f, x.deer[1], x.deer[0], 22);
-    if (f.stage >= 6) enter(f, x.bears[0]);
-    if (f.stage >= 7) enter(f, x.elk);
-    if (f.stage >= 8) enterBehind(f, x.bears[1], x.bears[0], 22);
-  },
-
-  busy: () => true,
-
-  update(f, dt) {
-    wander(f, f.extra.cat, dt, { speed: 8, stride: 7, sit: [4, 9], walk: [3, 6] });
-    rest(f, f.extra.cat, felidPoses("bobcat"));
-    const x = f.extra;
-    if (f.stage >= 1) {
-      for (const p of f.plants) {
-        if (!p.crown || p.kind !== "tree" || p.species === "hemlock" || x.leaves.length > MAX_LEAVES) continue;
-        if (f.rand() > dt * 0.35) continue;
-        const { cx, top, half, bottom } = p.crown;
-        x.leaves.push({
-          x: cx + (f.rand() * 2 - 1) * half,
-          y: top + f.rand() * (bottom - top),
-          vy: 7 + f.rand() * 6,
-          phase: f.rand() * 6.28,
-          tone: TONES[p.species],
-          big: f.rand() < 0.3,
-        });
+      arrives: 2,
+      when: "day",
+      first: 3,
+      mode: "perch",
+      every: [6, 5],
+      speed: 13,
+      spawn: (f) => ({ y: 22 + f.rand() * 30 }),
+      spots: perchSpots,
+      stay: [14, 28],
+      clearOnOff: "perched",
+      draw: (g, b, f) => eagleFlyAt(g, "golden", b, f.time),
+    }),
+    circlerActor({
+      id: "soarer",
+      label: "golden eagle (circling)",
+      kind: "bird",
+      sprites: ["eagle", "eagle-bank", "eagle-flapping"],
+      phase: 1,
+      arrives: 5,
+      when: "day",
+      cy: (f) => 48 + f.rand() * 10,
+      draw: (g, s, f) => circlerAt(g, "golden", s, f.time),
+    }),
+    crossingActor({
+      id: "cardinal",
+      label: "northern cardinal",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["cardinal", "cardinal-perched"],
+      arrives: 3,
+      when: "day",
+      first: 6,
+      mode: "perch",
+      every: [7, 6],
+      speed: 24,
+      spawn: (f) => ({ y: f.groundY - 56 - f.rand() * 24 }),
+      spots: (g) => perchSpots(g, true),
+      small: "cardinal",
+      odds: 0.3,
+      stay: [8, 16],
+      draw: (g, b, f) => flyerAt(g, b, f.time, "cardinal"),
+    }),
+    crossingActor({
+      id: "swift",
+      label: "chimney swift",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["swift"],
+      arrives: 4,
+      when: "day",
+      first: 2,
+      every: [6, 8],
+      speed: 46,
+      spawn: (f) => ({ y: f.groundY - 80 - f.rand() * 24 }),
+      draw: (g, b, f) => flyerAt(g, b, f.time, "swift"),
+    }),
+    drawStep("leaves", (g, f) => {
+      for (const leaf of f.extra.leaves) {
+        const tones = g.pal[leaf.tone];
+        rect(g, tones[1 + (Math.round(leaf.x) % 2)], Math.round(leaf.x), Math.round(leaf.y), leaf.big ? 2 : 1, 1);
       }
-    }
-    for (const leaf of x.leaves) {
-      leaf.y += leaf.vy * dt;
-      leaf.x += Math.sin(f.time * 2.4 + leaf.phase) * 9 * dt;
-    }
-    x.leaves = x.leaves.filter((leaf) => leaf.y < f.groundY + 12);
-    // The deer browse, and now and then something startles them: they bound off with their white
-    // tails raised as flags.
-    const [doe, buck] = x.deer;
-    if (doe.active && f.time >= x.spook.next) {
-      x.spook.until = f.time + 2;
-      x.spook.next = f.time + 25 + f.rand() * 20;
-      doe.dir = f.rand() < 0.5 ? 1 : -1;
-    }
-    if (f.time < x.spook.until) {
-      doe.state = "run";
-      doe.x += doe.dir * 24 * dt;
-      doe.phase += dt * 14;
-      for (const d of x.deer) d.hearSince = null;
-    } else {
-      if (doe.state === "run") doe.state = "sit";
-      if (x.elk.active && f.time < x.bugle.until + HEAR_AFTER) {
-        // While the bull bugles the deer stop, face him and lift their heads to listen, and carry on
-        // a moment after he finishes (cervidAt reads hearSince and hearUntil).
-        doe.state = "sit";
-        doe.timer = Math.max(doe.timer, 1);
-        doe.dir = x.elk.x > doe.x ? 1 : -1;
-        for (const d of x.deer) {
-          d.hearSince ??= f.time;
-          d.hearUntil = x.bugle.until + HEAR_AFTER;
+    }),
+    {
+      label: "white-tailed deer",
+      kind: "animal",
+      family: "deer",
+      presence: ["deer[0]", "deer[1]"],
+      sprites: ["deer", "deer-antlered", "deer-flag", "deer-grazing", "deer-lying", "deer-listening"],
+    },
+    {
+      label: "black bear and cub",
+      kind: "animal",
+      family: "bears",
+      presence: ["bears[0]", "bears[1]"],
+      sprites: [
+        "bear",
+        "bear-foraging",
+        "bear-rearing",
+        "bear-sitting",
+        "bear-lying",
+        "bear-cub",
+        "bear-cub-sitting",
+        "bear-cub-climbing",
+      ],
+    },
+    {
+      label: "mist bands",
+      kind: "effect",
+      arrives: 0,
+      fixed: `${MISTS} bands, always`,
+      sprites: ["mist"],
+    },
+    {
+      label: "bull elk in the rut",
+      kind: "animal",
+      family: "deer",
+      presence: ["elk"],
+      sprites: ["elk", "elk-bugle"],
+    },
+    {
+      label: "barred owl (night)",
+      kind: "bird",
+      family: "owls",
+      arrives: 1,
+      fixed: "1, perched under a crown at night",
+      sprites: ["owl", "owl-swivel", "owl-fluff"],
+    },
+    {
+      label: "stars and an arched Milky Way (dark theme)",
+      kind: "effect",
+      layer: "behind the plants (drawBack, dark theme only)",
+      arrives: 0,
+      fixed: `${STARS} stars and the Milky Way`,
+      sprites: ["sky"],
+    },
+  ],
+  {
+    init(f) {
+      return {
+        stars: starField(f, STARS, 55),
+        band: milkyWay(f),
+        milky: null,
+        leaves: [],
+        mists: Array.from({ length: MISTS }, () => mistBand(f, 30, 26)),
+        deer: [
+          { ...walker(f), kind: "whitetail", sex: "f" },
+          { ...walker(f), kind: "whitetail", sex: "m" },
+        ],
+        spook: { next: 20 + f.rand() * 15, until: -1 },
+        elk: { ...walker(f), kind: "elk", sex: "m" },
+        bugle: { next: 10 + f.rand() * 10, until: -1 },
+        bears: [walker(f), { ...walker(f, 0.55), cub: true }],
+        rear: { next: 14 + f.rand() * 10, until: -1 },
+        owl: null,
+      };
+    },
+
+    onGrow(f) {
+      const x = f.extra;
+      if (f.stage >= 4) enter(f, x.deer[0]);
+      if (f.stage >= 7 && !narrow(f)) enterBehind(f, x.deer[1], x.deer[0], 22);
+      if (f.stage >= 6) enter(f, x.bears[0]);
+      if (f.stage >= 7) enter(f, x.elk);
+      if (f.stage >= 8) enterBehind(f, x.bears[1], x.bears[0], 22);
+    },
+
+    busy: () => true,
+
+    update(f, dt) {
+      const x = f.extra;
+      if (f.stage >= 1) {
+        for (const p of f.plants) {
+          if (!p.crown || p.kind !== "tree" || p.species === "hemlock" || x.leaves.length > MAX_LEAVES) continue;
+          if (f.rand() > dt * 0.35) continue;
+          const { cx, top, half, bottom } = p.crown;
+          x.leaves.push({
+            x: cx + (f.rand() * 2 - 1) * half,
+            y: top + f.rand() * (bottom - top),
+            vy: 7 + f.rand() * 6,
+            phase: f.rand() * 6.28,
+            tone: TONES[p.species],
+            big: f.rand() < 0.3,
+          });
         }
-      } else {
+      }
+      for (const leaf of x.leaves) {
+        leaf.y += leaf.vy * dt;
+        leaf.x += Math.sin(f.time * 2.4 + leaf.phase) * 9 * dt;
+      }
+      x.leaves = x.leaves.filter((leaf) => leaf.y < f.groundY + 12);
+      // The deer browse, and now and then something startles them: they bound off with their white
+      // tails raised as flags.
+      const [doe, buck] = x.deer;
+      if (doe.active && f.time >= x.spook.next) {
+        x.spook.until = f.time + 2;
+        x.spook.next = f.time + 25 + f.rand() * 20;
+        doe.dir = f.rand() < 0.5 ? 1 : -1;
+      }
+      if (f.time < x.spook.until) {
+        doe.state = "run";
+        doe.x += doe.dir * 24 * dt;
+        doe.phase += dt * 14;
         for (const d of x.deer) d.hearSince = null;
-        wander(f, doe, dt, { speed: 8, sit: [3, 6], walk: [3, 6] });
-      }
-    }
-    follow(buck, doe, dt, 22);
-    buck.state = doe.state;
-    buck.phase = doe.phase + 1;
-    buck.timer = doe.timer;
-    settle(f, doe);
-    settle(f, buck);
-    // The bull elk bugles in the rut: head up, a breath of mist.
-    if (x.elk.active && f.time >= x.bugle.next) {
-      x.bugle.until = f.time + 3;
-      x.bugle.next = f.time + 25 + f.rand() * 15;
-    }
-    if (f.time < x.bugle.until) x.elk.state = "bugle";
-    else {
-      if (x.elk.state === "bugle") x.elk.state = "sit";
-      wander(f, x.elk, dt, { speed: 5, stride: 5, sit: [4, 8], walk: [3, 6] });
-    }
-    // The bugle's pose and breath run from when it starts (cervidAt reads elk.since).
-    settle(f, x.elk);
-    const turkeyX = x.turkey.x;
-    wander(f, x.turkey, dt, { speed: groundSpeed("turkey"), stride: 1, sit: [3.5, 9], walk: [2, 5] });
-    rest(f, x.turkey, groundPoses(x.turkey, "turkey"));
-    groundBirdStep(f, x.turkey, dt, "turkey", turkeyX);
-    wander(f, x.groundhog, dt, { speed: 6, stride: 4, sit: [6, 12], walk: [2, 4] });
-    rest(f, x.groundhog, harePoses("groundhog"));
-    // The mother bear forages along, and now and then rears up on her hind legs to sniff the air.
-    const [mother, cub] = x.bears;
-    if (mother.active && f.time >= x.rear.next) {
-      x.rear.until = f.time + 3;
-      x.rear.next = f.time + 22 + f.rand() * 12;
-    }
-    if (f.time < x.rear.until) {
-      mother.state = "rear";
-      mother.timer = x.rear.until - f.time;
-    } else {
-      if (mother.state === "rear") mother.state = "walk";
-      stroll(f, mother, dt, 5);
-    }
-    settle(f, mother);
-    if (cub.climb) {
-      if (f.time - cub.climb.start > CLIMB_SECONDS) cub.climb = null;
-    } else if (cub.active) {
-      follow(cub, mother, dt, 22);
-      cub.phase = mother.phase + 1;
-      // The cub stands, forages or sits while its mother rears, then follows her on.
-      cub.state = mother.state === "rear" ? "sit" : "walk";
-      cub.timer = mother.timer;
-      rest(f, cub, bearPoses(cub));
-      if (f.rand() < dt * 0.04) {
-        const near = f.plants.filter(
-          (p) => p.kind === "tree" && p.layer === 1 && p.crown && p.species !== "hemlock" && Math.abs(p.x - cub.x) < 20,
-        );
-        if (near.length) {
-          const tree = near[0];
-          const dir = tree.x >= cub.x ? 1 : -1;
-          cub.climb = {
-            start: f.time,
-            dir,
-            // Standing beside the trunk, facing it: its bark column lands on the trunk's near edge.
-            x: dir > 0 ? tree.x - 2 - BARK_COLUMN : tree.x + 1 + BARK_COLUMN,
-            height: Math.min(18, f.groundY + 7 - tree.crown.bottom),
-          };
+      } else {
+        if (doe.state === "run") doe.state = "sit";
+        if (x.elk.active && f.time < x.bugle.until + HEAR_AFTER) {
+          // While the bull bugles the deer stop, face him and lift their heads to listen, and carry on
+          // a moment after he finishes (cervidAt reads hearSince and hearUntil).
+          doe.state = "sit";
+          doe.timer = Math.max(doe.timer, 1);
+          doe.dir = x.elk.x > doe.x ? 1 : -1;
+          for (const d of x.deer) {
+            d.hearSince ??= f.time;
+            d.hearUntil = x.bugle.until + HEAR_AFTER;
+          }
+        } else {
+          for (const d of x.deer) d.hearSince = null;
+          wander(f, doe, dt, { speed: 8, sit: [3, 6], walk: [3, 6] });
         }
       }
-    }
-    // The day flyers: a golden eagle crossing slowly, another circling, a cardinal and a chimney swift.
-    const day = !isNight(f);
-    if (f.stage >= 2 && day) {
-      const spawn = () => ({ y: 22 + f.rand() * 30 });
-      flyByPerch(f, x.eagle, dt, { every: [6, 5], speed: 13, spawn, spots: perchSpots, stay: [14, 28] });
-    } else if (x.eagle.bird?.visit) {
-      goHome(f, x.eagle.bird);
-      x.eagle.bird = null;
-    }
-    if (f.stage >= 3 && day) {
-      // Now and then the cardinal stops on a hemlock's leader, then flies on. The swift only clings, so it never does.
-      const spawn = () => ({ y: f.groundY - 56 - f.rand() * 24 });
-      flyByPerch(f, x.cardinal, dt, {
-        every: [7, 6],
-        speed: 24,
-        spawn,
-        spots: (g) => perchSpots(g, true),
-        small: "cardinal",
-        odds: 0.3,
-        stay: [8, 16],
-      });
-    } else if (x.cardinal.bird?.visit) goHome(f, x.cardinal.bird);
-    if (f.stage >= 4 && day)
-      flyBy(f, x.swift, dt, { every: [6, 8], speed: 46, spawn: () => ({ y: f.groundY - 80 - f.rand() * 24 }) });
-    x.soarer.active = f.stage >= 5 && day;
-    if (!x.owl) {
-      const trees = f.plants.filter(
-        (p) =>
-          p.kind === "tree" &&
-          p.layer === 1 &&
-          p.crown &&
-          p.species !== "hemlock" &&
-          Math.abs(p.x - f.cols / 2) > CLEARING,
-      );
-      if (trees.length) {
-        const tree = trees[0];
-        x.owl = percher(f, tree.crown.cx + 3, tree.crown.bottom + 1, 1, OWL_MOVES);
-        x.owl.species = "barred";
-        x.owl.look = -1;
-        x.owl.branch = tree.crown.cx;
+      follow(buck, doe, dt, 22);
+      buck.state = doe.state;
+      buck.phase = doe.phase + 1;
+      buck.timer = doe.timer;
+      settle(f, doe);
+      settle(f, buck);
+      // The bull elk bugles in the rut: head up, a breath of mist.
+      if (x.elk.active && f.time >= x.bugle.next) {
+        x.bugle.until = f.time + 3;
+        x.bugle.next = f.time + 25 + f.rand() * 15;
       }
-    }
-    if (x.owl) fidget(f, x.owl);
+      if (f.time < x.bugle.until) x.elk.state = "bugle";
+      else {
+        if (x.elk.state === "bugle") x.elk.state = "sit";
+        wander(f, x.elk, dt, { speed: 5, stride: 5, sit: [4, 8], walk: [3, 6] });
+      }
+      // The bugle's pose and breath run from when it starts (cervidAt reads elk.since).
+      settle(f, x.elk);
+      // The mother bear forages along, and now and then rears up on her hind legs to sniff the air.
+      const [mother, cub] = x.bears;
+      if (mother.active && f.time >= x.rear.next) {
+        x.rear.until = f.time + 3;
+        x.rear.next = f.time + 22 + f.rand() * 12;
+      }
+      if (f.time < x.rear.until) {
+        mother.state = "rear";
+        mother.timer = x.rear.until - f.time;
+      } else {
+        if (mother.state === "rear") mother.state = "walk";
+        stroll(f, mother, dt, 5);
+      }
+      settle(f, mother);
+      if (cub.climb) {
+        if (f.time - cub.climb.start > CLIMB_SECONDS) cub.climb = null;
+      } else if (cub.active) {
+        follow(cub, mother, dt, 22);
+        cub.phase = mother.phase + 1;
+        // The cub stands, forages or sits while its mother rears, then follows her on.
+        cub.state = mother.state === "rear" ? "sit" : "walk";
+        cub.timer = mother.timer;
+        rest(f, cub, bearPoses(cub));
+        if (f.rand() < dt * 0.04) {
+          const near = f.plants.filter(
+            (p) =>
+              p.kind === "tree" && p.layer === 1 && p.crown && p.species !== "hemlock" && Math.abs(p.x - cub.x) < 20,
+          );
+          if (near.length) {
+            const tree = near[0];
+            const dir = tree.x >= cub.x ? 1 : -1;
+            cub.climb = {
+              start: f.time,
+              dir,
+              // Standing beside the trunk, facing it: its bark column lands on the trunk's near edge.
+              x: dir > 0 ? tree.x - 2 - BARK_COLUMN : tree.x + 1 + BARK_COLUMN,
+              height: Math.min(18, f.groundY + 7 - tree.crown.bottom),
+            };
+          }
+        }
+      }
+      if (!x.owl) {
+        const trees = f.plants.filter(
+          (p) =>
+            p.kind === "tree" &&
+            p.layer === 1 &&
+            p.crown &&
+            p.species !== "hemlock" &&
+            Math.abs(p.x - f.cols / 2) > CLEARING,
+        );
+        if (trees.length) {
+          const tree = trees[0];
+          x.owl = percher(f, tree.crown.cx + 3, tree.crown.bottom + 1, 1, OWL_MOVES);
+          x.owl.species = "barred";
+          x.owl.look = -1;
+          x.owl.branch = tree.crown.cx;
+        }
+      }
+      if (x.owl) fidget(f, x.owl);
+    },
   },
+);
 
-  // At night the sky has stars and the Milky Way. It is drawn still under reduced motion.
-  drawBack(g, f) {
-    if (f.theme !== "dark") return;
-    const x = f.extra;
-    x.milky ??= milkyWayCanvas(f.cols, f.groundY, x.band);
-    g.ctx.drawImage(x.milky, 0, 0);
-    starFieldAt(g, x.stars, g.time);
-    for (const star of NAMED_STARS) {
-      const { x: sx, y } = onBand(x.band, star.along, star.across);
-      starAt(g, star.colour, sx, y, star.big ? 0.9 : 0.95, star.big);
-    }
-    g.ctx.globalAlpha = 1;
+const SPRITES = {
+  ...soarSprites("eagle", "golden", { side: true }),
+  bobcat: (g, frame) => felidAt(g, walk(frame, { kind: "bobcat" }), 0),
+  "bobcat-sitting": (g, frame) => felidAt(g, walk(frame, { kind: "bobcat", state: "sit", pose: "sit" }), 0),
+  "bobcat-arching": (g, frame) => felidAt(g, walk(frame, { kind: "bobcat", state: "sit", pose: "arch" }), 0),
+  "bobcat-lying": (g, frame) => felidAt(g, walk(frame, { kind: "bobcat", state: "sit", pose: "lie" }), 0),
+  "bobcat-stretching": (g, frame) => felidAt(g, walk(frame, { kind: "bobcat", state: "sit", pose: "bow" }), 0),
+  cardinal: (g, frame) => flyerAt(g, bird(frame), 0, "cardinal"),
+  "cardinal-perched": (g) => perchedSmall(g, "cardinal", 40, 40, 0, blendPose({})),
+  swift: (g, frame) => flyerAt(g, bird(frame), 0, "swift"),
+  turkey: (g, frame) => turkeyAt(g, walk(frame, { c: frame.phase * 0.25, amp: 1 }), 0),
+  "turkey-displaying": (g, frame) =>
+    turkeyAt(
+      g,
+      walk(frame, { state: "sit", pose: "display", since: 0, timer: 8, c: 0.3 + frame.phase * 0.1, amp: 1 }),
+      3.2,
+    ),
+  "turkey-preening": (g, frame) =>
+    turkeyAt(g, walk(frame, { state: "sit", pose: "preen", since: 0, timer: 6, amp: 0 }), 1.5),
+  groundhog: (g, frame) => hareAt(g, walk(frame, { kind: "groundhog" }), 0),
+  "groundhog-sitting": (g, frame) => hareAt(g, walk(frame, { kind: "groundhog", state: "sit" }), 0),
+  "groundhog-eating": (g, frame) => hareAt(g, walk(frame, { kind: "groundhog", state: "sit", pose: "hunch" }), 0),
+  "groundhog-sprawling": (g, frame) => hareAt(g, walk(frame, { kind: "groundhog", state: "sit", pose: "sprawl" }), 0),
+  deer: (g, frame) => cervidAt(g, walk(frame, { kind: "whitetail", sex: "f" })),
+  "deer-antlered": (g, frame) => cervidAt(g, walk(frame, { kind: "whitetail", sex: "m" })),
+  "deer-flag": (g, frame) => cervidAt(g, walk(frame, { kind: "whitetail", sex: "f", state: "run" })),
+  "deer-grazing": (g, frame) => cervidAt(g, walk(frame, { kind: "whitetail", sex: "f", state: "sit" })),
+  "deer-lying": (g, frame) => cervidAt(g, walk(frame, { kind: "whitetail", sex: "m", state: "sit", pose: "lie" })),
+  "deer-listening": (g, frame) =>
+    cervidAt(g, walk(frame, { kind: "whitetail", sex: "f", state: "sit", hearSince: 0, hearUntil: 5 }), 1),
+  elk: (g, frame) => cervidAt(g, walk(frame, { kind: "elk", sex: "m" })),
+  "elk-bugle": (g, frame) => cervidAt(g, walk(frame, { kind: "elk", sex: "m", state: "bugle", actAt: 1.2 })),
+  bear: (g, frame) => bearAt(g, walk(frame)),
+  "bear-foraging": (g, frame) => bearAt(g, walk(frame, { state: "sit", pose: "forage", since: 0, timer: 30 }), 5),
+  "bear-rearing": (g, frame) => bearAt(g, walk(frame, { state: "rear", since: 0, timer: 30 }), 5),
+  "bear-sitting": (g, frame) => bearAt(g, walk(frame, { state: "sit", pose: "sit", since: 0, timer: 30 }), 5),
+  "bear-lying": (g, frame) => bearAt(g, walk(frame, { state: "sit", pose: "lie", since: 0, timer: 30 }), 5),
+  "bear-cub": (g, frame) => bearAt(g, walk(frame, { scale: 0.55, cub: true })),
+  "bear-cub-sitting": (g, frame) =>
+    bearAt(g, walk(frame, { scale: 0.55, cub: true, state: "sit", pose: "sit", since: 0, timer: 30 }), 5),
+  "bear-cub-climbing": (g, frame) => {
+    const y = g.groundY + 7;
+    rect(g, g.pal.trunk[0], 47, y - 40, 2, 40);
+    rect(g, g.pal.trunk[1], 49, y - 40, 2, 40);
+    bearAt(
+      g,
+      walk(frame, { cub: true, climb: { lead: 1, up: 2.4, hold: 2.3, down: 2.4, tail: 1, t: 3.4, height: 12 } }),
+      5,
+    );
   },
+  owl: (g) => owlPerched(DARK, g, "barred", { s: 0 }),
+  "owl-swivel": (g) => owlPerched(DARK, g, "barred", { s: -0.9 }),
+  "owl-fluff": (g) => owlPerched(DARK, g, "barred", { fluff: 1, shiver: 1 }),
+  sky: (g) => {
+    g.pal = DARK;
+    const f = { rand: rng(3), cols: ANIMAL_BOX.w, groundY: ANIMAL_BOX.ground, theme: "dark" };
+    extras.drawBack(g, { ...f, extra: extras.init(f) });
+  },
+  mist: (g) => mistAt(g, { x0: 90, y: 30, w: 40, h: 6, speed: 0 }, 0, 80),
+  leaf: (g) => {
+    [g.pal.red, g.pal.orange, g.pal.yellow, g.pal.copper].forEach((tones, i) => {
+      for (let k = 0; k < 3; k += 1) {
+        rect(g, tones[1 + ((i + k) % 2)], 5 + i * 18 + k * 5, 6 + ((k * 7 + i * 3) % 11), k % 2 ? 2 : 1, 1);
+      }
+    });
+  },
+};
 
-  draw(g, f) {
-    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "bobcat" }, f.time);
-    const x = f.extra;
-    for (const m of x.mists) mistAt(g, m, f.time, f.cols);
-    if (x.turkey.active) turkeyAt(g, x.turkey, f.time);
-    for (const d of x.deer) if (d.active) cervidAt(g, d, f.time);
-    if (x.elk.active) cervidAt(g, x.elk, f.time);
-    if (x.groundhog.active) hareAt(g, x.groundhog, f.time);
-    const [mother, cub] = x.bears;
-    if (mother.active) bearAt(g, mother, f.time);
-    if (cub.climb) {
-      const { start, x: cx, dir, height } = cub.climb;
-      bearAt(g, { ...cub, x: cx, dir, climb: { ...CLIMB, t: f.time - start, height } }, f.time);
-    } else if (cub.active) bearAt(g, cub, f.time);
-    if (x.owl && isNight(f)) {
-      rect(g, g.pal.trunk[1], x.owl.branch - 2, x.owl.y, 10, 1);
-      owlPerchAt(g, x.owl, f.time);
-    }
-    if (x.eagle.bird && !isNight(f)) eagleFlyAt(g, "golden", x.eagle.bird, f.time);
-    if (x.soarer.active) circlerAt(g, "golden", x.soarer, f.time);
-    if (x.cardinal.bird && !isNight(f)) flyerAt(g, x.cardinal.bird, f.time, "cardinal");
-    if (x.swift.bird && !isNight(f)) flyerAt(g, x.swift.bird, f.time, "swift");
-    for (const leaf of x.leaves) {
-      const tones = g.pal[leaf.tone];
-      rect(g, tones[1 + (Math.round(leaf.x) % 2)], Math.round(leaf.x), Math.round(leaf.y), leaf.big ? 2 : 1, 1);
-    }
+const PLANT_FAMILIES = {
+  "tree-sugarMaple": "broadleaf",
+  "tree-hickory": "broadleaf",
+  "tree-beech": "broadleaf",
+  "tree-yellowBirch": "broadleaf",
+  "tree-redMaple": "broadleaf",
+  "tree-sourwood": "broadleaf",
+  "tree-tulip": "broadleaf",
+  "tree-blackGum": "broadleaf",
+  "tree-hemlock": "conifers",
+};
+
+export const META = {
+  id: "smokies",
+  label: "Great Smoky Mountains",
+  group: "woods",
+  tint: ["#f9cf9c", "rgb(220 140 60)"],
+  backdrop: {
+    light: {
+      green: "#f9cf9c",
+      "green-soft": "#f4e1a4",
+      peach: "#f4b9a0",
+      blush: "#d8e4ec",
+      bloom: "#f3b56f",
+    },
+    dark: {
+      green: "rgb(220 140 60 / 0.38)",
+      "green-soft": "rgb(200 160 60 / 0.18)",
+      peach: "rgb(190 80 50 / 0.2)",
+      blush: "rgb(80 120 160 / 0.16)",
+      bloom: "rgb(230 140 50 / 0.3)",
+    },
   },
 };
 
 export default {
-  id: "smokies",
-  label: "Great Smoky Mountains",
-  group: "woods",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.35, 0.55], dark: [0.45, 0.62] },
   mature: MATURE,

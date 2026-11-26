@@ -12,7 +12,6 @@ import {
   circlingPair,
   enter,
   enterBehind,
-  flyBy,
   follow,
   isNight,
   settle,
@@ -36,6 +35,7 @@ import {
   mix,
   placeLandmarks,
   rect,
+  rng,
   row,
   scatter,
   shadowColour,
@@ -43,6 +43,8 @@ import {
   sortPlants,
 } from "../kit/pixel.js";
 import { meadowFlower } from "../kit/plants.js";
+import { ANIMAL_BOX, bird, walk } from "../kit/poses.js";
+import { crossingActor, drawStep, runCast, walkerActor } from "../kit/runner.js";
 import {
   bough,
   DODO_STRIDE,
@@ -1043,255 +1045,513 @@ function soil(pal, x, y, depth, turf) {
   return pal.soil[1];
 }
 
-const extras = {
-  init(f) {
-    return {
-      clouds: Array.from({ length: CLOUDS }, () => ({
-        x: Math.floor(f.rand() * f.cols),
-        y: 10 + Math.floor(f.rand() * 24),
-        w: 22 + Math.floor(f.rand() * 14),
-      })),
-      stars: starField(f, STARS, 70, 0.15),
-      flies: Array.from({ length: BUTTERFLIES }, (_, i) => ({
-        homeX: (0.12 + 0.76 * ((i + f.rand() * 0.8) / BUTTERFLIES)) * f.cols,
-        homeY: f.groundY - 14 - f.rand() * 26,
-        phase: f.rand() * 6.28,
-        speed: 0.5 + f.rand() * 0.4,
-        from: Infinity,
-      })),
-      rabbit: walker(f),
-      dodo: walker(f),
-      soldiers: [
-        { ...walker(f), suit: "spade" },
-        { ...walker(f), suit: "heart" },
-      ],
-      flock: { next: 0, bird: null },
-      teaParty: {
-        active: false,
-        start: -100,
-        goal: 0,
-        armed: false,
-        rushing: false,
-        first: true,
-        next: 10 + f.rand() * 6,
+const extras = runCast(
+  [
+    drawStep(
+      "sky",
+      (g, f) => {
+        if (f.theme === "dark") nightAt(g, f);
+        else for (const c of f.extra.clouds) cloudAt(g, c);
       },
-      vultures: circlingPair(f, 46 + f.rand() * 8, { rate: 0.2, gap: 8 }),
-      pigeon: { next: 4, bird: null },
-      lory: { next: 8, bird: null },
-      caterpillar: { alpha: 0 },
-      hat: { alpha: 0 },
-      hare: walker(f),
-      cat: { grin: 0, alpha: 0 },
-      bubbles: [],
-      rings: [],
-      ringNext: 1,
-      perch: f.plants.find((p) => p.perch),
-      tea: f.plants.find((p) => p.kind === "teaTable"),
-      tree: f.plants.find((p) => p.home),
-    };
-  },
+      { back: true },
+    ),
+    drawStep("sky-things", (g, f) => {
+      const x = f.extra;
+      if (f.theme === "dark") for (const b of x.bubbles) bubbleAt(g, b);
+      else if (f.stage >= 2) {
+        for (let i = 0; i < SPARKLE_DAY.count; i += 1) sparkleAt(g, i, f.time, f.cols, Math.round(f.groundY * 0.7));
+      }
+      for (const r of x.rings) ringAt(g, r);
+      for (const fly of x.flies) {
+        if (f.time >= fly.from) breadAt(g, fly, f.time);
+      }
+    }),
+    crossingActor({
+      id: "flock",
+      label: "flock of cards",
+      kind: "bird",
+      family: "storybook",
+      storybook: true,
+      sprites: ["flock"],
+      arrives: 6,
+      first: 0,
+      every: [5, 7],
+      speed: 10,
+      spawn: (f) => ({ y: 26 + f.rand() * 30 }),
+      draw: (g, b, f) => flockAt(g, b, f.time),
+    }),
+    drawStep("vultures", (g, f) => {
+      const x = f.extra;
+      for (const [i, v] of x.vultures.entries()) {
+        if (!v.active) continue;
+        const c = soarAt(f.time, v);
+        vultureAt(g, { x: c.x, y: c.y, dir: c.dir, phase: i * 2, ...v }, f.time);
+      }
+    }),
+    crossingActor({
+      id: "pigeon",
+      label: "the Pigeon",
+      kind: "bird",
+      family: "small-flyers",
+      storybook: true,
+      sprites: ["pigeon"],
+      arrives: 4,
+      when: "day",
+      first: 4,
+      every: [6, 6],
+      speed: 22,
+      spawn: (f) => ({ y: f.groundY - 62 - f.rand() * 20 }),
+      draw: (g, b, f) => flyerAt(g, b, f.time, "pigeon"),
+    }),
+    crossingActor({
+      id: "lory",
+      label: "the Lory",
+      kind: "bird",
+      family: "small-flyers",
+      storybook: true,
+      sprites: ["lory"],
+      arrives: 7,
+      when: "day",
+      first: 8,
+      every: [8, 8],
+      speed: 38,
+      spawn: (f) => ({ y: f.groundY - 40 - f.rand() * 20 }),
+      draw: (g, b, f) => flyerAt(g, b, f.time, "lory"),
+    }),
+    drawStep("cat-caterpillar-tea-hare", (g, f) => {
+      const x = f.extra;
+      const { perch, tea, tree } = x;
+      if (x.cat.grin > 0 && tree.grin) fadedAt(g, x.cat.grin, () => grinAt(g, tree.grin));
+      if (x.cat.alpha > 0 && tree.limb) fadedAt(g, x.cat.alpha, () => catAt(g, tree.limb, f.time));
+      if (x.caterpillar.alpha > 0) {
+        fadedAt(g, x.caterpillar.alpha, () => caterpillarAt(g, perch));
+      }
+      const stroke = f.time - x.teaParty.start;
+      if (x.teaParty.active && !x.teaParty.rushing && stroke <= TEA_PARTY_SECONDS && tea) {
+        teaPartyAt(g, tea, stroke, f.time);
+      } else {
+        if (x.hat.alpha > 0 && tea) fadedAt(g, x.hat.alpha, () => hatAt(g, tea, f.time));
+      }
+      if (x.hare.active && (!x.teaParty.active || x.teaParty.rushing)) {
+        hareAt(g, x.hare);
+      }
+    }),
+    walkerActor({
+      id: "dodo",
+      label: "dodo",
+      kind: "animal",
+      family: "ground-birds",
+      storybook: true,
+      sprites: ["dodo"],
+      arrives: 5,
+      move: { speed: 7, stride: 6, sit: [3, 6], walk: [3, 6] },
+      strideSpec: [DODO_STRIDE, STRIDE_CYCLE],
+      draw: (g, w) => dodoAt(g, w),
+    }),
+    drawStep("soldiers", (g, f) => {
+      const x = f.extra;
+      for (const s of x.soldiers) if (s.active) soldierAt(g, s);
+    }),
+    walkerActor({
+      id: "rabbit",
+      label: "White Rabbit",
+      kind: "animal",
+      family: "hares-rodents",
+      storybook: true,
+      sprites: ["rabbit"],
+      arrives: 1,
+      move: { speed: 16, stride: 12, sit: [2, 5], walk: [2, 4] },
+      strideSpec: [RABBIT_STRIDE, STRIDE_CYCLE],
+      draw: (g, w) => rabbitAt(g, w),
+    }),
+    {
+      label: "caterpillar",
+      kind: "animal",
+      family: "insects",
+      storybook: true,
+      arrives: 3,
+      sprites: ["caterpillar"],
+    },
+    {
+      label: "the Hatter's hat, hovering",
+      kind: "animal",
+      family: "storybook",
+      storybook: true,
+      arrives: 4,
+      sprites: ["hat"],
+    },
+    {
+      label: "March Hare",
+      kind: "animal",
+      family: "hares-rodents",
+      storybook: true,
+      presence: ["hare"],
+      sprites: ["hare", "hare-sipping"],
+    },
+    {
+      label: "card soldiers",
+      kind: "animal",
+      family: "storybook",
+      storybook: true,
+      presence: ["soldiers[0]", "soldiers[1]"],
+      sprites: ["soldier", "soldier-red"],
+    },
+    {
+      label: "Umbrella Vulture",
+      kind: "bird",
+      family: "soaring-birds",
+      storybook: true,
+      presence: ["vultures[0]", "vultures[1]"],
+      sprites: ["vulture", "vulture-open", "vulture-landing", "vulture-perched"],
+    },
+    {
+      label: "Bread-and-butterflies",
+      kind: "animal",
+      family: "insects",
+      storybook: true,
+      arrives: 3,
+      fixed: `up to ${BUTTERFLIES}`,
+      sprites: ["bread"],
+    },
+    {
+      label: "Cheshire Cat",
+      kind: "animal",
+      family: "cats",
+      storybook: true,
+      arrives: 6,
+      sprites: ["cat", "grin"],
+    },
+    {
+      label: "hookah smoke rings",
+      kind: "effect",
+      arrives: 3,
+      fixed: "a new one every 2.2 s, each up to 4 s",
+      sprites: ["ring"],
+    },
+    {
+      label: "soap bubbles (dark theme)",
+      kind: "effect",
+      arrives: 2,
+      fixed: `up to ${BUBBLES} at once`,
+      sprites: ["bubble"],
+    },
+    {
+      label: "daytime sparkles (light theme)",
+      kind: "effect",
+      arrives: 2,
+      fixed: "5 twinkles, each eased in and out in place",
+      sprites: ["sparkle"],
+    },
+    {
+      label: "clouds (light theme)",
+      kind: "effect",
+      layer: "behind the plants (drawBack, light theme only)",
+      arrives: 0,
+      fixed: `${CLOUDS} clouds`,
+      sprites: ["cloud"],
+    },
+    {
+      label: "stars and a moon (dark theme)",
+      kind: "effect",
+      layer: "behind the plants (drawBack, dark theme only)",
+      arrives: 0,
+      fixed: `${STARS} stars and a moon`,
+      sprites: ["sky"],
+    },
+    {
+      label: "The Mad Tea-Party",
+      kind: "effect",
+      arrives: 4,
+      fixed: "a mad tea rush about every 35 s",
+      sprites: ["tea-party"],
+    },
+  ],
+  {
+    init(f) {
+      return {
+        clouds: Array.from({ length: CLOUDS }, () => ({
+          x: Math.floor(f.rand() * f.cols),
+          y: 10 + Math.floor(f.rand() * 24),
+          w: 22 + Math.floor(f.rand() * 14),
+        })),
+        stars: starField(f, STARS, 70, 0.15),
+        flies: Array.from({ length: BUTTERFLIES }, (_, i) => ({
+          homeX: (0.12 + 0.76 * ((i + f.rand() * 0.8) / BUTTERFLIES)) * f.cols,
+          homeY: f.groundY - 14 - f.rand() * 26,
+          phase: f.rand() * 6.28,
+          speed: 0.5 + f.rand() * 0.4,
+          from: Infinity,
+        })),
+        soldiers: [
+          { ...walker(f), suit: "spade" },
+          { ...walker(f), suit: "heart" },
+        ],
+        teaParty: {
+          active: false,
+          start: -100,
+          goal: 0,
+          armed: false,
+          rushing: false,
+          first: true,
+          next: 10 + f.rand() * 6,
+        },
+        vultures: circlingPair(f, 46 + f.rand() * 8, { rate: 0.2, gap: 8 }),
+        caterpillar: { alpha: 0 },
+        hat: { alpha: 0 },
+        hare: walker(f),
+        cat: { grin: 0, alpha: 0 },
+        bubbles: [],
+        rings: [],
+        ringNext: 1,
+        perch: f.plants.find((p) => p.perch),
+        tea: f.plants.find((p) => p.kind === "teaTable"),
+        tree: f.plants.find((p) => p.home),
+      };
+    },
 
-  // The White Rabbit comes at stage 1, the Dodo at 5, the two soldiers together at 6. The
-  // Bread-and-butterflies arrive one per watering from stage 3.
-  onGrow(f) {
-    const x = f.extra;
-    if (f.stage >= 1) enter(f, x.rabbit);
-    if (f.stage >= 4) enter(f, x.hare);
-    if (f.stage >= 5) enter(f, x.dodo);
-    if (f.stage >= 6) {
+    // The White Rabbit comes at stage 1, the Dodo at 5, the two soldiers together at 6. The
+    // Bread-and-butterflies arrive one per watering from stage 3.
+    onGrow(f) {
+      const x = f.extra;
+      if (f.stage >= 4) enter(f, x.hare);
+      if (f.stage >= 6) {
+        const [lead, mate] = x.soldiers;
+        enter(f, lead);
+        enterBehind(f, mate, lead, 11);
+      }
+      x.flies.forEach((fly, i) => {
+        if (i < f.stage - 2 && fly.from === Infinity) fly.from = f.time + (f.reduced ? 0 : 2.2);
+      });
+    },
+
+    busy: () => true,
+
+    update(f, dt) {
+      const x = f.extra;
+      const { perch, tea, tree } = x;
+      x.caterpillar.alpha = toward(x.caterpillar.alpha, f.stage >= 3 && sizeOf(f, perch) >= 0.9, dt);
+      const teaUp = f.stage >= 4 && sizeOf(f, tea) >= 0.9;
+      x.hat.alpha = toward(x.hat.alpha, teaUp, dt);
+      const catUp = (f.stage >= 6 || f.theme === "dark") && sizeOf(f, tree) >= 0.9;
+      x.cat.grin = toward(x.cat.grin, catUp, dt);
+      x.cat.alpha = toward(x.cat.alpha, catUp && x.cat.grin >= 1, dt);
+
+      // Each walker's stride clock w.c grows with the ground it covers (the poses read it), so a
+      // planted foot holds its spot. The wander stride below only keeps w.phase ticking.
+      // The soldiers march in step, the second a pace behind the first.
       const [lead, mate] = x.soldiers;
-      enter(f, lead);
-      enterBehind(f, mate, lead, 11);
-    }
-    x.flies.forEach((fly, i) => {
-      if (i < f.stage - 2 && fly.from === Infinity) fly.from = f.time + (f.reduced ? 0 : 2.2);
-    });
-  },
+      const leadX = lead.x;
+      stroll(f, lead, dt, 8);
+      follow(mate, lead, dt, 11);
+      stride(lead, leadX, dt, SOLDIER_STRIDE, STRIDE_CYCLE);
+      mate.c = lead.c;
+      settle(f, lead);
+      settle(f, mate);
 
-  busy: () => true,
+      // March Hare & Tea Party Event Logic (triggered when the Hare wanders to either edge)
+      const TEA_ARM = 36;
+      const TEA_EDGE = 14;
+      const targetSeat = tea?.seats ? tea.seats[1] : tea ? tea.x + 14 : f.cols / 2;
 
-  update(f, dt) {
-    const x = f.extra;
-    const { perch, tea, tree } = x;
-    x.caterpillar.alpha = toward(x.caterpillar.alpha, f.stage >= 3 && sizeOf(f, perch) >= 0.9, dt);
-    const teaUp = f.stage >= 4 && sizeOf(f, tea) >= 0.9;
-    x.hat.alpha = toward(x.hat.alpha, teaUp, dt);
-    const catUp = (f.stage >= 6 || f.theme === "dark") && sizeOf(f, tree) >= 0.9;
-    x.cat.grin = toward(x.cat.grin, catUp, dt);
-    x.cat.alpha = toward(x.cat.alpha, catUp && x.cat.grin >= 1, dt);
+      const hareX = x.hare.x;
+      if (f.stage >= 4 && x.hare.active && tea) {
+        if (!x.teaParty.active) {
+          if (!x.teaParty.goal) x.teaParty.goal = x.hare.x < f.cols / 2 ? 1 : -1;
+          if (x.teaParty.first && f.time >= x.teaParty.next) {
+            x.teaParty.armed = true;
+          }
+          const gap = x.teaParty.goal > 0 ? f.cols - x.hare.x : x.hare.x;
+          if (gap > TEA_ARM) x.teaParty.armed = true;
 
-    // Each walker's stride clock w.c grows with the ground it covers (the poses read it), so a
-    // planted foot holds its spot. The wander stride below only keeps w.phase ticking.
-    const rabbitX = x.rabbit.x;
-    wander(f, x.rabbit, dt, { speed: 16, stride: 12, sit: [2, 5], walk: [2, 4] });
-    stride(x.rabbit, rabbitX, dt, RABBIT_STRIDE, STRIDE_CYCLE);
-    settle(f, x.rabbit);
-    const dodoX = x.dodo.x;
-    wander(f, x.dodo, dt, { speed: 7, stride: 6, sit: [3, 6], walk: [3, 6] });
-    stride(x.dodo, dodoX, dt, DODO_STRIDE, STRIDE_CYCLE);
-    settle(f, x.dodo);
-    // The soldiers march in step, the second a pace behind the first.
-    const [lead, mate] = x.soldiers;
-    const leadX = lead.x;
-    stroll(f, lead, dt, 8);
-    follow(mate, lead, dt, 11);
-    stride(lead, leadX, dt, SOLDIER_STRIDE, STRIDE_CYCLE);
-    mate.c = lead.c;
-    settle(f, lead);
-    settle(f, mate);
-
-    // March Hare & Tea Party Event Logic (triggered when the Hare wanders to either edge)
-    const TEA_ARM = 36;
-    const TEA_EDGE = 14;
-    const targetSeat = tea?.seats ? tea.seats[1] : tea ? tea.x + 14 : f.cols / 2;
-
-    const hareX = x.hare.x;
-    if (f.stage >= 4 && x.hare.active && tea) {
-      if (!x.teaParty.active) {
-        if (!x.teaParty.goal) x.teaParty.goal = x.hare.x < f.cols / 2 ? 1 : -1;
-        if (x.teaParty.first && f.time >= x.teaParty.next) {
-          x.teaParty.armed = true;
+          if (x.teaParty.armed && gap <= TEA_EDGE) {
+            // Trigger the Mad Tea-Party!
+            x.teaParty.active = true;
+            x.teaParty.rushing = true;
+            x.teaParty.armed = false;
+            x.teaParty.goal = -x.teaParty.goal;
+            x.teaParty.first = false;
+          }
         }
-        const gap = x.teaParty.goal > 0 ? f.cols - x.hare.x : x.hare.x;
-        if (gap > TEA_ARM) x.teaParty.armed = true;
 
-        if (x.teaParty.armed && gap <= TEA_EDGE) {
-          // Trigger the Mad Tea-Party!
-          x.teaParty.active = true;
-          x.teaParty.rushing = true;
-          x.teaParty.armed = false;
-          x.teaParty.goal = -x.teaParty.goal;
-          x.teaParty.first = false;
-        }
-      }
-
-      if (x.teaParty.rushing) {
-        // Hare dashes across the meadow to his chair!
-        const dx = targetSeat - x.hare.x;
-        if (Math.abs(dx) <= 2) {
-          x.hare.x = targetSeat;
-          x.hare.dir = -1;
-          x.hare.state = "sit";
-          x.teaParty.rushing = false;
-          x.teaParty.start = f.time;
-          tea.partyActive = true;
+        if (x.teaParty.rushing) {
+          // Hare dashes across the meadow to his chair!
+          const dx = targetSeat - x.hare.x;
+          if (Math.abs(dx) <= 2) {
+            x.hare.x = targetSeat;
+            x.hare.dir = -1;
+            x.hare.state = "sit";
+            x.teaParty.rushing = false;
+            x.teaParty.start = f.time;
+            tea.partyActive = true;
+          } else {
+            x.hare.dir = Math.sign(dx);
+            x.hare.state = "walk";
+            x.hare.x += x.hare.dir * 26 * dt;
+          }
+        } else if (x.teaParty.active) {
+          const stroke = f.time - x.teaParty.start;
+          tea.partyActive = stroke <= TEA_PARTY_SECONDS;
+          if (stroke > TEA_PARTY_SECONDS) {
+            x.teaParty.active = false;
+            tea.partyActive = false;
+            x.teaParty.next = f.time + 20 + f.rand() * 10;
+            x.hare.state = "sit";
+            x.hare.timer = 2.5;
+          }
         } else {
-          x.hare.dir = Math.sign(dx);
-          x.hare.state = "walk";
-          x.hare.x += x.hare.dir * 26 * dt;
+          const lean = { dir: x.teaParty.goal, odds: 0.72 };
+          wander(f, x.hare, dt, { speed: 12, stride: 9, sit: [2.5, 5], walk: [2, 4], lean });
+          settle(f, x.hare);
         }
-      } else if (x.teaParty.active) {
-        const stroke = f.time - x.teaParty.start;
-        tea.partyActive = stroke <= TEA_PARTY_SECONDS;
-        if (stroke > TEA_PARTY_SECONDS) {
-          x.teaParty.active = false;
-          tea.partyActive = false;
-          x.teaParty.next = f.time + 20 + f.rand() * 10;
-          x.hare.state = "sit";
-          x.hare.timer = 2.5;
+      }
+      stride(x.hare, hareX, dt, x.teaParty.rushing ? HARE_DASH_STRIDE : HARE_STRIDE, STRIDE_CYCLE);
+
+      for (const v of x.vultures) {
+        v.active = f.stage >= 8 && !isNight(f);
+        if (v.active) {
+          circlerPerch(f, v, dt, {
+            first: [15, 25],
+            every: [45, 35],
+            stay: [12, 22],
+            spots: willowSpots,
+            moves: VULTURE_MOVES,
+          });
+        } else {
+          goHome(f, v);
         }
-      } else {
-        const lean = { dir: x.teaParty.goal, odds: 0.72 };
-        wander(f, x.hare, dt, { speed: 12, stride: 9, sit: [2.5, 5], walk: [2, 4], lean });
-        settle(f, x.hare);
       }
-    }
-    stride(x.hare, hareX, dt, x.teaParty.rushing ? HARE_DASH_STRIDE : HARE_STRIDE, STRIDE_CYCLE);
 
-    if (f.stage >= 6) {
-      flyBy(f, x.flock, dt, { every: [5, 7], speed: 10, spawn: () => ({ y: 26 + f.rand() * 30 }) });
-    }
-    if (f.stage >= 4 && !isNight(f)) {
-      flyBy(f, x.pigeon, dt, { every: [6, 6], speed: 22, spawn: () => ({ y: f.groundY - 62 - f.rand() * 20 }) });
-    }
-    if (f.stage >= 7 && !isNight(f)) {
-      flyBy(f, x.lory, dt, { every: [8, 8], speed: 38, spawn: () => ({ y: f.groundY - 40 - f.rand() * 20 }) });
-    }
-    for (const v of x.vultures) {
-      v.active = f.stage >= 8 && !isNight(f);
-      if (v.active) {
-        circlerPerch(f, v, dt, {
-          first: [15, 25],
-          every: [45, 35],
-          stay: [12, 22],
-          spots: willowSpots,
-          moves: VULTURE_MOVES,
-        });
-      } else {
-        goHome(f, v);
+      // Soap bubbles drift up at night; by day the sky has eased twinkles instead (see draw).
+      if (f.stage >= 2 && f.theme === "dark" && x.bubbles.length < BUBBLES && f.rand() < dt * 0.5) {
+        x.bubbles.push({ x: f.rand() * f.cols, y: f.groundY, phase: f.rand() * 6.28 });
       }
-    }
+      for (const b of x.bubbles) b.y -= dt * 4;
+      x.bubbles = x.bubbles.filter((b) => b.y > -4);
 
-    // Soap bubbles drift up at night; by day the sky has eased twinkles instead (see draw).
-    if (f.stage >= 2 && f.theme === "dark" && x.bubbles.length < BUBBLES && f.rand() < dt * 0.5) {
-      x.bubbles.push({ x: f.rand() * f.cols, y: f.groundY, phase: f.rand() * 6.28 });
-    }
-    for (const b of x.bubbles) b.y -= dt * 4;
-    x.bubbles = x.bubbles.filter((b) => b.y > -4);
-
-    if (x.caterpillar.alpha > 0.6 && perch.top !== undefined) {
-      x.ringNext -= dt;
-      if (x.ringNext <= 0) {
-        x.rings.push({ x: perch.x, y: perch.top - 10, age: 0 });
-        x.ringNext = 2.2;
+      if (x.caterpillar.alpha > 0.6 && perch.top !== undefined) {
+        x.ringNext -= dt;
+        if (x.ringNext <= 0) {
+          x.rings.push({ x: perch.x, y: perch.top - 10, age: 0 });
+          x.ringNext = 2.2;
+        }
       }
-    }
-    for (const r of x.rings) {
-      r.age += dt;
-      r.y -= dt * 3;
-      r.x += dt * 1.5;
-    }
-    x.rings = x.rings.filter((r) => r.age < 4);
+      for (const r of x.rings) {
+        r.age += dt;
+        r.y -= dt * 3;
+        r.x += dt * 1.5;
+      }
+      x.rings = x.rings.filter((r) => r.age < 4);
+    },
   },
+);
 
-  drawBack(g, f) {
-    if (f.theme === "dark") nightAt(g, f);
-    else for (const c of f.extra.clouds) cloudAt(g, c);
+const SPRITES = {
+  rabbit: (g, frame) => rabbitAt(g, walk(frame)),
+  caterpillar: (g) => caterpillarAt(g, { x: 40, top: 46 }, 0),
+  hat: (g) => hatAt(g, { x: 52, seatRow: 46 }, 0),
+  hare: (g) => hareAt(g, { seats: [40, 40], seatRow: 46 }, false),
+  "hare-sipping": (g) => hareAt(g, { seats: [40, 40], seatRow: 46 }, true),
+  dodo: (g, frame) => dodoAt(g, walk(frame)),
+  soldier: (g, frame) => soldierAt(g, walk(frame, { suit: "spade" })),
+  "soldier-red": (g, frame) => soldierAt(g, walk(frame, { suit: "heart" })),
+  pigeon: (g, frame) => flyerAt(g, bird(frame), 0, "pigeon"),
+  lory: (g, frame) => flyerAt(g, bird(frame), 0, "lory"),
+  vulture: (g, frame) => vultureAt(g, bird(frame), 0),
+  "vulture-open": (g, frame) => vultureAt(g, bird(frame), Math.PI / 4),
+  "vulture-perched": (g, frame) =>
+    vultureAt(
+      g,
+      {
+        ...bird(frame),
+        x: 40,
+        y: 30,
+        visit: {
+          mode: "perch",
+          t: 1,
+          T: 0,
+          dir: 1,
+          spot: { top: () => ({ x: 40, y: 46 }) },
+          p: { phase: 0, moves: {} },
+        },
+      },
+      0,
+    ),
+  "vulture-landing": (g, frame) =>
+    vultureAt(
+      g,
+      {
+        ...bird(frame),
+        x: 40,
+        y: 20,
+        visit: {
+          mode: "land",
+          t: 0.92,
+          T: 1,
+          dir: 1,
+          spot: { top: () => ({ x: 40, y: 46 }) },
+          p: { phase: 0, moves: {} },
+        },
+      },
+      0,
+    ),
+  bread: (g) => breadAt(g, { homeX: 40, homeY: 30, phase: 0, speed: 0 }, 0),
+  "tea-party": (g) => {
+    teaPartyAt(g, { x: 40, w: 28, seatRow: 46, seats: [26, 54] }, 2.0, 2.0);
   },
+  flock: (g, frame) => flockAt(g, bird(frame), 0),
+  cat: (g) => catAt(g, { x: 36, row: 44 }, 1),
+  grin: (g) => grinAt(g, { x: 40, y: 30 }),
+  ring: (g) => ringAt(g, { x: 36, y: 30, age: 1 }),
+  bubble: (g) => bubbleAt(g, { x: 40, y: 30, phase: 0 }),
+  sparkle: (g) => {
+    for (let i = 0; i < 5; i += 1) sparkleAt(g, i, 2.5, ANIMAL_BOX.w, ANIMAL_BOX.ground - 12);
+  },
+  cloud: (g) => cloudAt(g, { x: 30, y: 24, w: 40 }),
+  sky: (g) => {
+    g.pal = DARK;
+    const extra = extras.init({
+      rand: rng(3),
+      cols: ANIMAL_BOX.w,
+      groundY: ANIMAL_BOX.ground,
+      plants: [],
+    });
+    nightAt(g, { cols: ANIMAL_BOX.w, extra });
+  },
+};
 
-  draw(g, f) {
-    const x = f.extra;
-    const { perch, tea, tree } = x;
-    if (f.theme === "dark") for (const b of x.bubbles) bubbleAt(g, b);
-    else if (f.stage >= 2) {
-      for (let i = 0; i < SPARKLE_DAY.count; i += 1) sparkleAt(g, i, f.time, f.cols, Math.round(f.groundY * 0.7));
-    }
-    for (const r of x.rings) ringAt(g, r);
-    for (const fly of x.flies) {
-      if (f.time >= fly.from) breadAt(g, fly, f.time);
-    }
-    if (x.flock.bird) flockAt(g, x.flock.bird, f.time);
-    for (const [i, v] of x.vultures.entries()) {
-      if (!v.active) continue;
-      const c = soarAt(f.time, v);
-      vultureAt(g, { x: c.x, y: c.y, dir: c.dir, phase: i * 2, ...v }, f.time);
-    }
-    if (x.pigeon.bird && !isNight(f)) flyerAt(g, x.pigeon.bird, f.time, "pigeon");
-    if (x.lory.bird && !isNight(f)) flyerAt(g, x.lory.bird, f.time, "lory");
-    if (x.cat.grin > 0 && tree.grin) fadedAt(g, x.cat.grin, () => grinAt(g, tree.grin));
-    if (x.cat.alpha > 0 && tree.limb) fadedAt(g, x.cat.alpha, () => catAt(g, tree.limb, f.time));
-    if (x.caterpillar.alpha > 0) {
-      fadedAt(g, x.caterpillar.alpha, () => caterpillarAt(g, perch));
-    }
-    const stroke = f.time - x.teaParty.start;
-    if (x.teaParty.active && !x.teaParty.rushing && stroke <= TEA_PARTY_SECONDS && tea) {
-      teaPartyAt(g, tea, stroke, f.time);
-    } else {
-      if (x.hat.alpha > 0 && tea) fadedAt(g, x.hat.alpha, () => hatAt(g, tea, f.time));
-    }
-    if (x.hare.active && (!x.teaParty.active || x.teaParty.rushing)) {
-      hareAt(g, x.hare);
-    }
-    if (x.dodo.active) dodoAt(g, x.dodo);
-    for (const s of x.soldiers) if (s.active) soldierAt(g, s);
-    if (x.rabbit.active) rabbitAt(g, x.rabbit);
+const PLANT_FAMILIES = {
+  willow: "broadleaf",
+  witchTree: "broadleaf",
+};
+
+export const META = {
+  id: "wonderland",
+  label: "Wonderland",
+  group: "storybook",
+  tint: ["#f3d6f0", "rgb(120 90 170)"],
+  backdrop: {
+    light: {
+      green: "#a6e9b8",
+      "green-soft": "#d6f5e1",
+      peach: "#ffc2b8",
+      blush: "#ffd6ea",
+      bloom: "#ffa6cb",
+    },
+    dark: {
+      green: "rgb(110 200 150 / 0.36)",
+      "green-soft": "rgb(150 120 220 / 0.2)",
+      peach: "rgb(230 110 150 / 0.2)",
+      blush: "rgb(120 90 170 / 0.16)",
+      bloom: "rgb(255 120 190 / 0.3)",
+    },
   },
 };
 
 export default {
-  id: "wonderland",
-  label: "Wonderland",
-  group: "storybook",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.3, 0.5], dark: [0.4, 0.6] },
   mature: {

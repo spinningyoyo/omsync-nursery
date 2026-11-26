@@ -3,7 +3,7 @@
 // bushy tail, a neck ruff that rides with the head and stretches when the head lifts, and a head
 // that can be level, raised to howl or tipped nose down for the fox's pounce. Four tones lit from
 // above. One spec per member (WOLF, YEARLING, COYOTE, RED, ARCTIC, PUP), drawn by
-// drawDog(spec, pal, plot, pose); animals.js's canidAt places and poses it. Coordinates are the dog's
+// drawDog(spec, pal, plot, pose); canidAt (below) places and poses it. Coordinates are the dog's
 // own: x runs from the rump (0) toward the nose and h is the height above the ground;
 // `plot(x, h, colour)` paints a pixel, so the caller places and mirrors it. Rest poses are blends of
 // SHAPES (stand, sit, lie, bow, and the pounce's leap and dive); howlAt and pounceAt return the pose
@@ -26,7 +26,8 @@ import {
   shapeCache,
   walkDips,
 } from "./build.js";
-import { clamp, frac, lerp, mix, rgba, smooth } from "./pixel.js";
+import { clamp, frac, hash, lerp, mix, rgba, shadowColour, smooth } from "./pixel.js";
+import { blinkAt, breathAt, ease, feet, paintAt, sinceOf, tonesFor } from "./place.js";
 
 export const STANCE = 0.65;
 
@@ -776,3 +777,149 @@ export function pounceAt(p) {
   const [a, b, from, to] = POUNCE_STEPS.find(([s, e]) => t >= s && t < e);
   return { from, to, u: from === to ? 0 : (t - a) / (b - a) };
 }
+
+// Dogs
+
+// Built from parts (canid.js): the wolf and its yearling, the coyote, the red and arctic foxes, and
+// a pup (any kind below scale 0.8). A dog walks with its feet planted, eases to a stop and rests in
+// the pose settleCanid picked as it stopped (standing and looking about, sitting, or lying), and in
+// a long stop may get up and stretch into the play bow before it walks on. c.state "howl" sits it
+// up to howl, rings of sound leaving the raised muzzle; "pounce" (the red fox, held c.lift pixels
+// off the ground) springs nose up and dives nose down, landing in a sit. c.since is when its state
+// last changed (settleCanid); c.pose ("stand", "sit", "lie" or "bow") and c.actAt (seconds into a
+// howl or pounce) show a pose on demand. Its palette is the scene's array under its kind (coat, dark,
+// pale, eye, tail tip) with the scene's `canid` entry beside it (the mouth, the howl's sound,
+// and dark at night), and its groundShadow.
+const CANID_SPECS = { wolf: WOLF, coyote: COYOTE, red: RED, arctic: ARCTIC };
+const CANID_SHADOW_COLUMNS = {
+  wolf: [-3, 16],
+  yearling: [-3, 15],
+  coyote: [-3, 14],
+  red: [-4, 13],
+  arctic: [-3, 11],
+  pup: [-2, 9],
+};
+const CANID_OWN = { R: "#6e2c2c", howl: "#5f6f84", dark: false };
+const CANID_POSES = new Set(["stand", "sit", "lie", "bow"]);
+const CANID_EASE = 0.25; // seconds a walk takes to start or stop
+const CANID_SETTLE = 0.5; // seconds it takes to sit or lie down
+const CANID_RISE = 0.5; // seconds it takes to get up
+const CANID_SIT_TO_HOWL = 0.4;
+
+function canidSpec(c) {
+  const k = c.scale ?? 1;
+  if (k < 0.8) return PUP;
+  if (c.kind === "wolf" && k < 1) return YEARLING;
+  return CANID_SPECS[c.kind];
+}
+
+// Call after the scene's update has set w.state (wander, a howl, a pounce, or a leader's state for a
+// pup or yearling, passed as `lead` so it rests as its leader does). Records when the state changed
+// and, as a stop begins, the pose it rests in, when the stop ends, and whether it bows before it goes.
+export function settleCanid(f, w, lead = null) {
+  if (w.state === w.was) return;
+  const prev = w.was;
+  w.was = w.state;
+  w.prev = prev;
+  w.since = f.time;
+  if (w.state === "walk") {
+    w.lastPose = prev === "pounce" ? "dive" : prev && prev !== "walk" && !w.bows ? (w.pose ?? "sit") : null;
+    w.pose = null;
+    w.bows = false;
+    return;
+  }
+  if (w.state !== "sit") return;
+  if (prev === "pounce" || prev === "howl") {
+    w.pose = "sit";
+    w.bows = false;
+    return;
+  }
+  const by = lead ?? w;
+  w.stopEnd = f.time + Math.max(0, by.timer ?? 0);
+  if (lead) {
+    w.pose = lead.pose ?? "sit";
+    w.bows = lead.bows ?? false;
+    return;
+  }
+  const stop = w.stopEnd - f.time;
+  const r = hash(Math.round(f.time * 100), Math.round(w.x), 3);
+  w.pose = stop < 1.6 ? "stand" : stop >= 3 && r < 0.5 ? "lie" : "sit";
+  w.bows = stop >= 4.5 && hash(Math.round(f.time * 100), Math.round(w.x), 4) < 0.5;
+}
+
+// The bow before it walks on: in the last 1.6 s of the stop it gets up, bows, holds and stands.
+function canidBow(name, left) {
+  if (left > 1.6 || left < 0) return null;
+  if (left > 1.2) return { from: name, to: "stand", u: (1.6 - left) / 0.4 };
+  if (left > 0.8) return { from: "stand", to: "bow", u: (1.2 - left) / 0.4 };
+  if (left > 0.4) return { from: "bow", to: "bow", u: 0 };
+  return { from: "bow", to: "stand", u: (0.4 - left) / 0.4 };
+}
+
+export function canidAt(g, c, time = 0) {
+  if (g.trace) return g.trace.draw(canidAt, g, c, time);
+  const spec = canidSpec(c);
+  const own = g.pal.canid ?? CANID_OWN;
+  const colours = g.pal[c.pal ?? c.kind];
+  const pal = tonesFor(colours, "canid", () => dogTones(colours, own));
+  const state = c.state;
+  const walking = state === "walk";
+  const since = sinceOf(c, time);
+  const bodyX = c.x * c.dir;
+  const phase = bodyX / (spec.stride / STANCE);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, CANID_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.75 : Math.sin(time * 1.4) * 0.6,
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, c.phase ?? 0, 3.1),
+    headUp: 0,
+  };
+  let lift = 0;
+  if (state === "pounce") {
+    Object.assign(pose, { rest: pounceAt(c.actAt ?? since), amp: 0, blink: false });
+    lift = Math.max(0, Math.round(c.lift ?? 0));
+  } else if (state === "howl") {
+    const h = c.actAt ?? since;
+    const from = c.prev === "sit" && c.pose !== "stand" ? (c.pose ?? "sit") : "stand";
+    pose.rest = { from, to: "sit", u: h / CANID_SIT_TO_HOWL };
+    const act = howlAt(h - CANID_SIT_TO_HOWL);
+    if (act) Object.assign(pose, act, { blink: false });
+  } else if (walking) {
+    if (c.lastPose && since < CANID_RISE) pose.rest = { from: c.lastPose, to: "stand", u: since / CANID_RISE };
+  } else {
+    const name = CANID_POSES.has(c.pose) ? c.pose : "sit";
+    if (c.prev === "pounce") pose.rest = { from: "dive", to: "sit", u: since / 0.3 };
+    else if (c.prev === "howl") pose.rest = { from: "sit", to: "sit", u: 0 };
+    else if (name !== "stand") pose.rest = { from: "stand", to: name, u: (since - CANID_EASE * 0.6) / CANID_SETTLE };
+    const bow = c.bows && c.stopEnd != null ? canidBow(name, c.stopEnd - time) : null;
+    if (bow) pose.rest = bow;
+    // Now and then it lifts its head to look about.
+    else if (since > 1 && since < 2) pose.headUp = Math.min(1, (since - 1) / 0.25, (2 - since) / 0.25);
+  }
+  // The shadow stays on the ground, shorter the higher the dog is off it.
+  const [s0, s1] = CANID_SHADOW_COLUMNS[spec.id];
+  const shrink = Math.min(Math.floor((s1 - s0) / 2) - 1, Math.round(lift / 2));
+  const shadow = { colour: shadowColour(g.pal), span: [s0 + shrink, s1 - 1 - shrink] };
+  paintAt(g, Math.round(c.x), feet(g, c), c.dir, (plot) => drawDog(spec, pal, plot, pose), shadow, lift);
+}
+
+export const FAMILY = {
+  id: "dogs",
+  title: "Dogs",
+  group: "Animals",
+  differ: "size, colour, tail",
+  members: {
+    "arctic-fox": { spec: ARCTIC, realLength: 0.55 },
+    fox: { spec: RED, realLength: 0.65, predator: true },
+    coyote: { spec: COYOTE, realLength: 0.9, predator: true },
+    wolf: { spec: WOLF, realLength: 1.2, predator: true },
+  },
+  drivers: {
+    canidAt: {
+      role: "walker",
+      member: (a) => ((a.scale ?? 1) < 0.8 ? "pup" : a.kind === "red" || a.kind === "arctic" ? "fox" : a.kind),
+    },
+  },
+};

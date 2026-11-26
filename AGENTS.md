@@ -8,7 +8,7 @@ contract. `docs/adr/` holds the reasons behind the layout and the stack.
 ## Rules
 
 - Scene, sprite, palette, saved-edit or studio work: use the `nursery-scene` skill. Before you
-  change a scene, read its module and its `docs/scenes/<scene>.md`.
+  change a scene, read its module end to end.
 - Art verification work: use the `verify-nursery` skill.
 - The modules in `src/nursery/assets/js/` import only each other, so the package stays
   self-contained. A scene imports only `kit/`. Only a host imports `garden/`. `sh scripts/check.sh`
@@ -28,12 +28,13 @@ contract. `docs/adr/` holds the reasons behind the layout and the stack.
 ```sh
 uv sync
 git config core.hooksPath .githooks   # once per clone: pre-commit and commit-msg checks
-sh scripts/check.sh               # ruff, Biome, import boundaries, brand and catalogue freshness
+sh scripts/check.sh               # ruff, Biome, import boundaries, scene records, brand and scenes freshness (needs Node)
 uv run pytest                     # the end-to-end tests (needs Chrome); -m "not browser" skips Chrome
 uv run nursery --help
 uv run nursery verify             # check the art against the design rules
 uv run nursery release --patch --dry-run   # or --minor, --major
-uv run nursery catalog            # rebuilds docs/scenes/<scene>.md
+uv run nursery scenes             # rebuilds scenes.json and scenes.css from the scene modules
+uv run nursery catalog --out DIR  # writes per-scene markdown tables to DIR
 uv run nursery brand              # rebuilds the mascot, favicons and studio mark from the grid
 ```
 

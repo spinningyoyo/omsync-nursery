@@ -1589,7 +1589,7 @@ function vultureLandPose(u, time, phase = 0) {
   return { e: ease(u, 0.74, 1), open: lerp(flap, hold, ease(u, 0.5, 0.7)), feet: ease(u, 0.45, 0.8) };
 }
 
-const PREP = 0.9; // seconds on the bough before it lifts, as animals.js's PREP
+const PREP = 0.9; // seconds on the bough before it lifts, as perch.js's PREP
 function vultureLeavePose(t, time, phase = 0) {
   const flap = 0.5 - 0.5 * Math.cos(time * 4 + phase);
   return { e: 1 - ease(t, 0, 2.2), open: flap * ease(t, 0.3, PREP), feet: 1 - ease(t, PREP, 2.4) };
@@ -1652,3 +1652,23 @@ export function wonderlandFlockAt(g, b, time = g.time ?? 0) {
   drawFlockCards(c, pal, 0, 0, time, dir);
   flush(g, c, x, y, dir);
 }
+
+export const FAMILY = {
+  id: "storybook",
+  title: "Storybook people and things",
+  group: "Animals",
+  differ: "each follows its book",
+  drivers: {
+    wonderlandRabbitAt: { family: "hares-rodents", role: "walker", member: () => "rabbit" },
+    wonderlandHareAt: { family: "hares-rodents", role: "walker", member: () => "hare" },
+    wonderlandDodoAt: { family: "ground-birds", role: "walker", member: () => "dodo" },
+    wonderlandSoldierAt: { family: "storybook", role: "walker", member: () => "soldier" },
+    wonderlandVultureAt: { family: "soaring-birds", role: "flyer", member: () => "vulture", day: true },
+    wonderlandFlockAt: { family: "storybook", role: "group", member: () => "flock", day: false },
+    balloonAt: { family: "storybook", role: "prop", member: () => "balloon" },
+    wonderlandCatAt: { family: "cats", role: "prop", member: () => "cat" },
+    wonderlandCaterpillarAt: { family: "insects", role: "prop", member: () => "caterpillar" },
+    wonderlandHatAt: { family: "storybook", role: "prop", member: () => "hat" },
+    wonderlandTeaPartyAt: { family: "storybook", role: "prop", member: () => "tea party" },
+  },
+};

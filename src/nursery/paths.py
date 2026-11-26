@@ -33,10 +33,3 @@ def module_path(name: str) -> Path:
     """A scene module or a kit module, by its name without .js."""
     scene = SCENES_DIR / f"{name}.js"
     return scene if scene.is_file() else KIT_DIR / f"{name}.js"
-
-
-def scene_copy(text: str) -> str:
-    """A scene module's imports rewritten for a copy served from /copies/ beside /js/."""
-    return text.replace('from "../kit/', 'from "../js/kit/').replace(
-        'from "./', 'from "../js/scenes/'
-    )

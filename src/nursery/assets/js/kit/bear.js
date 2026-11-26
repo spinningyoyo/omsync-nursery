@@ -6,7 +6,7 @@
 // smooth shape; the legs and the neck are rooted by where they sit across the body, so they ride
 // inside it in every pose and every blend between poses. Four tones lit from above, the far legs in
 // their own darker tone. One spec per member (BLACK, GRIZZLY, CUB), drawn by drawBear(spec, pal, plot,
-// pose); animals.js's bearAt places and poses it. Coordinates are the bear's own: x runs from the
+// pose); bearAt (below) places and poses it. Coordinates are the bear's own: x runs from the
 // rump (0) toward the nose and h is the height above the ground; `plot(x, h, colour)` paints a
 // pixel, so the caller places and mirrors it. On the scale: black bear 1.6 m, len 14; grizzly
 // 2.1 m, len 16; cub 0.45 m, len 8. The cub's tree climb (climbAt, climbTotal, drawClimb) is drawn
@@ -30,7 +30,8 @@ import {
   straighten,
   walkDips,
 } from "./build.js";
-import { clamp, frac, lerp, mix, rad, rgba, smooth } from "./pixel.js";
+import { clamp, frac, lerp, mix, rad, rgba, shadowColour, smooth } from "./pixel.js";
+import { blinkAt, breathAt, ease, feet, feetSpan, paintAt, sinceOf, tonesFor } from "./place.js";
 
 // A bear's tones from a scene's bear palette [coat, sheen, muzzle, nose, legs]: H the sheen along
 // the back, T the coat, S and U the shade and the darkest underneath, F the far legs, P the muzzle,
@@ -1042,3 +1043,91 @@ export function drawClimb(pal, plotAt, { s, e, rise, dx, look, blink, breath }) 
   limb(hip, "hindNear", -1, 2, 2, 3, pal.H, false);
   limb(shoulder, "foreNear", 1, 2.2, 2.2, 2, pal.H, true);
 }
+
+// Bears
+
+// Built from parts (bear.js): the black bear, the grizzly (kind "grizzly") and the cub (`cub` true).
+// A bear walks with its feet planted, eases to a stop and rests in the pose rest() picked as it
+// stopped (bearPoses: foraging with its head down and its whole front sloping to the ground, sitting
+// up on its rump, lying, or reared up to sniff the air, or just standing and looking about); standing
+// it breathes, blinks and now and then lifts its head. State "rear" is the sniff the scene times: it
+// rears up (the nose lifting in bursts, faint wisps of air drifting in to it) and eases back down by
+// the end of b.timer, the seconds it has left. b.since (settle, critters.js) is when its state
+// changed; b.pose names a pose to show on demand (with since and timer set). A cub whose b.climb is
+// { t, lead, up, hold, down, tail, height } (seconds into the climb, and the tree's height in px) is
+// on a trunk: x is where the cub stood, and the bark is 7 px in front of it. Its palette is the
+// scene's array under b.pal or "bear" ([coat, sheen, muzzle, nose, legs]) with the scene's groundShadow
+// and bearScent beside it.
+const BEAR_SPECS = { black: BLACK, grizzly: GRIZZLY };
+const BEAR_EASE = 0.3; // seconds a walk takes to start or stop
+const BEAR_POSE = 0.7; // seconds it takes to go down to a pose or come up from it
+const BEAR_POSES = new Set(["stand", "forage", "sit", "lie", "rear"]);
+
+// The poses a bear rests in as it stops (for rest(), critters.js): the cub does not lie or rear.
+export const bearPoses = (b) =>
+  b.cub ? ["stand", "forage", "sit"] : ["forage", "forage", "stand", "sit", "lie", "rear"];
+
+export function bearAt(g, b, time = 0) {
+  if (g.trace) return g.trace.draw(bearAt, g, b, time);
+  const spec = b.cub ? CUB : (BEAR_SPECS[b.kind] ?? BLACK);
+  const colours = g.pal[b.pal ?? "bear"];
+  const grizzly = b.kind === "grizzly";
+  const pal = tonesFor(colours, grizzly ? "grizzly" : "bear", () => (grizzly ? grizzlyTones : bearTones)(colours));
+  pal.scent = g.pal.bearScent;
+  const since = sinceOf(b, time);
+  const walking = b.state === "walk";
+  const left = b.timer ?? 100;
+  const bodyX = b.x * b.dir;
+  let pose = {
+    phase: bodyX / (spec.stride / STANCE),
+    bodyX,
+    amp: ease(walking, since, BEAR_EASE),
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, b.phase ?? 0, 3.2),
+  };
+  let climbing = null;
+  if (b.climb) {
+    const c = climbAt(b.climb);
+    if (c.rest) pose = { ...pose, bodyX: null, amp: 0, phase: 0, rest: c.rest, breath: 0 };
+    else climbing = c;
+  } else if (!walking) {
+    const name = b.state === "rear" ? "rear" : BEAR_POSES.has(b.pose) ? b.pose : "stand";
+    const u = Math.max(0, Math.min(1, (since - BEAR_EASE * 0.8) / BEAR_POSE, left / BEAR_POSE));
+    if (name !== "stand") pose.rest = { from: "stand", to: name, u };
+    const held = u >= 1;
+    const burst = (t) => (t * 1.1) % 1 < 0.55 && Math.floor(t * 7) % 2 === 0;
+    if (name === "rear" && held && left > 0.3) {
+      pose.scent = since;
+      pose.blink = false;
+      pose.sniff = burst(time) ? 1 : 0;
+    } else if (name === "forage" && held) pose.sniff = burst(time) ? -1 : 0;
+    else if (name === "lie" && held && left > 0.8) pose.eyesShut = ((time + (b.phase ?? 0)) / 6) % 1 > 0.3;
+    // Now and then it lifts its head to look about.
+    else if (name === "stand" && since > 1 && since < 1.6) pose.headUp = 1;
+  }
+  paintAt(
+    g,
+    Math.round(b.x),
+    feet(g, b),
+    b.dir,
+    (plot) => (climbing ? drawClimb(pal, plot, climbing) : drawBear(spec, pal, plot, pose)),
+    climbing ? null : { colour: shadowColour(g.pal), span: feetSpan },
+  );
+}
+
+export const FAMILY = {
+  id: "bears",
+  title: "Bears",
+  group: "Animals",
+  differ: "size, colour, hump",
+  members: {
+    bear: { spec: BLACK, realLength: 1.6, predator: true },
+    grizzly: { spec: GRIZZLY, realLength: 2.1, predator: true },
+  },
+  drivers: {
+    bearAt: {
+      role: "walker",
+      member: (a) => (a.cub ? "bear-cub" : a.kind === "grizzly" ? "grizzly" : "bear"),
+    },
+  },
+};

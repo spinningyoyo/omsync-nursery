@@ -9,9 +9,10 @@
 // look-out (RAM_TURN_HEAD). Coordinates are the animal's own: x runs from the rump (0) toward the
 // nose and h is the height above the ground; `plot(x, h, colour)` paints a pixel. Rest poses: stand,
 // graze, lie and back (the wallow: rolled over, legs in the air). The wallow's dust is horse.js's
-// dustAt with `colour: "bisonDust"`. animals.js's bisonAt and bighornAt place and pose them.
+// dustAt with `colour: "bisonDust"`. bisonAt and bighornAt (below) place and pose them.
 
 import { shapeCache } from "./build.js";
+import { doing } from "./critters.js";
 import {
   flipCentre,
   GAIT,
@@ -25,7 +26,21 @@ import {
   hoofTail,
   paintHoofLimb,
 } from "./hoof.js";
-import { clamp, hash, lerp, mix, smooth } from "./pixel.js";
+import { GAIT as HORSE_GAIT, dustAt as horseDustAt } from "./horse.js";
+import { clamp, hash, lerp, mix, shadowColour, smooth } from "./pixel.js";
+import {
+  blinkAt,
+  breathAt,
+  ease,
+  easeIn,
+  feet,
+  grazingLoop,
+  loopAt,
+  lyingLoop,
+  paintAt,
+  sinceOf,
+  tonesFor,
+} from "./place.js";
 
 // ---- Poses ------------------------------------------------------------------------------------
 
@@ -466,4 +481,194 @@ export const RAM_TURN_HEAD = {
   anchor: [2, 2],
   horn: { ...RAM_HORN, far: [3, 0.8], w0: 2.7 },
   ear: [3, 0],
+};
+
+// Wild cattle and sheep
+
+// Built from parts (bovid.js, on the horse build): the American bison, its calf (scale below 0.8) and the
+// bighorn ram. b.since (settle, critters.js) is when a walker's state last changed and b.timer the seconds
+// its stop has left. A stopped bison rests in the pose rest() picked as it stopped (bisonPoses): "graze"
+// (the neck swings down, the hump and shoulders dip with it), "stand" (breathing, a tail flick, a look
+// up) or "wallow", its signature: it lies down fore end first, rolls onto its back with the legs kicking
+// and dust coming off the ground, rolls back, rises rump first and shakes a cloud of dust from its coat.
+// A calf grazes beside a grazing mother, lies down in a long stop, and else stands; b.pose or b.act with
+// b.actAt seconds in shows one on demand. Palettes: the scene's bison ([dark, tan, horn, beard, throat])
+// with bisonShade, calf ([tan, dark]), and groundShadow and bisonDust beside them.
+//
+// The ram is a percher (critters.js) that stays where it was put. Its moves (s.moves) are "look" (the head
+// lifts and turns three-quarters to face out, the horns showing either side), "graze", "lie" (chewing its
+// cud), "chew" and "stamp"; s.act with s.actAt seconds in, and s.actLasts, shows one on demand. Its
+// palette is sheep: [coat, pale, horn, dark, horn shade], with groundShadow.
+const BOVID_BUILD = { bison: [BISON, [-1, 26]], calf: [CALF, [-1, 15]], bighorn: [BIGHORN, [-1, 17]] };
+const BOVID_EASE = 0.3; // seconds a walk takes to start or stop
+const BISON_REST = 5.2; // the stop a calf lies down in
+const WALLOW_STOP = 9.3; // the stop a wallow needs: 8.8 s from the first step down to the shake
+
+// The poses a bison may rest in for a stop of b.timer seconds (for rest(), critters.js): the wallow
+// only when the stop is long enough to finish it.
+export const bisonPoses = (b) => {
+  const poses = ["graze", "graze", "stand"];
+  if ((b.timer ?? 0) >= WALLOW_STOP) poses.push("wallow", "wallow");
+  return poses;
+};
+
+const WALLOW_LOOP = [
+  [0, 0.4, "stand", "stand"],
+  [0.4, 1.7, "stand", "lie"],
+  [1.7, 2.3, "lie", "lie"],
+  [2.3, 3.2, "lie", "back"],
+  [3.2, 5.4, "back", "back"],
+  [5.4, 6.2, "back", "lie"],
+  [6.2, 6.7, "lie", "lie"],
+  [6.7, 7.9, "lie", "stand"],
+];
+const WALLOW_KICK = [3.2, 5.4];
+const WALLOW_SHAKE = [7.9, 8.8];
+
+const bovidTones = (g, key, make) => tonesFor(g.pal[key], "bovid", () => make(g.pal[key]));
+
+// Places a bovid over its ground shadow, which spans the build's columns [s0, s1).
+function drawBovidAt(g, spec, pal, [s0, s1], x, fy, dir, pose) {
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  paintAt(g, x, fy, dir, (plot) => drawBovid(spec, pal, plot, pose), shadow);
+}
+
+export function bisonAt(g, b, time = 0) {
+  if (g.trace) return g.trace.draw(bisonAt, g, b, time);
+  const calf = (b.scale ?? 1) < 0.8;
+  const [spec, shadow] = BOVID_BUILD[calf ? "calf" : "bison"];
+  const pal = calf
+    ? bovidTones(g, "calf", calfTones)
+    : bovidTones(g, "bison", ([dark, tan, horn, beard, throat]) =>
+        bisonTones([dark, tan, horn, beard, throat], g.pal.bisonShade),
+      );
+  const dir = b.dir;
+  const x = Math.round(b.x);
+  const bodyX = b.x * dir;
+  const walking = b.state === "walk" && !b.act;
+  const since = sinceOf(b, time);
+  const stop = since + (b.timer ?? 0);
+  const phase = bodyX / (spec.stride / HORSE_GAIT.stance);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, BOVID_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.6 : Math.sin(time * 1.3) * 0.3,
+    breath: breathAt(time, 2, !walking),
+    blink: blinkAt(time, b.phase ?? 0, 3.7),
+  };
+  let wallowing = null;
+  if (!walking && (since >= BOVID_EASE || b.act)) {
+    const name = b.act ?? b.pose ?? "stand";
+    const at = b.actAt ?? since;
+    let loop = null;
+    if (calf) {
+      if (name === "graze") loop = grazingLoop(stop);
+      else if (name === "wallow" || name === "lie" || stop >= BISON_REST) loop = lyingLoop(stop);
+    } else if (name === "graze") {
+      loop = grazingLoop(stop);
+      if (at > 2.3 && at < 2.8) pose.ear = 1;
+    } else if (name === "wallow") {
+      loop = WALLOW_LOOP;
+      const [k0, k1] = WALLOW_KICK;
+      if (at >= k0 && at < k1) {
+        pose.kick = Math.sin((at - k0) * 7) * easeIn(at - k0, 0.6) * easeIn(k1 - at, 0.6);
+        pose.sway = Math.sin(time * 5) * 0.8;
+      }
+      if (at >= WALLOW_SHAKE[0] && at < WALLOW_SHAKE[1]) {
+        const u = (at - WALLOW_SHAKE[0]) / (WALLOW_SHAKE[1] - WALLOW_SHAKE[0]);
+        pose.shake = Math.sin((at - WALLOW_SHAKE[0]) * 28) * 1.2 * (1 - u);
+      }
+      wallowing = at;
+    } else if (name === "lie") loop = lyingLoop(stop);
+    else {
+      // Standing: a tail flick and, now and then, the head comes up.
+      const s = at - 1.6;
+      if (s > 0 && s < 1.2) pose.sway = Math.sin(s * 8) * 0.8;
+      pose.head = 0.3 * easeIn(Math.sin(at * 0.8) * 3, 1);
+      pose.ear = pose.head > 0.15 ? 1 : 0;
+    }
+    if (loop) pose.rest = loopAt(loop, at);
+  }
+  drawBovidAt(g, spec, pal, shadow, x, feet(g, b), dir, pose);
+  if (wallowing !== null) {
+    // A cloud at the back as it rolls, a bigger one off the coat as it shakes.
+    const fy = feet(g, b);
+    const span = (lo, hi) => (dir > 0 ? { x0: x + lo, x1: x + hi } : { x0: x - hi, x1: x - lo });
+    const [k0, k1] = WALLOW_KICK;
+    if (wallowing >= k0 + 0.2 && wallowing < k1 + 0.8) {
+      horseDustAt(g, 0, fy, ((wallowing - k0 - 0.2) * 1.2) % 1, {
+        ...span(-2, 22),
+        count: 18,
+        life: 1,
+        rise: 7,
+        colour: "bisonDust",
+      });
+    }
+    horseDustAt(g, 0, fy, wallowing - (WALLOW_SHAKE[0] - 0.1), {
+      ...span(1, 20),
+      count: 34,
+      life: 1.5,
+      rise: 13,
+      colour: "bisonDust",
+    });
+  }
+}
+
+// A bighorn ram: the move it is in as [name, seconds into it, seconds it lasts], from its percher moves
+// (the first of these under way) or from s.act on demand.
+const RAM_MOVES = ["lie", "graze", "look", "stamp", "chew"];
+const RAM_LASTS = { lie: 7, graze: 3.6, look: 5, stamp: 0.4, chew: 1.5 };
+function ramMove(s, time) {
+  if (s.act) return [s.act, s.actAt ?? 1, s.actLasts ?? RAM_LASTS[s.act] ?? 3];
+  for (const name of RAM_MOVES) {
+    const u = s.moves?.[name] ? doing(s, name, time) : -1;
+    if (u >= 0) return [name, u * s.moves[name].lasts, s.moves[name].lasts];
+  }
+  return ["stand", 0, 0];
+}
+
+export function bighornAt(g, s, time = 0) {
+  if (g.trace) return g.trace.draw(bighornAt, g, s, time);
+  const [spec, shadow] = BOVID_BUILD.bighorn;
+  const pal = bovidTones(g, s.pal ?? "sheep", sheepTones);
+  const [name, at, lasts] = ramMove(s, time);
+  const pose = {
+    amp: 0,
+    phase: 0,
+    sway: Math.sin(time * 1.6) * 0.35,
+    breath: breathAt(time, 2.4),
+    blink: blinkAt(time, s.phase ?? 0, 3.1, 0.045),
+  };
+  const chewing = (a, b) => at >= a && at < b && Math.sin(at * 11) > 0;
+  if (name === "graze") {
+    pose.rest = loopAt(grazingLoop(lasts), at);
+    pose.mouth = chewing(lasts - 1.4, lasts - 0.3) ? 1 : 0;
+  } else if (name === "lie") {
+    pose.rest = loopAt(lyingLoop(lasts), at);
+    pose.mouth = chewing(1.8, lasts - 1.8) ? 1 : 0;
+    pose.ear = at > 4 && at < 4.4 ? 1 : 0;
+  } else if (name === "look") {
+    // The head comes up and turns to face out over almost a second, holds, and turns back.
+    const turn = easeIn(Math.min(at, lasts - at), 0.9);
+    pose.head = turn * 0.9;
+    if (turn > 0.5) pose.headGrid = RAM_TURN_HEAD;
+  } else if (name === "stamp") pose.stamp = easeIn(Math.min(at, lasts - at), 0.12);
+  else if (name === "chew") pose.mouth = Math.sin(time * 11) > 0 ? 1 : 0;
+  drawBovidAt(g, spec, pal, shadow, Math.round(s.x), feet(g, s), s.dir, pose);
+}
+
+export const FAMILY = {
+  id: "cattle-sheep",
+  title: "Wild cattle and sheep",
+  group: "Animals",
+  differ: "size, horns, hump",
+  members: {
+    bighorn: { spec: BIGHORN, realLength: 1.6 },
+    bison: { spec: BISON, realLength: 3.0 },
+  },
+  drivers: {
+    bighornAt: { role: "walker", member: () => "bighorn" },
+    bisonAt: { role: "walker", member: () => "bison" },
+  },
 };

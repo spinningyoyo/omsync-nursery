@@ -5,7 +5,7 @@
 // and dips with it, ears that are parts of their own and flick, a tail that hangs from the hips with a
 // tuft, and a head placed on the neck's end. Four tones lit from above; a zebra's stripes are laid in
 // the coat's own columns (the spec's `coat`), so they travel with the body. One spec per member, drawn
-// by drawHorse(spec, pal, plot, pose); animals.js's zebraAt places and poses it. Coordinates are the
+// by drawHorse(spec, pal, plot, pose); zebraAt (below) places and poses it. Coordinates are the
 // horse's own: x runs from the rump (0) toward the nose and h is the height above the ground;
 // `plot(x, h, colour)` paints a pixel, so the caller places and mirrors it. Rest poses: stand, graze,
 // lie, back (rolled onto its back, legs in the air) and sit (back on its haunches). dustAt paints the
@@ -28,7 +28,20 @@ import {
   hoofTail,
   paintHoofLimb,
 } from "./hoof.js";
-import { hash, mix } from "./pixel.js";
+import { hash, mix, shadowColour, smooth } from "./pixel.js";
+import {
+  blinkAt,
+  breathAt,
+  bump,
+  ease,
+  feet,
+  grazingLoop,
+  loopAt,
+  lyingLoop,
+  paintAt,
+  sinceOf,
+  tonesFor,
+} from "./place.js";
 
 export { GAIT };
 
@@ -383,4 +396,178 @@ export const EEYORE = {
   lid: "s",
   haunch: [3.6, 3.4],
   sitHead: -0.6,
+};
+
+// Zebras and giraffes
+
+// Built from parts (horse.js): the plains zebra, and its foal (scale below 1), drawn on its own. A
+// zebra walks the four-beat walk with its hooves planted, eases to a stop and spends the stop in the
+// pose rest() picked as it stopped (zebraPoses): grazing with its head in the grass, a tail swish with
+// its ears flicking, lying down on its chest, or rolling in the dust (it goes down fore end first,
+// rolls onto its back with its legs waving, rolls back, gets up rump first and shakes, a cloud of dust
+// leaving its coat). Standing it breathes, blinks and flicks its tail. A foal in a long stop lies
+// down (or grazes beside a grazing mother). z.since (settle, critters.js) is when its state last
+// changed, z.timer the seconds its stop has left, and z.pose the pose to show on demand ("graze",
+// "swish", "lie", "roll"; z.actAt seconds in, for the roll). Its palette is the scene's `zebra` array
+// ([white, black, belly]), with the scene's groundShadow and horseDust beside it.
+const HORSE_BUILD = { zebra: [ZEBRA, [-1, 19]], foal: [FOAL, [-1, 13]] };
+const HORSE_EASE = 0.3; // seconds a walk takes to start or stop
+const HORSE_REST = [5.2, 4.4]; // the stop a foal lies down in, and a zebra
+const HORSE_ROLL = 8; // the stop a roll needs: about 7.8 s from the first step down to the shake
+
+// The poses a zebra may rest in for a stop of z.timer seconds (for rest(), critters.js): the long ones
+// only when the stop is long enough to finish.
+export const zebraPoses = (z) => {
+  const left = z.timer ?? 0;
+  const poses = ["graze", "swish"];
+  if (left >= HORSE_REST[1]) poses.push("lie");
+  if (left >= HORSE_ROLL) poses.push("roll");
+  return poses;
+};
+
+const ROLL_LOOP = [
+  [0, 0.4, "stand", "stand"],
+  [0.4, 1.5, "stand", "lie"],
+  [1.5, 2.0, "lie", "lie"],
+  [2.0, 2.7, "lie", "back"],
+  [2.7, 4.7, "back", "back"],
+  [4.7, 5.4, "back", "lie"],
+  [5.4, 5.8, "lie", "lie"],
+  [5.8, 6.9, "lie", "stand"],
+];
+const ROLL_KICK = [2.7, 4.7];
+const ROLL_SHAKE = [6.9, 7.7];
+
+export function zebraAt(g, z, time = 0) {
+  if (g.trace) return g.trace.draw(zebraAt, g, z, time);
+  const foal = (z.scale ?? 1) < 1;
+  const [spec, [s0, s1]] = HORSE_BUILD[foal ? "foal" : "zebra"];
+  const colours = g.pal[z.pal ?? "zebra"];
+  const pal = tonesFor(colours, foal ? "foal" : "zebra", () => zebraTones(colours, foal));
+  const dir = z.dir;
+  const x = Math.round(z.x);
+  const bodyX = z.x * dir;
+  const walking = z.state === "walk";
+  const since = sinceOf(z, time);
+  const stop = since + (z.timer ?? 0);
+  const phase = bodyX / (spec.stride / GAIT.stance);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, HORSE_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.6 : Math.sin(time * 1.3) * 0.25,
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, z.phase ?? 0, 3.3),
+  };
+  let rolling = null;
+  if (!walking && since >= HORSE_EASE) {
+    const name = z.pose ?? "stand";
+    const at = z.actAt ?? since;
+    let loop = null;
+    if (foal) {
+      // The foal grazes beside a grazing mother, lies down in a long stop, and else stands.
+      if (name === "graze") loop = grazingLoop(stop);
+      else if (stop >= HORSE_REST[0] || name === "lie") loop = lyingLoop(stop);
+    } else if (name === "graze") {
+      loop = grazingLoop(stop);
+      if (at > 2.3 && at < 2.8) pose.ear = 1;
+    } else if (name === "swish") {
+      const s = at - 0.8;
+      if (s > 0 && s < 1.4) {
+        pose.sway = Math.sin(s * 11);
+        pose.ear = s > 0.2 && s < 1.2 ? 1 : 0;
+      }
+    } else if (name === "lie") loop = lyingLoop(stop);
+    else if (name === "roll") {
+      loop = ROLL_LOOP;
+      const [k0, k1] = ROLL_KICK;
+      if (at >= k0 && at < k1) {
+        const ease = (a, b) => smooth(Math.min(1, Math.max(0, a / b)));
+        pose.kick = Math.sin((at - k0) * 8) * ease(at - k0, 0.5) * ease(k1 - at, 0.4);
+        pose.sway = Math.sin(time * 6) * 0.8;
+      }
+      if (at >= ROLL_SHAKE[0] && at < ROLL_SHAKE[1]) {
+        const u = (at - ROLL_SHAKE[0]) / (ROLL_SHAKE[1] - ROLL_SHAKE[0]);
+        pose.shake = Math.sin((at - ROLL_SHAKE[0]) * 32) * 1.2 * (1 - u);
+      }
+      rolling = at;
+    }
+    if (loop) pose.rest = loopAt(loop, at);
+  }
+  const fy = feet(g, z);
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  paintAt(g, x, fy, dir, (plot) => drawHorse(spec, pal, plot, pose), shadow);
+  if (rolling !== null) {
+    // A cloud at the back as it rolls, a bigger one off the coat as it shakes.
+    const span = (lo, hi) => (dir > 0 ? { x0: x + lo, x1: x + hi } : { x0: x - hi, x1: x - lo });
+    const [k0, k1] = ROLL_KICK;
+    if (rolling >= k0 + 0.2 && rolling < k1 + 0.8) {
+      dustAt(g, 0, fy, ((rolling - k0 - 0.2) * 1.2) % 1, { ...span(-1, 15), count: 10, life: 1, rise: 5 });
+    }
+    dustAt(g, 0, fy, rolling - (ROLL_SHAKE[0] - 0.1), { ...span(1, 15), count: 18, life: 0.9, rise: 11 });
+  }
+}
+
+// Eeyore, the Hundred Acre Wood's donkey, on the horse build with his own spec and no stripes (horse.js):
+// a grey barrel on thin legs, his head hung low on a sloping neck, long ears laid back, a dark mane and a
+// thin tail. He trudges the four-beat walk with his hooves planted; every stop he stands (breathing,
+// blinking, sighing with his head lower, flicking an ear), sits back on his haunches gloomily and gets
+// up again before he walks on. e.since (settle, critters.js) is when his state last changed and e.timer
+// the seconds his stop has left. His palette is the scene's `eeyore` array ([grey, shade, dark, muzzle])
+// with the scene's groundShadow beside it.
+const EEYORE_EASE = 0.3; // seconds a walk takes to start or stop
+const EEYORE_SHADOW = [-1, 11]; // the columns his shadow spans
+
+export function eeyoreAt(g, e, time = 0) {
+  if (g.trace) return g.trace.draw(eeyoreAt, g, e, time);
+  const colours = g.pal[e.pal ?? "eeyore"];
+  const pal = tonesFor(colours, "eeyore", () => eeyoreTones(colours));
+  const bodyX = e.x * e.dir;
+  const walking = e.state === "walk";
+  const since = sinceOf(e, time);
+  const stop = since + (e.timer ?? 0);
+  const phase = bodyX / (EEYORE.stride / GAIT.stance);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, EEYORE_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.4 : Math.sin(time * 1.1) * 0.35,
+    breath: breathAt(time, 2, !walking),
+    blink: blinkAt(time, e.phase ?? 0, 3.1, 0.045),
+    flop: walking ? Math.sin(phase * 2 * Math.PI + 1) : Math.sin(time * 1.5) * 0.3,
+  };
+  if (!walking && since >= EEYORE_EASE) {
+    const at = e.actAt ?? since;
+    const up = Math.max(3.2, stop - 1.4);
+    // Standing he sighs (his head sinks lower) and flicks an ear; then he sits down, sighs again, and
+    // rises before the walk.
+    const loop =
+      e.pose === "sit"
+        ? [[0, Infinity, "sit", "sit"]]
+        : [
+            [0, 1.9, "stand", "stand"],
+            [1.9, 3.0, "stand", "sit"],
+            [3.0, up, "sit", "sit"],
+            [up, stop - 0.2, "sit", "stand"],
+          ];
+    pose.rest = loopAt(loop, at);
+    pose.head = -0.5 * bump(at, 0.5, 1.8, 0.4) - 0.4 * bump(at, 3.6, Math.max(3.8, up - 0.2), 0.4);
+    pose.ear = bump(at, 1.0, 1.7, 0.2) + bump(at, 4.2, 4.9, 0.2) > 0.5 ? 1 : 0;
+  }
+  const shadow = { colour: shadowColour(g.pal), span: EEYORE_SHADOW };
+  paintAt(g, Math.round(e.x), feet(g, e), e.dir, (plot) => drawHorse(EEYORE, pal, plot, pose), shadow);
+}
+
+export const FAMILY = {
+  id: "horses",
+  title: "Horses",
+  group: "Animals",
+  differ: "size, colour, stripes",
+  members: {
+    zebra: { spec: ZEBRA, realLength: 2.3 },
+  },
+  drivers: {
+    zebraAt: { role: "walker", member: () => "zebra" },
+    eeyoreAt: { role: "walker", member: () => "eeyore" },
+  },
 };

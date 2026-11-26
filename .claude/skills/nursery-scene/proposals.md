@@ -3,8 +3,8 @@
 A proposal is a module at `.nursery/<scene>/proposals/<name>.js` (name: letters, digits, `-`,
 `_`). The running studio picks it up within a few seconds and shows it in the Inbox: the
 current sprite beside each variant in day and night, played, stepped and slowed, and the chosen
-variant over the live scene. Import with absolute paths: `/js/kit/animals.js`, `/js/kit/pixel.js`, and
-`/copies/<scene>.js` for the scene's own painters and `...At` functions.
+variant over the live scene. Import with absolute paths: `/js/kit/<family>.js`, `/js/kit/pixel.js`,
+and `/js/scenes/<scene>.js` for the scene's default export (`palettes`, `sprites`, etc.).
 
 ```js
 import { hawkAt } from "/js/kit/flyers.js";
@@ -44,7 +44,7 @@ palette plus the additions.
 
 A family's proposal draws every member side by side in one box at real size, so the user judges
 the family as a set. It lives in the scene of a member and is named `<family>-family`; import
-another scene's palettes from `/copies/<scene>.js` (its default export's `palettes`).
+another scene's palettes from `/js/scenes/<scene>.js` (its default export's `palettes`).
 
 ## The loop
 

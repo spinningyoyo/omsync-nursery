@@ -6,39 +6,22 @@
 // bull elk, a black bear and cub share the meadow; by day a belted kingfisher, a golden eagle and
 // butterflies fly over.
 // A bobcat hunts the meadow edge and rests in the grass: sitting, lying, arching or stretching.
-import {
-  bearAt,
-  bearPoses,
-  canidAt,
-  cervidAt,
-  felidAt,
-  felidPoses,
-  hareAt,
-  harePoses,
-  settleCanid,
-} from "../kit/animals.js";
+import { bearAt, bearPoses } from "../kit/bear.js";
+import { hareAt, harePoses } from "../kit/beast.js";
+import { canidAt, settleCanid } from "../kit/canid.js";
 import { sequoiaTop as kitSequoiaTop } from "../kit/conifer.js";
-import {
-  enter,
-  enterBehind,
-  follow,
-  isNight,
-  narrow,
-  rest,
-  settle,
-  soarer,
-  stroll,
-  walker,
-  wander,
-} from "../kit/critters.js";
+import { enter, enterBehind, follow, isNight, rest, settle, stroll, walker, wander } from "../kit/critters.js";
+import { cervidAt } from "../kit/deer.js";
+import { felidAt, felidPoses } from "../kit/felid.js";
 import { circlerAt, eagleFlyAt, flyerAt, kingfisherAt } from "../kit/flyers.js";
 import { butterflyAt, butterflyPick } from "../kit/insect.js";
-import { blobSpots, flyByPerch, goHome, unhidden } from "../kit/perch.js";
+import { blobSpots, unhidden } from "../kit/perch.js";
 import {
   blob,
   CLEARING,
   clamp,
   clearing,
+  fade,
   foliage,
   grove,
   hash,
@@ -53,6 +36,9 @@ import {
   wind,
 } from "../kit/pixel.js";
 import { meadowFlower, meadowFlowerHead } from "../kit/plants.js";
+import { ANIMAL_BOX, bird, butterfly, soarSprites, walk } from "../kit/poses.js";
+import { circlerActor, crossingActor, drawStep, runCast, tickTimer, walkerActor } from "../kit/runner.js";
+import { blendPose, perchedSmall } from "../kit/smallbird.js";
 import { broadleafTree, coniferTree, sequoiaTree } from "../kit/trees.js";
 
 const MATURE = { tuft: 1.5, flower: 2, bush: 2.5, tree: 3, sequoia: 4, mushroom: 1, hill: 2.5, elcap: 2.5 };
@@ -539,218 +525,385 @@ function pounceLift(t) {
   return Math.sin(Math.PI * Math.min(1, t / POUNCE_SECONDS)) * 7;
 }
 
-const extras = {
-  init(f) {
-    const colours = [0, 1, 2, 4];
-    return {
-      cat: walker(f),
-      petals: [],
-      eagle: { next: 0, bird: null },
-      soarer: soarer(f, 46 + f.rand() * 10),
-      jay: { next: 5, bird: null },
-      rabbit: walker(f),
-      fox: { ...walker(f), kind: "red" },
-      pounce: { next: 15 + f.rand() * 10, start: -10 },
-      cliff: f.plants.find((p) => p.kind === "elcap"),
-      firefall: { start: -Infinity, next: Infinity },
-      elk: { ...walker(f, 1.1), kind: "elk", sex: "m" },
-      bears: [walker(f), { ...walker(f, 0.55), cub: true }],
-      rear: { next: 14 + f.rand() * 10, until: -1 },
-      kingfisher: { next: 2, bird: null },
-      flies: Array.from({ length: BUTTERFLY_MAX }, (_, i) => ({
-        homeX: (0.12 + 0.76 * ((i + f.rand() * 0.8) / BUTTERFLY_MAX)) * f.cols,
-        homeY: f.groundY - 14 - f.rand() * 26,
-        phase: f.rand() * 6.28,
-        speed: 0.5 + f.rand() * 0.4,
-        colour: colours[i % colours.length],
-        cycle: 15 + f.rand() * 6,
-        from: Infinity,
-        at: Infinity,
-        n: null,
-        flower: null,
-      })),
-    };
-  },
-
-  // Butterflies arrive a little after the forest is old enough, one more per watering. A rabbit
-  // comes at stage 1, a bear and cub at 4 (when El Capitan has grown in and the firefall starts),
-  // a fox at 5 and an elk at 7.
-  onGrow(f) {
-    if (f.stage >= 6 && !narrow(f)) enter(f, f.extra.cat);
-    const { bears, firefall } = f.extra;
-    if (f.stage >= 4 && firefall.next === Infinity) firefall.next = f.time + 3;
-    if (f.stage >= 1) enter(f, f.extra.rabbit);
-    if (f.stage >= 4) {
-      const [bear, cub] = bears;
-      enter(f, bear);
-      enterBehind(f, cub, bear, 16);
-    }
-    if (f.stage >= 5) enter(f, f.extra.fox);
-    if (f.stage >= 7) enter(f, f.extra.elk);
-    f.extra.flies.forEach((fly, i) => {
-      if (i < f.stage - 4 && fly.from === Infinity) {
-        fly.from = f.time + (f.reduced ? 0 : 2.2);
-        fly.at = fly.from - fly.cycle * 0.6; // it arrives in flight, and lands a little later
+const extras = runCast(
+  [
+    {
+      label: "butterfly",
+      kind: "effect",
+      family: "insects",
+      arrives: 5,
+      fixed: `up to ${BUTTERFLY_MAX}`,
+      sprites: ["butterfly", "butterfly-settled"],
+    },
+    {
+      label: "petals from dogwood trees",
+      kind: "effect",
+      arrives: 7,
+      fixed: "up to 70 at once",
+      sprites: ["petal"],
+    },
+    {
+      label: "Horsetail Fall firefall",
+      kind: "effect",
+      layer: "on El Capitan, in the far row",
+      arrives: 4,
+      fixed: "one at a time, 8 s, every 25 to 40 s; seen at night",
+      sprites: ["firefall"],
+    },
+    walkerActor({
+      id: "cat",
+      label: "bobcat, resting in the grass between prowls",
+      kind: "animal",
+      family: "cats",
+      sprites: ["bobcat", "bobcat-sitting", "bobcat-arching", "bobcat-lying", "bobcat-stretching"],
+      arrives: 6,
+      phone: "hide",
+      move: { speed: 8, stride: 7, sit: [4, 9], walk: [3, 6] },
+      poses: () => felidPoses("bobcat"),
+      draw: (g, w, f) => felidAt(g, { ...w, kind: "bobcat" }, f.time),
+    }),
+    drawStep("butterflies-petals", (g, f) => {
+      const day = !isNight(f);
+      for (const fly of f.extra.flies) {
+        if (day && f.time >= fly.from) butterflyAt(g, fly, f.time, flowerHead(g, f, fly.flower));
       }
-    });
-  },
-
-  busy: (f) => f.stage >= 2 || f.extra.petals.length > 0,
-
-  update(f, dt) {
-    wander(f, f.extra.cat, dt, { speed: 8, stride: 7, sit: [4, 9], walk: [3, 6] });
-    rest(f, f.extra.cat, felidPoses("bobcat"));
-    const {
-      petals,
-      rabbit,
-      fox,
-      pounce,
-      elk,
-      bears,
-      kingfisher,
-      eagle,
-      jay,
-      soarer: circler,
-      cliff,
-      firefall,
-    } = f.extra;
-    // The firefall: the sun catches Horsetail Fall for a few seconds, then slips away. It shows
-    // only at night, when the fall glows.
-    if (f.time >= firefall.next) {
-      firefall.start = f.time;
-      firefall.next = f.time + 25 + f.rand() * 15;
-    }
-    const age = f.time - firefall.start;
-    cliff.flare = smooth(clamp(age / 1.5, 0, 1)) * smooth(clamp((FIREFALL_SECONDS - age) / 2.5, 0, 1));
-    wander(f, rabbit, dt, { speed: 14, stride: 10, sit: [2, 5], walk: [1.5, 3] });
-    rest(f, rabbit, harePoses("cottontail"));
-    if (fox.active && f.time >= pounce.next && fox.x > 16 && fox.x < f.cols - 16) {
-      pounce.start = f.time;
-      pounce.next = f.time + 20 + f.rand() * 10;
-    }
-    const leap = f.time - pounce.start;
-    if (leap < POUNCE_SECONDS) {
-      fox.state = "pounce";
-      fox.lift = pounceLift(leap);
-      fox.x += fox.dir * 9 * dt;
-    } else {
-      fox.lift = 0;
-      if (fox.state === "pounce") fox.state = "sit";
-      wander(f, fox, dt, { speed: 12, stride: 8, sit: [2, 4], walk: [3, 6] });
-    }
-    settleCanid(f, fox);
-    wander(f, elk, dt, { speed: 6, stride: 5, sit: [4, 8], walk: [4, 8] });
-    settle(f, elk);
-    // The mother bear forages along, and now and then rears up on her hind legs to sniff the air.
-    const [bear, cub] = bears;
-    const { rear } = f.extra;
-    if (bear.active && f.time >= rear.next) {
-      rear.until = f.time + 3;
-      rear.next = f.time + 22 + f.rand() * 12;
-    }
-    if (f.time < rear.until) {
-      bear.state = "rear";
-      bear.timer = rear.until - f.time;
-    } else {
-      if (bear.state === "rear") bear.state = "walk";
-      stroll(f, bear, dt, 5);
-    }
-    settle(f, bear);
-    follow(cub, bear, dt, 16);
-    cub.phase = bear.phase + 1;
-    // The cub stands, forages or sits while its mother rears, then follows her on.
-    cub.state = bear.state === "rear" ? "sit" : "walk";
-    cub.timer = bear.timer;
-    rest(f, cub, bearPoses(cub));
-    const day = !isNight(f);
-    // Now and then the kingfisher stops on a bush and the jay on a sequoia, then flies on.
-    if (f.stage >= 2 && day) {
-      const spawn = () => ({ y: f.groundY - 14 - f.rand() * 34 });
-      flyByPerch(f, kingfisher, dt, {
-        every: [4, 5],
-        speed: 62,
-        spawn,
-        spots: bushSpots,
-        small: "kingfisher",
-        odds: 0.3,
-        stay: [8, 16],
-      });
-    } else if (kingfisher.bird?.visit) goHome(f, kingfisher.bird);
-    if (f.stage >= 4 && day) {
-      const spawn = () => ({ y: f.groundY - 50 - f.rand() * 30 });
-      flyByPerch(f, jay, dt, {
-        every: [7, 5],
-        speed: 24,
-        spawn,
-        spots: perchSpots,
-        small: "jay",
-        odds: 0.3,
-        stay: [8, 16],
-      });
-    } else if (jay.bird?.visit) goHome(f, jay.bird);
-    // The golden eagle crosses slowly; a second one circles over the meadow.
-    if (f.stage >= 6 && day) {
-      const spawn = () => ({ y: 20 + f.rand() * 28 });
-      flyByPerch(f, eagle, dt, { every: [8, 4], speed: 13, spawn, spots: perchSpots, stay: [14, 28] });
-    } else if (eagle.bird?.visit) {
-      goHome(f, eagle.bird);
-      eagle.bird = null;
-    }
-    circler.active = f.stage >= 7 && day;
-    if (f.stage >= 7) {
-      for (const p of f.plants) {
-        if (p.species !== "dogwood" || p.kind !== "tree" || !p.crown || petals.length > 70) continue;
-        if (f.rand() > dt * 1.2) continue;
-        const { cx, top, half, bottom } = p.crown;
-        petals.push({
-          x: cx + (f.rand() * 2 - 1) * half,
-          y: top + f.rand() * (bottom - top),
-          vy: 6 + f.rand() * 5,
+      for (const petal of f.extra.petals) rect(g, g.pal.petal, Math.round(petal.x), Math.round(petal.y), 1, 1);
+    }),
+    drawStep("bears", (g, f) => {
+      for (const b of f.extra.bears) if (b.active) bearAt(g, b, f.time);
+    }),
+    {
+      label: "bear and cub",
+      kind: "animal",
+      family: "bears",
+      presence: ["bears[0]", "bears[1]"],
+      sprites: ["bear", "bear-foraging", "bear-rearing", "bear-sitting", "bear-lying", "bear-cub", "bear-cub-sitting"],
+    },
+    crossingActor({
+      id: "eagle",
+      label: "golden eagle (slow flyby, side-on, perches now and then)",
+      kind: "bird",
+      sprites: [
+        "eagle-side",
+        "eagle-side-flapping",
+        "eagle-landing",
+        "eagle-takeoff",
+        "eagle-perched",
+        "eagle-perched-preening",
+        "eagle-perched-stretching",
+      ],
+      arrives: 6,
+      when: "day",
+      first: 0,
+      mode: "perch",
+      every: [8, 4],
+      speed: 13,
+      spawn: (f) => ({ y: 20 + f.rand() * 28 }),
+      spots: perchSpots,
+      stay: [14, 28],
+      clearOnOff: "perched",
+      draw: (g, b, f) => eagleFlyAt(g, "golden", b, f.time),
+    }),
+    circlerActor({
+      id: "soarer",
+      label: "golden eagle (circling)",
+      kind: "bird",
+      sprites: ["eagle", "eagle-bank", "eagle-flapping"],
+      arrives: 7,
+      when: "day",
+      cy: (f) => 46 + f.rand() * 10,
+      draw: (g, s, f) => circlerAt(g, "golden", s, f.time),
+    }),
+    crossingActor({
+      id: "jay",
+      label: "Steller's jay",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["jay", "jay-perched"],
+      arrives: 4,
+      when: "day",
+      first: 5,
+      mode: "perch",
+      every: [7, 5],
+      speed: 24,
+      spawn: (f) => ({ y: f.groundY - 50 - f.rand() * 30 }),
+      spots: perchSpots,
+      small: "jay",
+      odds: 0.3,
+      stay: [8, 16],
+      draw: (g, b, f) => flyerAt(g, b, f.time, "jay"),
+    }),
+    crossingActor({
+      id: "kingfisher",
+      label: "kingfisher",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["kingfisher", "kingfisher-perched"],
+      arrives: 2,
+      when: "day",
+      first: 2,
+      mode: "perch",
+      every: [4, 5],
+      speed: 62,
+      spawn: (f) => ({ y: f.groundY - 14 - f.rand() * 34 }),
+      spots: bushSpots,
+      small: "kingfisher",
+      odds: 0.3,
+      stay: [8, 16],
+      draw: (g, b, f) => kingfisherAt(g, b, f.time),
+    }),
+    walkerActor({
+      id: "elk",
+      label: "bull elk",
+      kind: "animal",
+      family: "deer",
+      sprites: ["elk", "elk-sitting", "elk-lying"],
+      arrives: 7,
+      scale: 1.1,
+      props: { kind: "elk", sex: "m" },
+      move: { speed: 6, stride: 5, sit: [4, 8], walk: [4, 8] },
+      draw: (g, w, f) => cervidAt(g, w, f.time),
+    }),
+    drawStep("fox", (g, f) => {
+      if (f.extra.fox.active) canidAt(g, f.extra.fox, f.time);
+    }),
+    {
+      label: "red fox",
+      kind: "animal",
+      family: "dogs",
+      presence: ["fox"],
+      sprites: ["fox", "fox-pounce"],
+    },
+    walkerActor({
+      id: "rabbit",
+      label: "cottontail",
+      kind: "animal",
+      family: "hares-rodents",
+      sprites: ["rabbit", "rabbit-sitting-up", "rabbit-grazing", "rabbit-washing", "rabbit-loafing", "rabbit-lying"],
+      arrives: 1,
+      move: { speed: 14, stride: 10, sit: [2, 5], walk: [1.5, 3] },
+      poses: () => harePoses("cottontail"),
+      draw: (g, w, f) => hareAt(g, w, f.time),
+    }),
+  ],
+  {
+    init(f) {
+      const colours = [0, 1, 2, 4];
+      return {
+        petals: [],
+        fox: { ...walker(f), kind: "red" },
+        pounce: { next: 15 + f.rand() * 10, start: -10 },
+        cliff: f.plants.find((p) => p.kind === "elcap"),
+        firefall: { start: -Infinity, next: Infinity },
+        bears: [walker(f), { ...walker(f, 0.55), cub: true }],
+        rear: { next: 14 + f.rand() * 10, until: -1 },
+        flies: Array.from({ length: BUTTERFLY_MAX }, (_, i) => ({
+          homeX: (0.12 + 0.76 * ((i + f.rand() * 0.8) / BUTTERFLY_MAX)) * f.cols,
+          homeY: f.groundY - 14 - f.rand() * 26,
           phase: f.rand() * 6.28,
-        });
-      }
-    }
-    // Each butterfly picks a full-grown flower near where it will land.
-    const spots = f.plants.filter((p) => p.kind === "flower" && flowerSize(p) >= 0.9);
-    for (const fly of f.extra.flies) {
-      if (fly.at !== Infinity)
-        butterflyPick(
-          fly,
-          f.time,
-          spots,
-          f.extra.flies.map((o) => o.flower).filter((o) => o && o !== fly.flower),
-        );
-    }
-    for (const petal of petals) {
-      petal.y += petal.vy * dt;
-      petal.x += Math.sin(f.time * 2 + petal.phase) * 5 * dt;
-    }
-    f.extra.petals = petals.filter((petal) => petal.y < f.groundY + 10);
-  },
+          speed: 0.5 + f.rand() * 0.4,
+          colour: colours[i % colours.length],
+          cycle: 15 + f.rand() * 6,
+          from: Infinity,
+          at: Infinity,
+          n: null,
+          flower: null,
+        })),
+      };
+    },
 
-  draw(g, f) {
-    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "bobcat" }, f.time);
-    const day = !isNight(f);
-    for (const fly of f.extra.flies) {
-      if (day && f.time >= fly.from) butterflyAt(g, fly, f.time, flowerHead(g, f, fly.flower));
+    onGrow(f) {
+      const { bears, firefall } = f.extra;
+      if (f.stage >= 4 && firefall.next === Infinity) firefall.next = f.time + 3;
+      if (f.stage >= 4) {
+        const [bear, cub] = bears;
+        enter(f, bear);
+        enterBehind(f, cub, bear, 16);
+      }
+      if (f.stage >= 5) enter(f, f.extra.fox);
+      f.extra.flies.forEach((fly, i) => {
+        if (i < f.stage - 4 && fly.from === Infinity) {
+          fly.from = f.time + (f.reduced ? 0 : 2.2);
+          fly.at = fly.from - fly.cycle * 0.6;
+        }
+      });
+    },
+
+    busy: (f) => f.stage >= 2 || f.extra.petals.length > 0,
+
+    update(f, dt) {
+      const { petals, fox, pounce, bears, cliff, firefall, rear } = f.extra;
+      tickTimer(f, firefall, [25, 15], () => {
+        firefall.start = f.time;
+      });
+      const age = f.time - firefall.start;
+      cliff.flare = smooth(clamp(age / 1.5, 0, 1)) * smooth(clamp((FIREFALL_SECONDS - age) / 2.5, 0, 1));
+      tickTimer(
+        f,
+        pounce,
+        [20, 10],
+        () => {
+          pounce.start = f.time;
+        },
+        fox.active && fox.x > 16 && fox.x < f.cols - 16,
+      );
+      const leap = f.time - pounce.start;
+      if (leap < POUNCE_SECONDS) {
+        fox.state = "pounce";
+        fox.lift = pounceLift(leap);
+        fox.x += fox.dir * 9 * dt;
+      } else {
+        fox.lift = 0;
+        if (fox.state === "pounce") fox.state = "sit";
+        wander(f, fox, dt, { speed: 12, stride: 8, sit: [2, 4], walk: [3, 6] });
+      }
+      settleCanid(f, fox);
+      const [bear, cub] = bears;
+      tickTimer(
+        f,
+        rear,
+        [22, 12],
+        () => {
+          rear.until = f.time + 3;
+        },
+        bear.active,
+      );
+      if (f.time < rear.until) {
+        bear.state = "rear";
+        bear.timer = rear.until - f.time;
+      } else {
+        if (bear.state === "rear") bear.state = "walk";
+        stroll(f, bear, dt, 5);
+      }
+      settle(f, bear);
+      follow(cub, bear, dt, 16);
+      cub.phase = bear.phase + 1;
+      cub.state = bear.state === "rear" ? "sit" : "walk";
+      cub.timer = bear.timer;
+      rest(f, cub, bearPoses(cub));
+      if (f.stage >= 7) {
+        for (const p of f.plants) {
+          if (p.species !== "dogwood" || p.kind !== "tree" || !p.crown || petals.length > 70) continue;
+          if (f.rand() > dt * 1.2) continue;
+          const { cx, top, half, bottom } = p.crown;
+          petals.push({
+            x: cx + (f.rand() * 2 - 1) * half,
+            y: top + f.rand() * (bottom - top),
+            vy: 6 + f.rand() * 5,
+            phase: f.rand() * 6.28,
+          });
+        }
+      }
+      const spots = f.plants.filter((p) => p.kind === "flower" && flowerSize(p) >= 0.9);
+      for (const fly of f.extra.flies) {
+        if (fly.at !== Infinity)
+          butterflyPick(
+            fly,
+            f.time,
+            spots,
+            f.extra.flies.map((o) => o.flower).filter((o) => o && o !== fly.flower),
+          );
+      }
+      for (const petal of petals) {
+        petal.y += petal.vy * dt;
+        petal.x += Math.sin(f.time * 2 + petal.phase) * 5 * dt;
+      }
+      f.extra.petals = petals.filter((petal) => petal.y < f.groundY + 10);
+    },
+  },
+);
+
+const SPRITES = {
+  ...soarSprites("eagle", "golden", { side: true }),
+  bobcat: (g, frame) => felidAt(g, walk(frame, { kind: "bobcat" }), 0),
+  "bobcat-sitting": (g, frame) => felidAt(g, walk(frame, { kind: "bobcat", state: "sit", pose: "sit" }), 0),
+  "bobcat-arching": (g, frame) => felidAt(g, walk(frame, { kind: "bobcat", state: "sit", pose: "arch" }), 0),
+  "bobcat-lying": (g, frame) => felidAt(g, walk(frame, { kind: "bobcat", state: "sit", pose: "lie" }), 0),
+  "bobcat-stretching": (g, frame) => felidAt(g, walk(frame, { kind: "bobcat", state: "sit", pose: "bow" }), 0),
+  rabbit: (g, frame) => hareAt(g, walk(frame)),
+  "rabbit-sitting-up": (g, frame) => hareAt(g, walk(frame, { state: "sit", pose: "tall" }), 0),
+  "rabbit-grazing": (g, frame) => hareAt(g, walk(frame, { state: "sit", pose: "graze" }), 0),
+  "rabbit-washing": (g, frame) => hareAt(g, walk(frame, { state: "sit", pose: "groom" }), 0),
+  "rabbit-loafing": (g, frame) => hareAt(g, walk(frame, { state: "sit", pose: "loaf" }), 0),
+  "rabbit-lying": (g, frame) => hareAt(g, walk(frame, { state: "sit", pose: "lie" }), 0),
+  fox: (g, frame) => canidAt(g, walk(frame, { kind: "red" })),
+  "fox-pounce": (g, frame) => canidAt(g, walk(frame, { kind: "red", state: "pounce", lift: 6 })),
+  elk: (g, frame) => cervidAt(g, walk(frame, { kind: "elk", sex: "m", scale: 1.1 })),
+  "elk-sitting": (g, frame) => cervidAt(g, walk(frame, { kind: "elk", sex: "m", scale: 1.1, state: "sit" })),
+  "elk-lying": (g, frame) => cervidAt(g, walk(frame, { kind: "elk", sex: "m", scale: 1.1, state: "sit", pose: "lie" })),
+  jay: (g, frame) => flyerAt(g, bird(frame), 0, "jay"),
+  "jay-perched": (g) => perchedSmall(g, "jay", 40, 40, 0, blendPose({})),
+  butterfly: (g) => butterflyAt(g, butterfly(), 0),
+  "butterfly-settled": (g) => {
+    // Resting on a flower, the wings half open: 2.5 s into its round.
+    const flower = { x: 40, seed: 2, scale: 1.2 };
+    g.time = 0;
+    meadowFlower(g, flower, 1, 44);
+    butterflyAt(g, butterfly({ at: -2.5, n: 0 }), 0, meadowFlowerHead(g, flower, 1, 44));
+  },
+  bear: (g, frame) => bearAt(g, walk(frame)),
+  "bear-foraging": (g, frame) => bearAt(g, walk(frame, { state: "sit", pose: "forage", since: 0, timer: 30 }), 5),
+  "bear-rearing": (g, frame) => bearAt(g, walk(frame, { state: "rear", since: 0, timer: 30 }), 5),
+  "bear-sitting": (g, frame) => bearAt(g, walk(frame, { state: "sit", pose: "sit", since: 0, timer: 30 }), 5),
+  "bear-lying": (g, frame) => bearAt(g, walk(frame, { state: "sit", pose: "lie", since: 0, timer: 30 }), 5),
+  "bear-cub": (g, frame) => bearAt(g, walk(frame, { scale: 0.55, cub: true })),
+  "bear-cub-sitting": (g, frame) =>
+    bearAt(g, walk(frame, { scale: 0.55, cub: true, state: "sit", pose: "sit", since: 0, timer: 30 }), 5),
+  kingfisher: (g, frame) => kingfisherAt(g, bird(frame), 0),
+  "kingfisher-perched": (g) => perchedSmall(g, "kingfisher", 40, 40, 0, blendPose({})),
+  petal: (g) => {
+    for (const [x, y] of [
+      [6, 6],
+      [12, 10],
+      [18, 4],
+      [25, 12],
+      [31, 7],
+      [36, 15],
+    ]) {
+      rect(g, g.pal.petal, x, y, 1, 1);
     }
-    for (const petal of f.extra.petals) rect(g, g.pal.petal, Math.round(petal.x), Math.round(petal.y), 1, 1);
-    const { rabbit, fox, elk, bears, kingfisher, eagle, jay, soarer: circler } = f.extra;
-    for (const b of bears) if (b.active) bearAt(g, b, f.time);
-    if (eagle.bird && day) eagleFlyAt(g, "golden", eagle.bird, f.time);
-    if (circler.active) circlerAt(g, "golden", circler, f.time);
-    if (jay.bird && day) flyerAt(g, jay.bird, f.time, "jay");
-    if (kingfisher.bird && day) kingfisherAt(g, kingfisher.bird, f.time);
-    if (elk.active) cervidAt(g, elk, f.time);
-    if (fox.active) canidAt(g, fox, f.time);
-    if (rabbit.active) hareAt(g, rabbit, f.time);
+  },
+  // The firefall shows only at night, so its sprite is El Capitan's face in the dark palette.
+  firefall: (g, _frame) =>
+    elcap({ ...g, pal: fade(DARK, 0.55) }, { x: 40, scale: 0.6, seed: 7, flare: 1 }, 1, ANIMAL_BOX.ground),
+};
+
+const PLANT_FAMILIES = {
+  "tree-round": "broadleaf",
+  "tree-dogwood": "broadleaf",
+  "tree-birch": "broadleaf",
+  sequoia: "conifers",
+  "tree-pine": "conifers",
+};
+
+export const META = {
+  id: "meadow",
+  label: "Yosemite Meadows",
+  group: "woods",
+  tint: ["#b7dc98", "rgb(96 160 84)"],
+  backdrop: {
+    light: {
+      green: "#b7dc98",
+      "green-soft": "#d3eac0",
+      peach: "#fbdfc8",
+      blush: "#fdeceb",
+      bloom: "#cfeab4",
+    },
+    dark: {
+      green: "rgb(96 160 84 / 0.4)",
+      "green-soft": "rgb(96 160 84 / 0.2)",
+      peach: "rgb(206 128 84 / 0.22)",
+      blush: "rgb(196 96 120 / 0.14)",
+      bloom: "rgb(110 178 92 / 0.34)",
+    },
   },
 };
 
 export default {
-  id: "meadow",
-  label: "Yosemite Meadows",
-  group: "woods",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.5], dark: [0.55] },
   mature: MATURE,

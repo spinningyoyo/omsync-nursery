@@ -5,33 +5,14 @@
 // hatchling (and now and then hauls out to bask on the sand), a pua'a (feral pig) trots, roots and now and then wallows in the mud, and a humpback whale spouts offshore. Where the waves
 // break on the sand, spray flies up.
 
+import { enter, enterBehind, follow, isNight, rest, settle, stride, walker, wander } from "../kit/critters.js";
 // A feral cat (pōpoki) prowls the sand; its coat is one of eleven, picked as the scene loads.
-import {
-  CRAWL,
-  crabAt,
-  crabPoses,
-  crawlX,
-  felidAt,
-  felidPoses,
-  groundBirdAt,
-  groundBirdStep,
-  groundPoses,
-  groundSpeed,
-  honuAshoreAt,
-  honuShellAt,
-  PUP_STRIDE,
-  puaaAt,
-  puaaPoses,
-  SEAL_STRIDE,
-  sealAt,
-  sealPoses,
-  whaleAt,
-} from "../kit/animals.js";
-import { enter, enterBehind, follow, isNight, narrow, rest, settle, stride, walker, wander } from "../kit/critters.js";
-import { HOUSECAT_COAT_NAMES, HOUSECAT_COATS } from "../kit/felid.js";
+import { felidAt, felidPoses, HOUSECAT_COAT_NAMES, HOUSECAT_COATS } from "../kit/felid.js";
 import { flyerAt } from "../kit/flyers.js";
+import { groundBirdAt, groundBirdStep, groundPoses, groundSpeed } from "../kit/groundbird.js";
 import { coconutPalm } from "../kit/palms.js";
 import { blobSpots, flyByPerch, goHome, unhidden } from "../kit/perch.js";
+import { puaaAt, puaaPoses } from "../kit/pig.js";
 import {
   blob,
   clamp,
@@ -46,6 +27,11 @@ import {
   stroke,
   wind,
 } from "../kit/pixel.js";
+import { ANIMAL_BOX, bird, walk } from "../kit/poses.js";
+import { crossingActor, drawStep, runCast, walkerActor } from "../kit/runner.js";
+import { CRAWL, crabAt, crabPoses, crawlX, honuAshoreAt, honuShellAt } from "../kit/shell.js";
+import { blendPose, perchedSmall } from "../kit/smallbird.js";
+import { PUP_STRIDE, SEAL_STRIDE, sealAt, sealPoses, whaleAt } from "../kit/swimmer.js";
 import { broadleafTree } from "../kit/trees.js";
 
 const RIDGE_ROWS = 56;
@@ -626,200 +612,492 @@ function updateSpray(f, dt) {
   }
 }
 
-const extras = {
-  init(f) {
-    return {
-      cat: { ...walker(f), pal: `housecat-${HOUSECAT_COAT_NAMES[Math.floor(f.rand() * HOUSECAT_COAT_NAMES.length)]}` },
-      sea: 0,
-      tropicbirds: [
-        { next: 3, bird: null },
-        { next: 9, bird: null },
-      ],
-      iiwi: { next: 5, bird: null },
-      crabs: Array.from({ length: CRABS }, (_, i) => ({ ...walker(f), lane: i * 3 })),
-      moa: walker(f),
-      seals: [walker(f), walker(f, 0.55)],
-      puaa: walker(f),
-      honu: { x: f.cols * 0.3, dir: 1, scale: 1, land: 0 },
-      hatchling: { ...walker(f, 0.5), land: 0 },
-      haulOut: {
-        next: 25 + f.rand() * 20,
-        state: "idle",
-        since: 0,
-        target: 0,
-        x0: 0,
-        drop: 0,
-        bask: 0,
-        pigAway: false,
+const extras = runCast(
+  [
+    {
+      label: "sea (rows of water behind the sand)",
+      kind: "effect",
+      layer: "behind the plants (drawBack)",
+      arrives: 1,
+      sea: SEA_ROWS,
+      fixed: `${SEA_ROWS} rows at full tide`,
+      sprites: ["sea"],
+    },
+    {
+      label: "surf spray",
+      kind: "effect",
+      layer: "behind the plants (drawBack)",
+      arrives: 1,
+      fixed: `up to ${SPRAY_MAX} droplets at once`,
+      sprites: ["spray"],
+    },
+    {
+      label: "white-tailed tropicbird (koaʻe kea)",
+      kind: "bird",
+      family: "small-flyers",
+      presence: ["tropicbirds[0]", "tropicbirds[1]"],
+      sprites: ["tropicbird", "tropicbird-perched"],
+    },
+    // The sea lies behind the plants, between the horizon and the sand.
+    drawStep(
+      "sea",
+      (g, f) => {
+        const rows = seaRows(f);
+        if (rows < 1) return;
+        const [shallow, mid, deep, foam] = g.pal.sea;
+        const top = f.groundY - rows;
+        const bands = [
+          [deep, 0.35],
+          [mid, 0.4],
+          [shallow, 0.25],
+        ];
+        let y = top;
+        bands.forEach(([colour, share], i) => {
+          const h = i === bands.length - 1 ? f.groundY - y : Math.max(1, Math.round(rows * share));
+          rect(g, colour, 0, y, f.cols, h);
+          y += h;
+        });
+        rect(g, foam, 0, top, f.cols, 1);
+        for (let x = 0; x < f.cols; x += 1) {
+          const t = g.time;
+          if (Math.sin(x * 0.28 + t * 1.6) > 0.55) rect(g, foam, x, f.groundY - 1, 1, 1);
+          if (Math.sin(x * 0.19 - t * 1.1 + 2) > 0.78) rect(g, foam, x, f.groundY - 1 - Math.max(2, rows >> 2), 1, 1);
+          if (hash(x, Math.floor(t * 2), 7) < 0.012) rect(g, foam, x, top + 1 + (x % Math.max(1, rows - 2)), 1, 1);
+        }
+        for (const d of f.extra.spray.drops) {
+          g.ctx.globalAlpha = clamp(d.life, 0, 1);
+          rect(g, foam, Math.round(d.x), Math.round(d.y), 1, 1);
+        }
+        g.ctx.globalAlpha = 1;
+        if (f.stage >= 5 && !f.reduced) {
+          if (!ashore(f)) honuAt(g, f.extra.honu, g.time, top, f.groundY);
+          if (f.extra.hatchling.active) honuAt(g, f.extra.hatchling, g.time, top, f.groundY);
+        }
+        const w = f.extra.whale;
+        if (!f.reduced) whaleAt(g, w, top + 2, f.time);
       },
-      whale: { next: 6, start: -10, x: 0, dir: 1, dive: false },
-      spray: { next: 0, drops: [] },
-    };
-  },
-
-  // The tide eases in while the scene animates, and jumps to its level under reduced motion.
-  onGrow(f) {
-    if (f.stage >= 4 && !narrow(f)) enter(f, f.extra.cat);
-    const x = f.extra;
-    if (f.reduced) x.sea = tide(f);
-    x.crabs.forEach((crab, i) => {
-      if (f.stage >= 1 + i * 3) enter(f, crab);
-    });
-    if (f.stage >= 3) enter(f, x.moa);
-    if (f.stage >= 4) {
-      const [seal, pup] = x.seals;
-      enter(f, seal);
-      enterBehind(f, pup, seal, 20);
-    }
-    if (f.stage >= 8 && !x.haulOut.pigAway) {
-      // Not while the honu is on its way to the sand or ashore: the pua'a comes when it is back at sea.
-      if (["to", "crawl", "bask", "back"].includes(x.haulOut.state)) x.haulOut.pigAway = true;
-      else enter(f, x.puaa);
-    }
-    if (f.stage >= 5 && !x.hatchling.active) {
-      enterBehind(f, x.hatchling, x.honu, 10);
-    }
-  },
-
-  busy: () => true,
-
-  update(f, dt) {
-    wander(f, f.extra.cat, dt, { speed: 7, stride: 7, sit: [4, 9], walk: [3, 6] });
-    rest(f, f.extra.cat, felidPoses("housecat"));
-    const x = f.extra;
-    x.sea += (tide(f) - x.sea) * Math.min(1, dt * 0.8);
-    // Now and then a tropicbird alights on a sea cliff and the ʻiʻiwi on a hibiscus, then they fly on.
-    const day = !isNight(f);
-    const slots = [
-      [
-        f.stage >= 2,
-        x.tropicbirds[0],
-        { every: [4, 6], speed: 12, spawn: () => ({ y: 20 + f.rand() * 40 }), spots: cliffSpots, small: "tropicbird" },
-      ],
-      [
-        f.stage >= 4,
-        x.iiwi,
-        {
-          every: [6, 6],
-          speed: 22,
-          spawn: () => ({ y: f.groundY - 56 - f.rand() * 24 }),
-          spots: hibiscusSpots,
-          small: "iiwi",
-        },
-      ],
-      [
-        f.stage >= 6,
-        x.tropicbirds[1],
-        { every: [5, 7], speed: 38, spawn: () => ({ y: 40 + f.rand() * 40 }), spots: cliffSpots, small: "tropicbird" },
-      ],
-    ];
-    for (const [on, slot, o] of slots) {
-      if (on && day) flyByPerch(f, slot, dt, { ...o, odds: 0.3, stay: [8, 16] });
-      else if (slot.bird?.visit) goHome(f, slot.bird);
-    }
-    for (const c of x.crabs) {
-      wander(f, c, dt, { speed: 9, sit: [1, 3], walk: [1, 3] });
-      rest(f, c, crabPoses);
-    }
-    const moaX = x.moa.x;
-    wander(f, x.moa, dt, { speed: groundSpeed("moa"), stride: 1, sit: [2.6, 6], walk: [1.5, 3] });
-    rest(f, x.moa, groundPoses(x.moa, "moa"));
-    groundBirdStep(f, x.moa, dt, "moa", moaX);
-    if (x.puaa.leaving) walkOff(f, x.puaa, dt);
-    else wander(f, x.puaa, dt, { speed: 6, stride: 5, sit: [3, 18], walk: [3, 6] });
-    rest(f, x.puaa, puaaPoses(x.puaa));
-    // The seal hitches along at 4 px/s, 3 px a stride (1.33 strides a second); her pup keeps behind her and
-    // rests beside her, lifting her head when her mother does.
-    const [seal, pup] = x.seals;
-    const sealX = seal.x;
-    const pupX = pup.x;
-    wander(f, seal, dt, { speed: 4, stride: 1.33, sit: [3, 12], walk: [2, 4] });
-    rest(f, seal, sealPoses(seal));
-    stride(seal, sealX, dt, SEAL_STRIDE[0], SEAL_STRIDE[1]);
-    follow(pup, seal, dt, 20);
-    pup.state = seal.state;
-    pup.timer = seal.timer;
-    settle(f, pup);
-    pup.pose = seal.pose;
-    stride(pup, pupX, dt, PUP_STRIDE[0], PUP_STRIDE[1]);
-    if (f.stage >= 5) {
-      if (!haulOut(f, x, dt)) {
-        x.honu.x += x.honu.dir * 4 * dt;
-        if (x.honu.x < 10 || x.honu.x > f.cols - 10) x.honu.dir *= -1;
+      { back: true },
+    ),
+    drawStep("honu-ashore", (g, f) => {
+      if (f.stage >= 5 && !f.reduced && ashore(f)) {
+        const ho = f.extra.haulOut;
+        const mode = ho.state === "bask" ? "bask" : "crawl";
+        honuAshoreAt(
+          g,
+          { ...f.extra.honu, mode, age: f.time - ho.since },
+          f.groundY + Math.round(HAUL_DEPTH * ho.drop),
+        );
       }
-      // The hatchling follows to the water's edge and waits there while the honu is ashore.
-      const ho = x.haulOut;
-      const waiting = ho.state === "to" || ho.state === "crawl" || ho.state === "bask" || ho.state === "back";
-      x.hatchling.land += ((waiting ? 1 : 0) - x.hatchling.land) * Math.min(1, dt * 0.8);
-      if (!(ho.state === "crawl" || ho.state === "bask" || ho.state === "back")) follow(x.hatchling, x.honu, dt, 10);
-    }
-    if (f.stage >= 7 && f.time >= x.whale.next) {
-      x.whale.start = f.time;
-      x.whale.x = 15 + f.rand() * (f.cols - 30);
-      x.whale.dir = f.rand() < 0.5 ? 1 : -1;
-      x.whale.dive = f.rand() < 0.4; // some surfacings end in a dive with the flukes
-      x.whale.next = f.time + 12 + f.rand() * 8;
-    }
-    updateSpray(f, dt);
-  },
+    }),
+    walkerActor({
+      id: "cat",
+      label: "feral cat, in one of eleven coats",
+      kind: "animal",
+      family: "cats",
+      sprites: [
+        "cat",
+        "cat-sitting",
+        "cat-arching",
+        "cat-lying",
+        "cat-stretching",
+        "cat-loafing",
+        "cat-curled",
+        "cat-dozing",
+        "cat-grooming",
+        "cat-white",
+        "cat-silver-tabby",
+        "cat-orange-white",
+        "cat-siamese",
+        "cat-black",
+        "cat-ginger",
+        "cat-calico",
+        "cat-grey",
+        "cat-tortie",
+        "cat-tuxedo",
+        "cat-brown-tabby",
+      ],
+      arrives: 4,
+      phone: "hide",
+      props: (f) => ({ pal: `housecat-${HOUSECAT_COAT_NAMES[Math.floor(f.rand() * HOUSECAT_COAT_NAMES.length)]}` }),
+      move: { speed: 7, stride: 7, sit: [4, 9], walk: [3, 6] },
+      poses: () => felidPoses("housecat"),
+      draw: (g, w, f) => felidAt(g, { ...w, kind: "housecat" }, f.time),
+    }),
+    drawStep("tropicbirds", (g, f) => {
+      for (const bird of f.extra.tropicbirds) if (bird.bird && !isNight(f)) tropicbirdAt(g, bird.bird, f.time);
+    }),
+    crossingActor({
+      id: "iiwi",
+      label: "ʻiʻiwi",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["iiwi", "iiwi-perched"],
+      arrives: 4,
+      when: "day",
+      first: 5,
+      mode: "perch",
+      every: [6, 6],
+      speed: 22,
+      spawn: (f) => ({ y: f.groundY - 56 - f.rand() * 24 }),
+      spots: hibiscusSpots,
+      small: "iiwi",
+      odds: 0.3,
+      stay: [8, 16],
+      draw: (g, b, f) => flyerAt(g, b, f.time, "iiwi"),
+    }),
+    drawStep("crabs-and-seals", (g, f) => {
+      for (const c of f.extra.crabs) if (c.active) crabAt(g, c, g.groundY + 5 + c.lane, f.time);
+      for (const s of f.extra.seals) if (s.active) sealAt(g, s, f.time);
+    }),
+    walkerActor({
+      id: "moa",
+      label: "moa (feral chicken)",
+      kind: "animal",
+      family: "ground-birds",
+      sprites: ["moa", "moa-pecking", "moa-scratching", "moa-preening", "moa-flapping"],
+      arrives: 3,
+      move: { speed: groundSpeed("moa"), stride: 1, sit: [2.6, 6], walk: [1.5, 3] },
+      poses: (w) => groundPoses(w, "moa"),
+      step: (f, w, dt, x0) => groundBirdStep(f, w, dt, "moa", x0),
+      draw: (g, w, f) => moaAt(g, w, f.time),
+    }),
+    drawStep("puaa", (g, f) => {
+      if (f.extra.puaa.active) puaaAt(g, f.extra.puaa, f.time);
+    }),
+    {
+      label: "ghost crab (ʻōhiki)",
+      kind: "animal",
+      family: "shelled-scaled",
+      presence: ["crabs[0]"],
+      sprites: ["crab", "crab-crouching", "crab-threatening"],
+    },
+    {
+      label: "honu (green sea turtle)",
+      kind: "animal",
+      family: "shelled-scaled",
+      layer: "behind the plants (drawBack)",
+      arrives: 5,
+      fixed: "1",
+      sprites: ["honu"],
+    },
+    {
+      label: "honu hauled out (crawls up the sand and basks)",
+      kind: "animal",
+      family: "shelled-scaled",
+      arrives: 5,
+      fixed: "1 at a time, every 40 to 70 s by day, basking 10 to 15 s",
+      sprites: ["honu-crawling", "honu-basking"],
+    },
+    {
+      label: "honu hatchling",
+      kind: "animal",
+      family: "shelled-scaled",
+      layer: "behind the plants (drawBack)",
+      presence: ["hatchling"],
+      sprites: ["honu-hatchling"],
+    },
+    {
+      label: "Hawaiian monk seal and pup",
+      kind: "animal",
+      family: "swimmers",
+      presence: ["seals[0]", "seals[1]"],
+      sprites: ["seal", "seal-head-up", "seal-rolling", "seal-pup"],
+    },
+    {
+      label: "pua'a (feral pig)",
+      kind: "animal",
+      family: "pigs",
+      presence: ["puaa"],
+      sprites: ["puaa", "puaa-rooting", "puaa-wallowing", "puaa-shaking"],
+    },
+    {
+      label: "humpback whale",
+      kind: "animal",
+      family: "swimmers",
+      layer: "behind the plants (drawBack)",
+      arrives: 7,
+      fixed: "1 at a time, about 3 s per surfacing, some ending in a dive with the flukes",
+      sprites: ["whale", "whale-surfacing", "whale-fluke"],
+    },
+  ],
+  {
+    init(f) {
+      return {
+        sea: 0,
+        tropicbirds: [
+          { next: 3, bird: null },
+          { next: 9, bird: null },
+        ],
+        crabs: Array.from({ length: CRABS }, (_, i) => ({ ...walker(f), lane: i * 3 })),
+        seals: [walker(f), walker(f, 0.55)],
+        puaa: walker(f),
+        honu: { x: f.cols * 0.3, dir: 1, scale: 1, land: 0 },
+        hatchling: { ...walker(f, 0.5), land: 0 },
+        haulOut: {
+          next: 25 + f.rand() * 20,
+          state: "idle",
+          since: 0,
+          target: 0,
+          x0: 0,
+          drop: 0,
+          bask: 0,
+          pigAway: false,
+        },
+        whale: { next: 6, start: -10, x: 0, dir: 1, dive: false },
+        spray: { next: 0, drops: [] },
+      };
+    },
 
-  // The sea lies behind the plants, between the horizon and the sand.
-  drawBack(g, f) {
-    const rows = seaRows(f);
-    if (rows < 1) return;
-    const [shallow, mid, deep, foam] = g.pal.sea;
-    const top = f.groundY - rows;
-    const bands = [
-      [deep, 0.35],
-      [mid, 0.4],
-      [shallow, 0.25],
-    ];
-    let y = top;
-    bands.forEach(([colour, share], i) => {
-      const h = i === bands.length - 1 ? f.groundY - y : Math.max(1, Math.round(rows * share));
-      rect(g, colour, 0, y, f.cols, h);
-      y += h;
-    });
-    rect(g, foam, 0, top, f.cols, 1);
-    for (let x = 0; x < f.cols; x += 1) {
-      const t = g.time;
-      if (Math.sin(x * 0.28 + t * 1.6) > 0.55) rect(g, foam, x, f.groundY - 1, 1, 1);
-      if (Math.sin(x * 0.19 - t * 1.1 + 2) > 0.78) rect(g, foam, x, f.groundY - 1 - Math.max(2, rows >> 2), 1, 1);
-      if (hash(x, Math.floor(t * 2), 7) < 0.012) rect(g, foam, x, top + 1 + (x % Math.max(1, rows - 2)), 1, 1);
-    }
-    for (const d of f.extra.spray.drops) {
-      g.ctx.globalAlpha = clamp(d.life, 0, 1);
-      rect(g, foam, Math.round(d.x), Math.round(d.y), 1, 1);
-    }
-    g.ctx.globalAlpha = 1;
-    if (f.stage >= 5 && !f.reduced) {
-      if (!ashore(f)) honuAt(g, f.extra.honu, g.time, top, f.groundY);
-      if (f.extra.hatchling.active) honuAt(g, f.extra.hatchling, g.time, top, f.groundY);
-    }
-    const w = f.extra.whale;
-    if (!f.reduced) whaleAt(g, w, top + 2, f.time);
-  },
+    // The tide eases in while the scene animates, and jumps to its level under reduced motion.
+    onGrow(f) {
+      const x = f.extra;
+      if (f.reduced) x.sea = tide(f);
+      x.crabs.forEach((crab, i) => {
+        if (f.stage >= 1 + i * 3) enter(f, crab);
+      });
+      if (f.stage >= 4) {
+        const [seal, pup] = x.seals;
+        enter(f, seal);
+        enterBehind(f, pup, seal, 20);
+      }
+      if (f.stage >= 8 && !x.haulOut.pigAway) {
+        // Not while the honu is on its way to the sand or ashore: the pua'a comes when it is back at sea.
+        if (["to", "crawl", "bask", "back"].includes(x.haulOut.state)) x.haulOut.pigAway = true;
+        else enter(f, x.puaa);
+      }
+      if (f.stage >= 5 && !x.hatchling.active) {
+        enterBehind(f, x.hatchling, x.honu, 10);
+      }
+    },
 
-  draw(g, f) {
-    if (f.stage >= 5 && !f.reduced && ashore(f)) {
-      const ho = f.extra.haulOut;
-      const mode = ho.state === "bask" ? "bask" : "crawl";
-      honuAshoreAt(g, { ...f.extra.honu, mode, age: f.time - ho.since }, f.groundY + Math.round(HAUL_DEPTH * ho.drop));
+    busy: () => true,
+
+    update(f, dt) {
+      const x = f.extra;
+      x.sea += (tide(f) - x.sea) * Math.min(1, dt * 0.8);
+      // Now and then a tropicbird alights on a sea cliff and the ʻiʻiwi on a hibiscus, then they fly on.
+      const day = !isNight(f);
+      const slots = [
+        [
+          f.stage >= 2,
+          x.tropicbirds[0],
+          {
+            every: [4, 6],
+            speed: 12,
+            spawn: () => ({ y: 20 + f.rand() * 40 }),
+            spots: cliffSpots,
+            small: "tropicbird",
+          },
+        ],
+
+        [
+          f.stage >= 6,
+          x.tropicbirds[1],
+          {
+            every: [5, 7],
+            speed: 38,
+            spawn: () => ({ y: 40 + f.rand() * 40 }),
+            spots: cliffSpots,
+            small: "tropicbird",
+          },
+        ],
+      ];
+      for (const [on, slot, o] of slots) {
+        if (on && day) flyByPerch(f, slot, dt, { ...o, odds: 0.3, stay: [8, 16] });
+        else if (slot.bird?.visit) goHome(f, slot.bird);
+      }
+      for (const c of x.crabs) {
+        wander(f, c, dt, { speed: 9, sit: [1, 3], walk: [1, 3] });
+        rest(f, c, crabPoses);
+      }
+      if (x.puaa.leaving) walkOff(f, x.puaa, dt);
+      else wander(f, x.puaa, dt, { speed: 6, stride: 5, sit: [3, 18], walk: [3, 6] });
+      rest(f, x.puaa, puaaPoses(x.puaa));
+      // The seal hitches along at 4 px/s, 3 px a stride (1.33 strides a second); her pup keeps behind her and
+      // rests beside her, lifting her head when her mother does.
+      const [seal, pup] = x.seals;
+      const sealX = seal.x;
+      const pupX = pup.x;
+      wander(f, seal, dt, { speed: 4, stride: 1.33, sit: [3, 12], walk: [2, 4] });
+      rest(f, seal, sealPoses(seal));
+      stride(seal, sealX, dt, SEAL_STRIDE[0], SEAL_STRIDE[1]);
+      follow(pup, seal, dt, 20);
+      pup.state = seal.state;
+      pup.timer = seal.timer;
+      settle(f, pup);
+      pup.pose = seal.pose;
+      stride(pup, pupX, dt, PUP_STRIDE[0], PUP_STRIDE[1]);
+      if (f.stage >= 5) {
+        if (!haulOut(f, x, dt)) {
+          x.honu.x += x.honu.dir * 4 * dt;
+          if (x.honu.x < 10 || x.honu.x > f.cols - 10) x.honu.dir *= -1;
+        }
+        // The hatchling follows to the water's edge and waits there while the honu is ashore.
+        const ho = x.haulOut;
+        const waiting = ho.state === "to" || ho.state === "crawl" || ho.state === "bask" || ho.state === "back";
+        x.hatchling.land += ((waiting ? 1 : 0) - x.hatchling.land) * Math.min(1, dt * 0.8);
+        if (!(ho.state === "crawl" || ho.state === "bask" || ho.state === "back")) follow(x.hatchling, x.honu, dt, 10);
+      }
+      if (f.stage >= 7 && f.time >= x.whale.next) {
+        x.whale.start = f.time;
+        x.whale.x = 15 + f.rand() * (f.cols - 30);
+        x.whale.dir = f.rand() < 0.5 ? 1 : -1;
+        x.whale.dive = f.rand() < 0.4; // some surfacings end in a dive with the flukes
+        x.whale.next = f.time + 12 + f.rand() * 8;
+      }
+      updateSpray(f, dt);
+    },
+  },
+);
+
+function seaFrame(stage, time, whale) {
+  return {
+    groundY: ANIMAL_BOX.ground,
+    cols: ANIMAL_BOX.w,
+    stage,
+    time,
+    reduced: false,
+    theme: "light",
+    extra: {
+      sea: 12,
+      whale,
+      honu: { x: -50, dir: 1, scale: 1 },
+      hatchling: { active: false },
+      haulOut: { state: "idle" },
+      spray: { drops: [] },
+    },
+  };
+}
+
+const SPRITES = {
+  cat: (g, frame) => felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico" }), 0),
+  "cat-sitting": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "sit" }), 0),
+  "cat-arching": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "arch" }), 0),
+  "cat-lying": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "lie" }), 0),
+  "cat-stretching": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "bow" }), 0),
+  "cat-loafing": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "loaf" }), 0),
+  "cat-curled": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "curl" }), 0),
+  "cat-dozing": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "doze" }), 0),
+  "cat-grooming": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "groom" }), 0),
+  "cat-white": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-white", state: "sit", pose: "sit" }), 0),
+  "cat-silver-tabby": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-silver-tabby", state: "sit", pose: "sit" }), 0),
+  "cat-orange-white": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-orange-white", state: "sit", pose: "sit" }), 0),
+  "cat-siamese": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-siamese", state: "sit", pose: "sit" }), 0),
+  "cat-black": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-black", state: "sit", pose: "sit" }), 0),
+  "cat-ginger": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-ginger", state: "sit", pose: "sit" }), 0),
+  "cat-calico": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "sit" }), 0),
+  "cat-grey": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-grey", state: "sit", pose: "sit" }), 0),
+  "cat-tortie": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-tortie", state: "sit", pose: "sit" }), 0),
+  "cat-tuxedo": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-tuxedo", state: "sit", pose: "sit" }), 0),
+  "cat-brown-tabby": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "sit" }), 0),
+  tropicbird: (g, frame) => tropicbirdAt(g, bird(frame), 0),
+  "tropicbird-perched": (g) => perchedSmall(g, "tropicbird", 40, 40, 0, blendPose({})),
+  iiwi: (g, frame) => flyerAt(g, bird(frame), 0, "iiwi"),
+  "iiwi-perched": (g) => perchedSmall(g, "iiwi", 40, 40, 0, blendPose({})),
+  crab: (g, frame) => crabAt(g, walk(frame, { lane: 0 }), g.groundY + 5),
+  "crab-crouching": (g, frame) => crabAt(g, walk(frame, { state: "sit", pose: "crouch" }), g.groundY + 5, 0),
+  "crab-threatening": (g, frame) => crabAt(g, walk(frame, { state: "sit", pose: "threat" }), g.groundY + 5, 0.1),
+  honu: (g) => honuAt(g, { x: 40, dir: 1, scale: 1 }, 0, 8, 44),
+  "honu-crawling": (g) => honuAshoreAt(g, { x: 40, dir: 1, mode: "crawl", age: 0.9 }, g.groundY + 6),
+  "honu-basking": (g) => honuAshoreAt(g, { x: 40, dir: 1, mode: "bask", age: 7.2 }, g.groundY + 6),
+  "honu-hatchling": (g) => honuAt(g, { x: 40, dir: 1, scale: 0.5 }, 0, 8, 44),
+  seal: (g, frame) => sealAt(g, walk(frame, { c: 0.2 + frame.phase * 0.25 }), 0),
+  "seal-head-up": (g, frame) => sealAt(g, walk(frame, { state: "sit", pose: "lie", still: 2.6, timer: 5 }), 2.6),
+  "seal-rolling": (g, frame) => sealAt(g, walk(frame, { state: "sit", pose: "roll", still: 3.6, timer: 6 }), 3.6),
+  "seal-pup": (g, frame) => sealAt(g, walk(frame, { scale: 0.55, c: 0.2 + frame.phase * 0.25 }), 0),
+  moa: (g, frame) => moaAt(g, walk(frame, { c: frame.phase * 0.25, amp: 1 }), 0),
+  "moa-pecking": (g, frame) => moaAt(g, walk(frame, { state: "sit", pose: "peck", since: 0, timer: 6, amp: 0 }), 0.5),
+  "moa-scratching": (g, frame) =>
+    moaAt(g, walk(frame, { state: "sit", pose: "scratch", since: 0, timer: 6, amp: 0 }), 1.6),
+  "moa-preening": (g, frame) => moaAt(g, walk(frame, { state: "sit", pose: "preen", since: 0, timer: 6, amp: 0 }), 1.5),
+  "moa-flapping": (g, frame) => moaAt(g, walk(frame, { state: "sit", pose: "flap", since: 0, timer: 6, amp: 0 }), 1.3),
+  puaa: (g, frame) => puaaAt(g, walk(frame), 0),
+  "puaa-rooting": (g, frame) => puaaAt(g, walk(frame, { state: "sit", pose: "root", since: 0, timer: 6 }), 3.2),
+  "puaa-wallowing": (g, frame) => puaaAt(g, walk(frame, { state: "sit", pose: "wallow", since: 0, timer: 14 }), 5.4),
+  "puaa-shaking": (g, frame) => puaaAt(g, walk(frame, { state: "sit", pose: "wallow", since: 0, timer: 14 }), 9.6),
+  sea: (g) => {
+    g.time = 0;
+    extras.drawBack(g, seaFrame(0, 0, { start: 99, x: 0 }));
+  },
+  spray: (g) => {
+    for (const [x, y] of [
+      [6, 44],
+      [9, 42],
+      [12, 45],
+      [15, 41],
+      [18, 44],
+      [21, 43],
+    ]) {
+      rect(g, g.pal.sea[3], x, y, 1, 1);
     }
-    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "housecat" }, f.time);
-    for (const bird of f.extra.tropicbirds) if (bird.bird && !isNight(f)) tropicbirdAt(g, bird.bird, f.time);
-    if (f.extra.iiwi.bird && !isNight(f)) flyerAt(g, f.extra.iiwi.bird, f.time, "iiwi");
-    for (const c of f.extra.crabs) if (c.active) crabAt(g, c, g.groundY + 5 + c.lane, f.time);
-    for (const s of f.extra.seals) if (s.active) sealAt(g, s, f.time);
-    if (f.extra.moa.active) moaAt(g, f.extra.moa, f.time);
-    if (f.extra.puaa.active) puaaAt(g, f.extra.puaa, f.time);
+  },
+  whale: (g) => {
+    g.time = 1;
+    extras.drawBack(g, seaFrame(7, 1, { start: 0.2, x: 40, dir: 1, dive: false }));
+  },
+  "whale-surfacing": (g) => {
+    g.time = 1.6;
+    extras.drawBack(g, seaFrame(7, 1.6, { start: 0, x: 40, dir: 1, dive: false }));
+  },
+  "whale-fluke": (g) => {
+    g.time = 2.4;
+    extras.drawBack(g, seaFrame(7, 2.4, { start: 0, x: 40, dir: 1, dive: true }));
+  },
+};
+
+const PLANT_FAMILIES = {
+  "tree-plumeria": "broadleaf",
+  "tree-coconut": "palm-like",
+};
+
+export const META = {
+  id: "hawaii",
+  label: "Waikiki Beach",
+  group: "coastal",
+  density: "open",
+  tint: ["#a9dcf2", "rgb(60 140 200)"],
+  backdrop: {
+    light: {
+      green: "#a9dcf2",
+      "green-soft": "#f6e6b8",
+      peach: "#fddcc0",
+      blush: "#cdeeee",
+      bloom: "#9fe0d8",
+    },
+    dark: {
+      green: "rgb(60 140 200 / 0.42)",
+      "green-soft": "rgb(210 180 110 / 0.16)",
+      peach: "rgb(230 130 90 / 0.18)",
+      blush: "rgb(60 170 170 / 0.14)",
+      bloom: "rgb(60 190 170 / 0.3)",
+    },
   },
 };
 
 export default {
-  id: "hawaii",
-  label: "Waikiki Beach",
-  group: "coastal",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.62], dark: [0.5, 0.7] },
   mature: MATURE,

@@ -394,3 +394,10 @@ export function bambooClump(g, p, s, base) {
     }
   }
 }
+
+export const FAMILY = {
+  id: "palm-like",
+  title: "Palm-like trees",
+  group: "Trees",
+  differ: "frond shape, height",
+};

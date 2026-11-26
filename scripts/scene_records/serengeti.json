@@ -1,0 +1,1048 @@
+{
+  "scene": "serengeti",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "back:step:sun": 108,
+        "front:circlerAt": 48,
+        "front:cubAt": 12,
+        "front:elephantAt": 24,
+        "front:felidAt": 36,
+        "front:flamingoAt": 36,
+        "front:giraffeAt": 60,
+        "front:lionAt": 12,
+        "front:rollerAt": 54,
+        "front:secretaryAt": 96,
+        "front:step:haze-and-motes": 108,
+        "front:step:lion-cubs": 108,
+        "front:step:puddle-zebra-giraffe": 108,
+        "front:zebraAt": 84,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sun < front:circlerAt",
+        "back:step:sun < front:cubAt",
+        "back:step:sun < front:elephantAt",
+        "back:step:sun < front:felidAt",
+        "back:step:sun < front:flamingoAt",
+        "back:step:sun < front:giraffeAt",
+        "back:step:sun < front:lionAt",
+        "back:step:sun < front:rollerAt",
+        "back:step:sun < front:secretaryAt",
+        "back:step:sun < front:step:haze-and-motes",
+        "back:step:sun < front:step:lion-cubs",
+        "back:step:sun < front:step:puddle-zebra-giraffe",
+        "back:step:sun < front:zebraAt",
+        "back:step:sun < plants",
+        "front:circlerAt < front:cubAt",
+        "front:circlerAt < front:elephantAt",
+        "front:circlerAt < front:felidAt",
+        "front:circlerAt < front:giraffeAt",
+        "front:circlerAt < front:lionAt",
+        "front:circlerAt < front:secretaryAt",
+        "front:circlerAt < front:step:lion-cubs",
+        "front:circlerAt < front:step:puddle-zebra-giraffe",
+        "front:circlerAt < front:zebraAt",
+        "front:elephantAt < front:cubAt",
+        "front:elephantAt < front:felidAt",
+        "front:elephantAt < front:lionAt",
+        "front:elephantAt < front:step:lion-cubs",
+        "front:felidAt < front:cubAt",
+        "front:felidAt < front:lionAt",
+        "front:felidAt < front:step:lion-cubs",
+        "front:flamingoAt < front:circlerAt",
+        "front:flamingoAt < front:cubAt",
+        "front:flamingoAt < front:elephantAt",
+        "front:flamingoAt < front:felidAt",
+        "front:flamingoAt < front:giraffeAt",
+        "front:flamingoAt < front:lionAt",
+        "front:flamingoAt < front:secretaryAt",
+        "front:flamingoAt < front:step:lion-cubs",
+        "front:flamingoAt < front:step:puddle-zebra-giraffe",
+        "front:flamingoAt < front:zebraAt",
+        "front:giraffeAt < front:cubAt",
+        "front:giraffeAt < front:elephantAt",
+        "front:giraffeAt < front:felidAt",
+        "front:giraffeAt < front:lionAt",
+        "front:giraffeAt < front:secretaryAt",
+        "front:giraffeAt < front:step:lion-cubs",
+        "front:lionAt < front:cubAt",
+        "front:rollerAt < front:circlerAt",
+        "front:rollerAt < front:elephantAt",
+        "front:rollerAt < front:felidAt",
+        "front:rollerAt < front:flamingoAt",
+        "front:rollerAt < front:giraffeAt",
+        "front:rollerAt < front:secretaryAt",
+        "front:rollerAt < front:step:lion-cubs",
+        "front:rollerAt < front:step:puddle-zebra-giraffe",
+        "front:rollerAt < front:zebraAt",
+        "front:secretaryAt < front:cubAt",
+        "front:secretaryAt < front:elephantAt",
+        "front:secretaryAt < front:felidAt",
+        "front:secretaryAt < front:lionAt",
+        "front:secretaryAt < front:step:lion-cubs",
+        "front:step:haze-and-motes < front:circlerAt",
+        "front:step:haze-and-motes < front:cubAt",
+        "front:step:haze-and-motes < front:elephantAt",
+        "front:step:haze-and-motes < front:felidAt",
+        "front:step:haze-and-motes < front:flamingoAt",
+        "front:step:haze-and-motes < front:giraffeAt",
+        "front:step:haze-and-motes < front:lionAt",
+        "front:step:haze-and-motes < front:rollerAt",
+        "front:step:haze-and-motes < front:secretaryAt",
+        "front:step:haze-and-motes < front:step:lion-cubs",
+        "front:step:haze-and-motes < front:step:puddle-zebra-giraffe",
+        "front:step:haze-and-motes < front:zebraAt",
+        "front:step:lion-cubs < front:cubAt",
+        "front:step:lion-cubs < front:lionAt",
+        "front:step:puddle-zebra-giraffe < front:cubAt",
+        "front:step:puddle-zebra-giraffe < front:elephantAt",
+        "front:step:puddle-zebra-giraffe < front:felidAt",
+        "front:step:puddle-zebra-giraffe < front:giraffeAt",
+        "front:step:puddle-zebra-giraffe < front:lionAt",
+        "front:step:puddle-zebra-giraffe < front:secretaryAt",
+        "front:step:puddle-zebra-giraffe < front:step:lion-cubs",
+        "front:step:puddle-zebra-giraffe < front:zebraAt",
+        "front:zebraAt < front:cubAt",
+        "front:zebraAt < front:elephantAt",
+        "front:zebraAt < front:felidAt",
+        "front:zebraAt < front:giraffeAt",
+        "front:zebraAt < front:lionAt",
+        "front:zebraAt < front:secretaryAt",
+        "front:zebraAt < front:step:lion-cubs",
+        "plants < front:circlerAt",
+        "plants < front:cubAt",
+        "plants < front:elephantAt",
+        "plants < front:felidAt",
+        "plants < front:flamingoAt",
+        "plants < front:giraffeAt",
+        "plants < front:lionAt",
+        "plants < front:rollerAt",
+        "plants < front:secretaryAt",
+        "plants < front:step:haze-and-motes",
+        "plants < front:step:lion-cubs",
+        "plants < front:step:puddle-zebra-giraffe",
+        "plants < front:zebraAt"
+      ],
+      "actors": {
+        "roller": {
+          "firstStage": 3,
+          "activeSteps": 54,
+          "xRange": [
+            -13,
+            252
+          ],
+          "yRange": [
+            26.1,
+            26.1
+          ],
+          "speed": 20,
+          "poses": [
+            "fly"
+          ]
+        },
+        "flamingo": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -12,
+            101.8
+          ],
+          "yRange": [
+            37.8,
+            37.8
+          ],
+          "speed": 13,
+          "poses": [
+            "fly"
+          ]
+        },
+        "vultures[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            101.5,
+            101.5
+          ],
+          "yRange": [
+            42.6,
+            42.6
+          ]
+        },
+        "vultures[1]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            101.5,
+            101.5
+          ],
+          "yRange": [
+            48.6,
+            48.6
+          ]
+        },
+        "zebra": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            182,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "graze",
+            "lie",
+            "walk"
+          ]
+        },
+        "foal": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            199,
+            248
+          ],
+          "speed": 5.2,
+          "poses": [
+            "graze",
+            "lie",
+            "walk"
+          ]
+        },
+        "giraffe": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -10.7,
+            19.3
+          ],
+          "speed": 5,
+          "poses": [
+            "chew",
+            "drink",
+            "walk"
+          ]
+        },
+        "secretary": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -10.3,
+            65.4
+          ],
+          "speed": 6.9,
+          "poses": [
+            "stand",
+            "stretch",
+            "walk"
+          ]
+        },
+        "elephant": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -11,
+            0
+          ],
+          "speed": 4,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "calf": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -23.6,
+            -12
+          ],
+          "speed": 2.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cheetah": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -9.7,
+            15
+          ],
+          "speed": 9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "lion": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            176.8,
+            185
+          ],
+          "speed": 3,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "cubs[0]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cubs[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cubs[2]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            234,
+            250.5
+          ],
+          "speed": 6,
+          "poses": [
+            "pounce",
+            "walk"
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "back:step:sun": 108,
+        "front:circlerAt": 48,
+        "front:cubAt": 12,
+        "front:elephantAt": 24,
+        "front:flamingoAt": 36,
+        "front:giraffeAt": 60,
+        "front:lionAt": 12,
+        "front:rollerAt": 29,
+        "front:secretaryAt": 96,
+        "front:step:haze-and-motes": 108,
+        "front:step:lion-cubs": 108,
+        "front:step:puddle-zebra-giraffe": 108,
+        "front:zebraAt": 84,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sun < front:circlerAt",
+        "back:step:sun < front:cubAt",
+        "back:step:sun < front:elephantAt",
+        "back:step:sun < front:flamingoAt",
+        "back:step:sun < front:giraffeAt",
+        "back:step:sun < front:lionAt",
+        "back:step:sun < front:rollerAt",
+        "back:step:sun < front:secretaryAt",
+        "back:step:sun < front:step:haze-and-motes",
+        "back:step:sun < front:step:lion-cubs",
+        "back:step:sun < front:step:puddle-zebra-giraffe",
+        "back:step:sun < front:zebraAt",
+        "back:step:sun < plants",
+        "front:circlerAt < front:cubAt",
+        "front:circlerAt < front:elephantAt",
+        "front:circlerAt < front:giraffeAt",
+        "front:circlerAt < front:lionAt",
+        "front:circlerAt < front:secretaryAt",
+        "front:circlerAt < front:step:lion-cubs",
+        "front:circlerAt < front:step:puddle-zebra-giraffe",
+        "front:circlerAt < front:zebraAt",
+        "front:elephantAt < front:cubAt",
+        "front:elephantAt < front:lionAt",
+        "front:elephantAt < front:step:lion-cubs",
+        "front:flamingoAt < front:circlerAt",
+        "front:flamingoAt < front:cubAt",
+        "front:flamingoAt < front:elephantAt",
+        "front:flamingoAt < front:giraffeAt",
+        "front:flamingoAt < front:lionAt",
+        "front:flamingoAt < front:secretaryAt",
+        "front:flamingoAt < front:step:lion-cubs",
+        "front:flamingoAt < front:step:puddle-zebra-giraffe",
+        "front:flamingoAt < front:zebraAt",
+        "front:giraffeAt < front:cubAt",
+        "front:giraffeAt < front:elephantAt",
+        "front:giraffeAt < front:lionAt",
+        "front:giraffeAt < front:secretaryAt",
+        "front:giraffeAt < front:step:lion-cubs",
+        "front:lionAt < front:cubAt",
+        "front:rollerAt < front:circlerAt",
+        "front:rollerAt < front:cubAt",
+        "front:rollerAt < front:elephantAt",
+        "front:rollerAt < front:flamingoAt",
+        "front:rollerAt < front:giraffeAt",
+        "front:rollerAt < front:lionAt",
+        "front:rollerAt < front:secretaryAt",
+        "front:rollerAt < front:step:lion-cubs",
+        "front:rollerAt < front:step:puddle-zebra-giraffe",
+        "front:rollerAt < front:zebraAt",
+        "front:secretaryAt < front:cubAt",
+        "front:secretaryAt < front:elephantAt",
+        "front:secretaryAt < front:lionAt",
+        "front:secretaryAt < front:step:lion-cubs",
+        "front:step:haze-and-motes < front:circlerAt",
+        "front:step:haze-and-motes < front:cubAt",
+        "front:step:haze-and-motes < front:elephantAt",
+        "front:step:haze-and-motes < front:flamingoAt",
+        "front:step:haze-and-motes < front:giraffeAt",
+        "front:step:haze-and-motes < front:lionAt",
+        "front:step:haze-and-motes < front:rollerAt",
+        "front:step:haze-and-motes < front:secretaryAt",
+        "front:step:haze-and-motes < front:step:lion-cubs",
+        "front:step:haze-and-motes < front:step:puddle-zebra-giraffe",
+        "front:step:haze-and-motes < front:zebraAt",
+        "front:step:lion-cubs < front:cubAt",
+        "front:step:lion-cubs < front:lionAt",
+        "front:step:puddle-zebra-giraffe < front:cubAt",
+        "front:step:puddle-zebra-giraffe < front:elephantAt",
+        "front:step:puddle-zebra-giraffe < front:giraffeAt",
+        "front:step:puddle-zebra-giraffe < front:lionAt",
+        "front:step:puddle-zebra-giraffe < front:secretaryAt",
+        "front:step:puddle-zebra-giraffe < front:step:lion-cubs",
+        "front:step:puddle-zebra-giraffe < front:zebraAt",
+        "front:zebraAt < front:cubAt",
+        "front:zebraAt < front:elephantAt",
+        "front:zebraAt < front:giraffeAt",
+        "front:zebraAt < front:lionAt",
+        "front:zebraAt < front:secretaryAt",
+        "front:zebraAt < front:step:lion-cubs",
+        "plants < front:circlerAt",
+        "plants < front:cubAt",
+        "plants < front:elephantAt",
+        "plants < front:flamingoAt",
+        "plants < front:giraffeAt",
+        "plants < front:lionAt",
+        "plants < front:rollerAt",
+        "plants < front:secretaryAt",
+        "plants < front:step:haze-and-motes",
+        "plants < front:step:lion-cubs",
+        "plants < front:step:puddle-zebra-giraffe",
+        "plants < front:zebraAt"
+      ],
+      "actors": {
+        "roller": {
+          "firstStage": 3,
+          "activeSteps": 29,
+          "xRange": [
+            -13,
+            102
+          ],
+          "yRange": [
+            26.1,
+            32.5
+          ],
+          "speed": 20,
+          "poses": [
+            "fly"
+          ]
+        },
+        "flamingo": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -12,
+            101.8
+          ],
+          "yRange": [
+            37.8,
+            37.8
+          ],
+          "speed": 13,
+          "poses": [
+            "fly"
+          ]
+        },
+        "vultures[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            38.1,
+            38.1
+          ],
+          "yRange": [
+            42.6,
+            42.6
+          ]
+        },
+        "vultures[1]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            38.1,
+            38.1
+          ],
+          "yRange": [
+            48.6,
+            48.6
+          ]
+        },
+        "zebra": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            35.5,
+            100.3
+          ],
+          "speed": 7,
+          "poses": [
+            "graze",
+            "lie",
+            "walk"
+          ]
+        },
+        "foal": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "giraffe": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -10.7,
+            21.8
+          ],
+          "speed": 5,
+          "poses": [
+            "chew",
+            "drink",
+            "walk"
+          ]
+        },
+        "secretary": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -10.3,
+            65.4
+          ],
+          "speed": 6.9,
+          "poses": [
+            "stand",
+            "stretch",
+            "walk"
+          ]
+        },
+        "elephant": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -11,
+            0
+          ],
+          "speed": 4,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "calf": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -23.6,
+            -12
+          ],
+          "speed": 2.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cheetah": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "lion": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            56.8,
+            65
+          ],
+          "speed": 3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cubs[0]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cubs[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "cubs[2]": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "back:step:sun": 108,
+        "front:cubAt": 12,
+        "front:elephantAt": 24,
+        "front:giraffeAt": 60,
+        "front:lionAt": 12,
+        "front:secretaryAt": 96,
+        "front:step:haze-and-motes": 108,
+        "front:step:lion-cubs": 108,
+        "front:step:puddle-zebra-giraffe": 108,
+        "front:zebraAt": 84,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sun < front:cubAt",
+        "back:step:sun < front:elephantAt",
+        "back:step:sun < front:giraffeAt",
+        "back:step:sun < front:lionAt",
+        "back:step:sun < front:secretaryAt",
+        "back:step:sun < front:step:haze-and-motes",
+        "back:step:sun < front:step:lion-cubs",
+        "back:step:sun < front:step:puddle-zebra-giraffe",
+        "back:step:sun < front:zebraAt",
+        "back:step:sun < plants",
+        "front:elephantAt < front:cubAt",
+        "front:elephantAt < front:lionAt",
+        "front:elephantAt < front:step:lion-cubs",
+        "front:giraffeAt < front:cubAt",
+        "front:giraffeAt < front:elephantAt",
+        "front:giraffeAt < front:lionAt",
+        "front:giraffeAt < front:secretaryAt",
+        "front:giraffeAt < front:step:lion-cubs",
+        "front:lionAt < front:cubAt",
+        "front:secretaryAt < front:cubAt",
+        "front:secretaryAt < front:elephantAt",
+        "front:secretaryAt < front:lionAt",
+        "front:secretaryAt < front:step:lion-cubs",
+        "front:step:haze-and-motes < front:cubAt",
+        "front:step:haze-and-motes < front:elephantAt",
+        "front:step:haze-and-motes < front:giraffeAt",
+        "front:step:haze-and-motes < front:lionAt",
+        "front:step:haze-and-motes < front:secretaryAt",
+        "front:step:haze-and-motes < front:step:lion-cubs",
+        "front:step:haze-and-motes < front:step:puddle-zebra-giraffe",
+        "front:step:haze-and-motes < front:zebraAt",
+        "front:step:lion-cubs < front:cubAt",
+        "front:step:lion-cubs < front:lionAt",
+        "front:step:puddle-zebra-giraffe < front:cubAt",
+        "front:step:puddle-zebra-giraffe < front:elephantAt",
+        "front:step:puddle-zebra-giraffe < front:giraffeAt",
+        "front:step:puddle-zebra-giraffe < front:lionAt",
+        "front:step:puddle-zebra-giraffe < front:secretaryAt",
+        "front:step:puddle-zebra-giraffe < front:step:lion-cubs",
+        "front:step:puddle-zebra-giraffe < front:zebraAt",
+        "front:zebraAt < front:cubAt",
+        "front:zebraAt < front:elephantAt",
+        "front:zebraAt < front:giraffeAt",
+        "front:zebraAt < front:lionAt",
+        "front:zebraAt < front:secretaryAt",
+        "front:zebraAt < front:step:lion-cubs",
+        "plants < front:cubAt",
+        "plants < front:elephantAt",
+        "plants < front:giraffeAt",
+        "plants < front:lionAt",
+        "plants < front:secretaryAt",
+        "plants < front:step:haze-and-motes",
+        "plants < front:step:lion-cubs",
+        "plants < front:step:puddle-zebra-giraffe",
+        "plants < front:zebraAt"
+      ],
+      "actors": {
+        "roller": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "flamingo": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "vultures[0]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "vultures[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "zebra": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            182,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "graze",
+            "lie",
+            "walk"
+          ]
+        },
+        "foal": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            199,
+            248
+          ],
+          "speed": 5.2,
+          "poses": [
+            "graze",
+            "lie",
+            "walk"
+          ]
+        },
+        "giraffe": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -10.7,
+            19.3
+          ],
+          "speed": 5,
+          "poses": [
+            "chew",
+            "drink",
+            "walk"
+          ]
+        },
+        "secretary": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -10.3,
+            65.4
+          ],
+          "speed": 6.9,
+          "poses": [
+            "stand",
+            "stretch",
+            "walk"
+          ]
+        },
+        "elephant": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -11,
+            0
+          ],
+          "speed": 4,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "calf": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -23.6,
+            -12
+          ],
+          "speed": 2.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cheetah": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -12,
+            -12
+          ],
+          "poses": [
+            "walk"
+          ]
+        },
+        "lion": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            176.8,
+            185
+          ],
+          "speed": 3,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "cubs[0]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cubs[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cubs[2]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            234,
+            250.5
+          ],
+          "speed": 6,
+          "poses": [
+            "pounce",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "back:step:sun": 108,
+        "front:cubAt": 12,
+        "front:elephantAt": 24,
+        "front:giraffeAt": 60,
+        "front:lionAt": 12,
+        "front:secretaryAt": 96,
+        "front:step:haze-and-motes": 108,
+        "front:step:lion-cubs": 108,
+        "front:step:puddle-zebra-giraffe": 108,
+        "front:zebraAt": 84,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sun < front:cubAt",
+        "back:step:sun < front:elephantAt",
+        "back:step:sun < front:giraffeAt",
+        "back:step:sun < front:lionAt",
+        "back:step:sun < front:secretaryAt",
+        "back:step:sun < front:step:haze-and-motes",
+        "back:step:sun < front:step:lion-cubs",
+        "back:step:sun < front:step:puddle-zebra-giraffe",
+        "back:step:sun < front:zebraAt",
+        "back:step:sun < plants",
+        "front:elephantAt < front:cubAt",
+        "front:elephantAt < front:lionAt",
+        "front:elephantAt < front:step:lion-cubs",
+        "front:giraffeAt < front:cubAt",
+        "front:giraffeAt < front:elephantAt",
+        "front:giraffeAt < front:lionAt",
+        "front:giraffeAt < front:secretaryAt",
+        "front:giraffeAt < front:step:lion-cubs",
+        "front:lionAt < front:cubAt",
+        "front:secretaryAt < front:cubAt",
+        "front:secretaryAt < front:elephantAt",
+        "front:secretaryAt < front:lionAt",
+        "front:secretaryAt < front:step:lion-cubs",
+        "front:step:haze-and-motes < front:cubAt",
+        "front:step:haze-and-motes < front:elephantAt",
+        "front:step:haze-and-motes < front:giraffeAt",
+        "front:step:haze-and-motes < front:lionAt",
+        "front:step:haze-and-motes < front:secretaryAt",
+        "front:step:haze-and-motes < front:step:lion-cubs",
+        "front:step:haze-and-motes < front:step:puddle-zebra-giraffe",
+        "front:step:haze-and-motes < front:zebraAt",
+        "front:step:lion-cubs < front:cubAt",
+        "front:step:lion-cubs < front:lionAt",
+        "front:step:puddle-zebra-giraffe < front:cubAt",
+        "front:step:puddle-zebra-giraffe < front:elephantAt",
+        "front:step:puddle-zebra-giraffe < front:giraffeAt",
+        "front:step:puddle-zebra-giraffe < front:lionAt",
+        "front:step:puddle-zebra-giraffe < front:secretaryAt",
+        "front:step:puddle-zebra-giraffe < front:step:lion-cubs",
+        "front:step:puddle-zebra-giraffe < front:zebraAt",
+        "front:zebraAt < front:cubAt",
+        "front:zebraAt < front:elephantAt",
+        "front:zebraAt < front:giraffeAt",
+        "front:zebraAt < front:lionAt",
+        "front:zebraAt < front:secretaryAt",
+        "front:zebraAt < front:step:lion-cubs",
+        "plants < front:cubAt",
+        "plants < front:elephantAt",
+        "plants < front:giraffeAt",
+        "plants < front:lionAt",
+        "plants < front:secretaryAt",
+        "plants < front:step:haze-and-motes",
+        "plants < front:step:lion-cubs",
+        "plants < front:step:puddle-zebra-giraffe",
+        "plants < front:zebraAt"
+      ],
+      "actors": {
+        "roller": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "flamingo": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "vultures[0]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "vultures[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "zebra": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            35.5,
+            100.3
+          ],
+          "speed": 7,
+          "poses": [
+            "graze",
+            "lie",
+            "walk"
+          ]
+        },
+        "foal": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "giraffe": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -10.7,
+            21.8
+          ],
+          "speed": 5,
+          "poses": [
+            "chew",
+            "drink",
+            "walk"
+          ]
+        },
+        "secretary": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -10.3,
+            65.4
+          ],
+          "speed": 6.9,
+          "poses": [
+            "stand",
+            "stretch",
+            "walk"
+          ]
+        },
+        "elephant": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -11,
+            0
+          ],
+          "speed": 4,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "calf": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -23.6,
+            -12
+          ],
+          "speed": 2.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cheetah": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "lion": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            56.8,
+            65
+          ],
+          "speed": 3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cubs[0]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -10.5,
+            6
+          ],
+          "speed": 6,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "cubs[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "cubs[2]": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    }
+  }
+}

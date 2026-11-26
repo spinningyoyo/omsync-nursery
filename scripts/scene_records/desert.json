@@ -1,0 +1,717 @@
+{
+  "scene": "desert",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:bighornAt": 60,
+        "front:canidAt": 48,
+        "front:glideAt": 36,
+        "front:hareAt": 96,
+        "front:hawkAt": 84,
+        "front:roadrunnerAt": 72,
+        "front:snakeAt": 36,
+        "front:step:bighorn-owl": 108,
+        "front:step:coyotes-snake-rabbit": 108,
+        "front:step:hawk": 108,
+        "front:tortoiseAt": 60,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:bighornAt",
+        "back:step:sky < front:canidAt",
+        "back:step:sky < front:glideAt",
+        "back:step:sky < front:hareAt",
+        "back:step:sky < front:hawkAt",
+        "back:step:sky < front:roadrunnerAt",
+        "back:step:sky < front:snakeAt",
+        "back:step:sky < front:step:bighorn-owl",
+        "back:step:sky < front:step:coyotes-snake-rabbit",
+        "back:step:sky < front:step:hawk",
+        "back:step:sky < front:tortoiseAt",
+        "back:step:sky < plants",
+        "front:bighornAt < front:canidAt",
+        "front:bighornAt < front:hareAt",
+        "front:bighornAt < front:roadrunnerAt",
+        "front:bighornAt < front:snakeAt",
+        "front:bighornAt < front:step:coyotes-snake-rabbit",
+        "front:bighornAt < front:tortoiseAt",
+        "front:canidAt < front:hareAt",
+        "front:canidAt < front:roadrunnerAt",
+        "front:canidAt < front:snakeAt",
+        "front:glideAt < front:bighornAt",
+        "front:glideAt < front:canidAt",
+        "front:glideAt < front:hareAt",
+        "front:glideAt < front:roadrunnerAt",
+        "front:glideAt < front:snakeAt",
+        "front:glideAt < front:step:bighorn-owl",
+        "front:glideAt < front:step:coyotes-snake-rabbit",
+        "front:glideAt < front:tortoiseAt",
+        "front:hareAt < front:roadrunnerAt",
+        "front:hawkAt < front:bighornAt",
+        "front:hawkAt < front:canidAt",
+        "front:hawkAt < front:glideAt",
+        "front:hawkAt < front:hareAt",
+        "front:hawkAt < front:roadrunnerAt",
+        "front:hawkAt < front:snakeAt",
+        "front:hawkAt < front:step:bighorn-owl",
+        "front:hawkAt < front:step:coyotes-snake-rabbit",
+        "front:hawkAt < front:tortoiseAt",
+        "front:snakeAt < front:hareAt",
+        "front:snakeAt < front:roadrunnerAt",
+        "front:step:bighorn-owl < front:bighornAt",
+        "front:step:bighorn-owl < front:canidAt",
+        "front:step:bighorn-owl < front:hareAt",
+        "front:step:bighorn-owl < front:roadrunnerAt",
+        "front:step:bighorn-owl < front:snakeAt",
+        "front:step:bighorn-owl < front:step:coyotes-snake-rabbit",
+        "front:step:bighorn-owl < front:tortoiseAt",
+        "front:step:coyotes-snake-rabbit < front:canidAt",
+        "front:step:coyotes-snake-rabbit < front:hareAt",
+        "front:step:coyotes-snake-rabbit < front:roadrunnerAt",
+        "front:step:coyotes-snake-rabbit < front:snakeAt",
+        "front:step:hawk < front:bighornAt",
+        "front:step:hawk < front:canidAt",
+        "front:step:hawk < front:glideAt",
+        "front:step:hawk < front:hareAt",
+        "front:step:hawk < front:hawkAt",
+        "front:step:hawk < front:roadrunnerAt",
+        "front:step:hawk < front:snakeAt",
+        "front:step:hawk < front:step:bighorn-owl",
+        "front:step:hawk < front:step:coyotes-snake-rabbit",
+        "front:step:hawk < front:tortoiseAt",
+        "front:tortoiseAt < front:canidAt",
+        "front:tortoiseAt < front:hareAt",
+        "front:tortoiseAt < front:roadrunnerAt",
+        "front:tortoiseAt < front:snakeAt",
+        "front:tortoiseAt < front:step:coyotes-snake-rabbit",
+        "plants < front:bighornAt",
+        "plants < front:canidAt",
+        "plants < front:glideAt",
+        "plants < front:hareAt",
+        "plants < front:hawkAt",
+        "plants < front:roadrunnerAt",
+        "plants < front:snakeAt",
+        "plants < front:step:bighorn-owl",
+        "plants < front:step:coyotes-snake-rabbit",
+        "plants < front:step:hawk",
+        "plants < front:tortoiseAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            252,
+            252
+          ],
+          "poses": [
+            "walk"
+          ]
+        },
+        "vultures": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -12,
+            145.5
+          ],
+          "yRange": [
+            30.8,
+            30.8
+          ],
+          "speed": 18,
+          "poses": [
+            "fly"
+          ]
+        },
+        "tumble": {
+          "firstStage": 4,
+          "activeSteps": 36,
+          "xRange": [
+            -10.5,
+            252
+          ],
+          "speed": 30,
+          "poses": [
+            "fly"
+          ]
+        },
+        "tortoise": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -11.6,
+            -3
+          ],
+          "speed": 1.5,
+          "poses": [
+            "look",
+            "walk"
+          ]
+        },
+        "runner": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            121.4,
+            245.1
+          ],
+          "speed": 27.5,
+          "poses": [
+            "pump",
+            "stand",
+            "stretch",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            199.5,
+            248.5
+          ],
+          "speed": 14,
+          "poses": [
+            "graze",
+            "lie",
+            "loaf",
+            "walk"
+          ]
+        },
+        "coyotes[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            213,
+            248.8
+          ],
+          "speed": 13,
+          "poses": [
+            "lie",
+            "sit",
+            "walk"
+          ]
+        },
+        "coyotes[1]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            209.5,
+            263.8
+          ],
+          "speed": 7.1,
+          "poses": [
+            "lie",
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:bighornAt": 60,
+        "front:canidAt": 48,
+        "front:glideAt": 30,
+        "front:hareAt": 96,
+        "front:hawkAt": 84,
+        "front:roadrunnerAt": 72,
+        "front:snakeAt": 36,
+        "front:step:bighorn-owl": 108,
+        "front:step:coyotes-snake-rabbit": 108,
+        "front:step:hawk": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:bighornAt",
+        "back:step:sky < front:canidAt",
+        "back:step:sky < front:glideAt",
+        "back:step:sky < front:hareAt",
+        "back:step:sky < front:hawkAt",
+        "back:step:sky < front:roadrunnerAt",
+        "back:step:sky < front:snakeAt",
+        "back:step:sky < front:step:bighorn-owl",
+        "back:step:sky < front:step:coyotes-snake-rabbit",
+        "back:step:sky < front:step:hawk",
+        "back:step:sky < plants",
+        "front:bighornAt < front:canidAt",
+        "front:bighornAt < front:hareAt",
+        "front:bighornAt < front:roadrunnerAt",
+        "front:bighornAt < front:snakeAt",
+        "front:bighornAt < front:step:coyotes-snake-rabbit",
+        "front:canidAt < front:hareAt",
+        "front:canidAt < front:roadrunnerAt",
+        "front:canidAt < front:snakeAt",
+        "front:glideAt < front:bighornAt",
+        "front:glideAt < front:canidAt",
+        "front:glideAt < front:hareAt",
+        "front:glideAt < front:roadrunnerAt",
+        "front:glideAt < front:snakeAt",
+        "front:glideAt < front:step:bighorn-owl",
+        "front:glideAt < front:step:coyotes-snake-rabbit",
+        "front:hareAt < front:roadrunnerAt",
+        "front:hawkAt < front:bighornAt",
+        "front:hawkAt < front:canidAt",
+        "front:hawkAt < front:glideAt",
+        "front:hawkAt < front:hareAt",
+        "front:hawkAt < front:roadrunnerAt",
+        "front:hawkAt < front:snakeAt",
+        "front:hawkAt < front:step:bighorn-owl",
+        "front:hawkAt < front:step:coyotes-snake-rabbit",
+        "front:snakeAt < front:hareAt",
+        "front:snakeAt < front:roadrunnerAt",
+        "front:step:bighorn-owl < front:bighornAt",
+        "front:step:bighorn-owl < front:canidAt",
+        "front:step:bighorn-owl < front:hareAt",
+        "front:step:bighorn-owl < front:roadrunnerAt",
+        "front:step:bighorn-owl < front:snakeAt",
+        "front:step:bighorn-owl < front:step:coyotes-snake-rabbit",
+        "front:step:coyotes-snake-rabbit < front:canidAt",
+        "front:step:coyotes-snake-rabbit < front:hareAt",
+        "front:step:coyotes-snake-rabbit < front:roadrunnerAt",
+        "front:step:coyotes-snake-rabbit < front:snakeAt",
+        "front:step:hawk < front:bighornAt",
+        "front:step:hawk < front:canidAt",
+        "front:step:hawk < front:glideAt",
+        "front:step:hawk < front:hareAt",
+        "front:step:hawk < front:hawkAt",
+        "front:step:hawk < front:roadrunnerAt",
+        "front:step:hawk < front:snakeAt",
+        "front:step:hawk < front:step:bighorn-owl",
+        "front:step:hawk < front:step:coyotes-snake-rabbit",
+        "plants < front:bighornAt",
+        "plants < front:canidAt",
+        "plants < front:glideAt",
+        "plants < front:hareAt",
+        "plants < front:hawkAt",
+        "plants < front:roadrunnerAt",
+        "plants < front:snakeAt",
+        "plants < front:step:bighorn-owl",
+        "plants < front:step:coyotes-snake-rabbit",
+        "plants < front:step:hawk"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "vultures": {
+          "firstStage": 6,
+          "activeSteps": 30,
+          "xRange": [
+            -12,
+            118.5
+          ],
+          "yRange": [
+            30.8,
+            30.8
+          ],
+          "speed": 18,
+          "poses": [
+            "fly"
+          ]
+        },
+        "tumble": {
+          "firstStage": 4,
+          "activeSteps": 16,
+          "xRange": [
+            -10.5,
+            102
+          ],
+          "speed": 30,
+          "poses": [
+            "fly"
+          ]
+        },
+        "tortoise": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "runner": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -1.1,
+            95.1
+          ],
+          "speed": 27.5,
+          "poses": [
+            "pump",
+            "stand",
+            "stretch",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            25,
+            98.5
+          ],
+          "speed": 14,
+          "poses": [
+            "graze",
+            "groom",
+            "lie",
+            "walk"
+          ]
+        },
+        "coyotes[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            63,
+            98.8
+          ],
+          "speed": 13,
+          "poses": [
+            "lie",
+            "sit",
+            "walk"
+          ]
+        },
+        "coyotes[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:bighornAt": 60,
+        "front:canidAt": 48,
+        "front:felidAt": 24,
+        "front:hareAt": 96,
+        "front:owlPerchAt": 60,
+        "front:roadrunnerAt": 72,
+        "front:snakeAt": 36,
+        "front:step:bighorn-owl": 108,
+        "front:step:coyotes-snake-rabbit": 108,
+        "front:step:hawk": 108,
+        "front:tortoiseAt": 60,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:bighornAt",
+        "back:step:sky < front:canidAt",
+        "back:step:sky < front:felidAt",
+        "back:step:sky < front:hareAt",
+        "back:step:sky < front:owlPerchAt",
+        "back:step:sky < front:roadrunnerAt",
+        "back:step:sky < front:snakeAt",
+        "back:step:sky < front:step:bighorn-owl",
+        "back:step:sky < front:step:coyotes-snake-rabbit",
+        "back:step:sky < front:step:hawk",
+        "back:step:sky < front:tortoiseAt",
+        "back:step:sky < plants",
+        "front:bighornAt < front:canidAt",
+        "front:bighornAt < front:hareAt",
+        "front:bighornAt < front:owlPerchAt",
+        "front:bighornAt < front:roadrunnerAt",
+        "front:bighornAt < front:snakeAt",
+        "front:bighornAt < front:step:coyotes-snake-rabbit",
+        "front:bighornAt < front:tortoiseAt",
+        "front:canidAt < front:hareAt",
+        "front:canidAt < front:roadrunnerAt",
+        "front:canidAt < front:snakeAt",
+        "front:felidAt < front:bighornAt",
+        "front:felidAt < front:canidAt",
+        "front:felidAt < front:hareAt",
+        "front:felidAt < front:owlPerchAt",
+        "front:felidAt < front:roadrunnerAt",
+        "front:felidAt < front:snakeAt",
+        "front:felidAt < front:step:bighorn-owl",
+        "front:felidAt < front:step:coyotes-snake-rabbit",
+        "front:felidAt < front:step:hawk",
+        "front:felidAt < front:tortoiseAt",
+        "front:hareAt < front:roadrunnerAt",
+        "front:owlPerchAt < front:canidAt",
+        "front:owlPerchAt < front:hareAt",
+        "front:owlPerchAt < front:roadrunnerAt",
+        "front:owlPerchAt < front:snakeAt",
+        "front:owlPerchAt < front:step:coyotes-snake-rabbit",
+        "front:owlPerchAt < front:tortoiseAt",
+        "front:snakeAt < front:hareAt",
+        "front:snakeAt < front:roadrunnerAt",
+        "front:step:bighorn-owl < front:bighornAt",
+        "front:step:bighorn-owl < front:canidAt",
+        "front:step:bighorn-owl < front:hareAt",
+        "front:step:bighorn-owl < front:owlPerchAt",
+        "front:step:bighorn-owl < front:roadrunnerAt",
+        "front:step:bighorn-owl < front:snakeAt",
+        "front:step:bighorn-owl < front:step:coyotes-snake-rabbit",
+        "front:step:bighorn-owl < front:tortoiseAt",
+        "front:step:coyotes-snake-rabbit < front:canidAt",
+        "front:step:coyotes-snake-rabbit < front:hareAt",
+        "front:step:coyotes-snake-rabbit < front:roadrunnerAt",
+        "front:step:coyotes-snake-rabbit < front:snakeAt",
+        "front:step:hawk < front:bighornAt",
+        "front:step:hawk < front:canidAt",
+        "front:step:hawk < front:hareAt",
+        "front:step:hawk < front:owlPerchAt",
+        "front:step:hawk < front:roadrunnerAt",
+        "front:step:hawk < front:snakeAt",
+        "front:step:hawk < front:step:bighorn-owl",
+        "front:step:hawk < front:step:coyotes-snake-rabbit",
+        "front:step:hawk < front:tortoiseAt",
+        "front:tortoiseAt < front:canidAt",
+        "front:tortoiseAt < front:hareAt",
+        "front:tortoiseAt < front:roadrunnerAt",
+        "front:tortoiseAt < front:snakeAt",
+        "front:tortoiseAt < front:step:coyotes-snake-rabbit",
+        "plants < front:bighornAt",
+        "plants < front:canidAt",
+        "plants < front:felidAt",
+        "plants < front:hareAt",
+        "plants < front:owlPerchAt",
+        "plants < front:roadrunnerAt",
+        "plants < front:snakeAt",
+        "plants < front:step:bighorn-owl",
+        "plants < front:step:coyotes-snake-rabbit",
+        "plants < front:step:hawk",
+        "plants < front:tortoiseAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            228,
+            250
+          ],
+          "speed": 8,
+          "poses": [
+            "arch",
+            "walk"
+          ]
+        },
+        "vultures": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "tumble": {
+          "firstStage": 4,
+          "activeSteps": 36,
+          "xRange": [
+            -10.5,
+            252
+          ],
+          "speed": 30,
+          "poses": [
+            "fly"
+          ]
+        },
+        "tortoise": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            -11.6,
+            -3
+          ],
+          "speed": 1.5,
+          "poses": [
+            "look",
+            "walk"
+          ]
+        },
+        "runner": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            121.4,
+            245.1
+          ],
+          "speed": 27.5,
+          "poses": [
+            "pump",
+            "stand",
+            "stretch",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            147,
+            248.5
+          ],
+          "speed": 14,
+          "poses": [
+            "graze",
+            "lie",
+            "tall",
+            "walk"
+          ]
+        },
+        "coyotes[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            209.8,
+            252
+          ],
+          "speed": 13,
+          "poses": [
+            "howl",
+            "sit",
+            "walk"
+          ]
+        },
+        "coyotes[1]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            222.8,
+            265
+          ],
+          "speed": 7.7,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:bighornAt": 60,
+        "front:canidAt": 48,
+        "front:hareAt": 96,
+        "front:roadrunnerAt": 72,
+        "front:snakeAt": 36,
+        "front:step:bighorn-owl": 108,
+        "front:step:coyotes-snake-rabbit": 108,
+        "front:step:hawk": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:bighornAt",
+        "back:step:sky < front:canidAt",
+        "back:step:sky < front:hareAt",
+        "back:step:sky < front:roadrunnerAt",
+        "back:step:sky < front:snakeAt",
+        "back:step:sky < front:step:bighorn-owl",
+        "back:step:sky < front:step:coyotes-snake-rabbit",
+        "back:step:sky < front:step:hawk",
+        "back:step:sky < plants",
+        "front:bighornAt < front:canidAt",
+        "front:bighornAt < front:hareAt",
+        "front:bighornAt < front:roadrunnerAt",
+        "front:bighornAt < front:snakeAt",
+        "front:bighornAt < front:step:coyotes-snake-rabbit",
+        "front:canidAt < front:hareAt",
+        "front:canidAt < front:roadrunnerAt",
+        "front:canidAt < front:snakeAt",
+        "front:hareAt < front:roadrunnerAt",
+        "front:snakeAt < front:hareAt",
+        "front:snakeAt < front:roadrunnerAt",
+        "front:step:bighorn-owl < front:bighornAt",
+        "front:step:bighorn-owl < front:canidAt",
+        "front:step:bighorn-owl < front:hareAt",
+        "front:step:bighorn-owl < front:roadrunnerAt",
+        "front:step:bighorn-owl < front:snakeAt",
+        "front:step:bighorn-owl < front:step:coyotes-snake-rabbit",
+        "front:step:coyotes-snake-rabbit < front:canidAt",
+        "front:step:coyotes-snake-rabbit < front:hareAt",
+        "front:step:coyotes-snake-rabbit < front:roadrunnerAt",
+        "front:step:coyotes-snake-rabbit < front:snakeAt",
+        "front:step:hawk < front:bighornAt",
+        "front:step:hawk < front:canidAt",
+        "front:step:hawk < front:hareAt",
+        "front:step:hawk < front:roadrunnerAt",
+        "front:step:hawk < front:snakeAt",
+        "front:step:hawk < front:step:bighorn-owl",
+        "front:step:hawk < front:step:coyotes-snake-rabbit",
+        "plants < front:bighornAt",
+        "plants < front:canidAt",
+        "plants < front:hareAt",
+        "plants < front:roadrunnerAt",
+        "plants < front:snakeAt",
+        "plants < front:step:bighorn-owl",
+        "plants < front:step:coyotes-snake-rabbit",
+        "plants < front:step:hawk"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "vultures": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "tumble": {
+          "firstStage": 4,
+          "activeSteps": 16,
+          "xRange": [
+            -10.5,
+            102
+          ],
+          "speed": 30,
+          "poses": [
+            "fly"
+          ]
+        },
+        "tortoise": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "runner": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -1.1,
+            95.1
+          ],
+          "speed": 27.5,
+          "poses": [
+            "pump",
+            "stand",
+            "stretch",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            21.5,
+            98.5
+          ],
+          "speed": 14,
+          "poses": [
+            "graze",
+            "lie",
+            "tall",
+            "walk"
+          ]
+        },
+        "coyotes[0]": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            40.3,
+            102
+          ],
+          "speed": 13,
+          "poses": [
+            "howl",
+            "sit",
+            "walk"
+          ]
+        },
+        "coyotes[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    }
+  }
+}

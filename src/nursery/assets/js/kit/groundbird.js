@@ -5,12 +5,14 @@
 // that fans from the rump, a wing rooted on the shoulder that changes shape from folded to open, and two
 // thin legs of two bones whose ankle bends backward, lit from above in four tones. drawBird draws one
 // facing right with plot(x, h, colour) (h the height over the ground row; h -1 is its soft shadow);
-// animals.js's groundBirdAt places it and chooses its pose. A member (RUNNER, TURKEY, SECRETARY,
+// groundBirdAt (below) places it and chooses its pose. A member (RUNNER, TURKEY, SECRETARY,
 // MOA, HEN) is a spec, its colours made from the scene's palette (groundTones): runner [brown, buff, blue,
 // red, bill, belly, legs], turkey [body, wing, red, blue, dark], secretary [grey, black, face, white],
 // moa [body, tail, comb, legs], with the scene's groundShadow beside them.
 import { bone, joint, mixPose, plant, rowFill, straighten } from "./build.js";
-import { clamp, frac, lerp, mix, rad, smooth } from "./pixel.js";
+import { stride } from "./critters.js";
+import { clamp, frac, lerp, mix, rad, shadowColour, smooth } from "./pixel.js";
+import { feet, paintAt, sinceOf } from "./place.js";
 
 const lighten = (c, a = 0.16) => mix(c, "#ffffff", a);
 const darken = (c, a = 0.16) => mix(c, "#000000", a);
@@ -948,3 +950,88 @@ export function restPose(kind, name, since, time, seed = 0) {
   P.blink = (time / 3.3 + seed * 0.37) % 1 < 0.035 ? 1 : 0;
   return P;
 }
+
+// Ground birds
+
+// Built from parts (groundbird.js): the roadrunner (desert), the wild turkey (Smokies), the secretary bird
+// (Serengeti) and the moa, a feral rooster (Hawaii). A bird walks with its feet planted: its stride clock
+// b.c (critters.js stride) grows with the ground it covers, GROUND_STRIDE[kind] being [px a stride, seconds
+// a stride], and groundSpeed(kind) the speed that goes with it (the roadrunner runs, the others walk). It
+// eases into a stop (b.amp, the share of walking still in its legs) and plays the pose rest() picked
+// as it stopped (groundPoses): the roadrunner's tail pump, preen and wing stretch; the turkey's display (the
+// fan spreads, it struts on slow steps, then folds) and preen; the secretary bird's stamping hunt, preen
+// and stretch; the moa's pecks in threes, scratch, preen and wing flap. b.since (settle) is when its state
+// changed and b.timer the seconds its stop has left. Call groundBirdStep() after wander() and rest() each
+// update. A bird's palette is named after its kind, with the scene's groundShadow beside it.
+export const groundSpeed = speedOf;
+const GROUND_STRIDE = Object.fromEntries(
+  Object.keys(CYCLE).map((kind) => [kind, [speedOf(kind) * CYCLE[kind], CYCLE[kind]]]),
+);
+export const groundPoses = (b, kind) => restPoses(kind, b.timer ?? 0);
+
+export function groundBirdStep(f, b, dt, kind, x0) {
+  if (!b.active) return;
+  const strut = STRUT[kind];
+  if (strut && b.state === "sit" && b.pose === strut.pose && b.x > 14 && b.x < f.cols - 14) {
+    const since = f.time - (b.since ?? f.time);
+    if (since > strut.from && since < strut.to) b.x += b.dir * strut.speed * dt;
+  }
+  const [px, cycle] = GROUND_STRIDE[kind];
+  stride(b, x0, dt, px, cycle);
+  const goal = b.moving ? 1 : 0;
+  b.amp ??= goal;
+  b.amp += (goal - b.amp) * Math.min(1, dt / (goal ? 0.1 : 0.12));
+  if (Math.abs(goal - b.amp) < 0.01) b.amp = goal;
+}
+
+export function groundBirdAt(g, b, kind, time = 0) {
+  if (g.trace) return g.trace.draw(groundBirdAt, g, b, kind, time);
+  const spec = MEMBERS[kind];
+  const C = groundTones(spec, g.pal[b.pal ?? kind]);
+  const walking = b.state === "walk";
+  const amp = b.amp ?? (walking ? 1 : 0);
+  const seed = (b.phase ?? 0) % 7;
+  const since = sinceOf(b, time);
+  const P = walking
+    ? { ...restPose(kind, "stand", 0, time, seed), neckH: 0, neckX: 0 }
+    : restPose(kind, b.pose ?? "stand", since, time, seed);
+  const fan = P.fan ?? 0;
+  const dir = b.dir;
+  const bodyX = dir * b.x - spec.cx;
+  Object.assign(P, {
+    phase: b.c ?? (b.phase ?? 0) * 0.25,
+    amp,
+    run: kind === "runner" ? amp : 0,
+    bob: amp * (1 - fan * 0.7),
+    bodyX,
+  });
+  if (kind === "runner") {
+    P.crest = P.crest === 0 ? 0 : amp > 0.5 ? 0.45 : 1;
+    P.tailAng = (P.tailAng ?? 0) + amp * Math.sin(time * 5.1 + seed) * 7;
+  }
+  // The build draws its own shadow, as the cells on row -1. bodyX is its origin in its own mirrored
+  // coordinates, and facing left it is mirrored about the edge between columns -1 and 0.
+  const origin = Math.round(bodyX);
+  const shade = shadowColour(g.pal);
+  paintAt(g, dir > 0 ? origin : -origin - 1, feet(g, b), dir, (plot) =>
+    drawBird(spec, C, (u, h, colour) => plot(u, h, h < 0 ? shade : colour), P),
+  );
+}
+
+export const FAMILY = {
+  id: "ground-birds",
+  title: "Ground birds",
+  group: "Birds",
+  differ: "size, tail, legs",
+  members: {
+    secretary: { predator: true },
+    roadrunner: { predator: true },
+  },
+  drivers: {
+    roadrunnerAt: { role: "walker", member: () => "roadrunner" },
+    turkeyAt: { role: "walker", member: () => "turkey" },
+    secretaryAt: { role: "walker", member: () => "secretary" },
+    moaAt: { role: "walker", member: () => "moa" },
+    groundBirdAt: { role: "walker", member: (a) => a.kind ?? "ground bird" },
+  },
+};

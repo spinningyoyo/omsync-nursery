@@ -10,8 +10,9 @@ studio and the `nursery` command run from a checkout of this repository.
 
 ## Getting started
 
-You need [uv](https://docs.astral.sh/uv/) and Chrome (or another Chromium browser). The checks, the
-previews and the tests drive headless Chrome.
+You need [uv](https://docs.astral.sh/uv/), [Node.js](https://nodejs.org/) and Chrome (or another
+Chromium browser). The checks run the scene modules in Node. The previews and the tests drive
+headless Chrome.
 
 ```sh
 git clone https://github.com/spinningyoyo/omsync-nursery
@@ -29,10 +30,11 @@ The studio is a local tool. Do not expose its port to a network.
 ## Development
 
 ```sh
-sh scripts/check.sh                 # ruff, Biome, import boundaries, brand files and scene docs
+sh scripts/check.sh                 # ruff, Biome, import boundaries, brand and scenes files
 uv run pytest                       # the end-to-end tests
 uv run nursery brand                # build the mascot and the favicons from the mascot's grid
-uv run nursery catalog              # build docs/scenes/<scene>.md from the code
+uv run nursery scenes               # build scenes.json and scenes.css from the scene modules
+uv run nursery catalog --out DIR    # write per-scene markdown tables to DIR
 uv run nursery verify               # check the art against the design rules
 uv run nursery release --dry-run    # check a release and change nothing
 uv run nursery --help               # every command

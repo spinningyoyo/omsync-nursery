@@ -6,29 +6,15 @@
 // gone, a great horned owl watches from a Joshua tree, the coyote sits up to howl, and the Perseids
 // fall in two patterns, with quiet spells between.
 // At night a pale desert bobcat comes out to hunt, and rests between prowls.
-import {
-  bighornAt,
-  canidAt,
-  felidAt,
-  felidPoses,
-  groundBirdAt,
-  groundBirdStep,
-  groundPoses,
-  groundSpeed,
-  hareAt,
-  harePoses,
-  settleCanid,
-  snakeAt,
-  snakePoses,
-  tortoiseAt,
-  tortoisePoses,
-} from "../kit/animals.js";
+
+import { hareAt, harePoses } from "../kit/beast.js";
+import { bighornAt } from "../kit/bovid.js";
+import { canidAt, settleCanid } from "../kit/canid.js";
 import {
   enter,
   enterBehind,
   fidget,
   flock,
-  flyBy,
   follow,
   isNight,
   narrow,
@@ -48,8 +34,10 @@ import {
   yucca as yuccaPlant,
 } from "../kit/desert.js";
 import { bandPath, dithered, milkyWayCanvas, onBand, starAt, starField, starFieldAt } from "../kit/effects.js";
+import { felidAt, felidPoses } from "../kit/felid.js";
 import { glideAt, hawkAt, OWL_MOVES, owlPerchAt } from "../kit/flyers.js";
-import { circlerPerch, flyByPerch, goHome, unhidden } from "../kit/perch.js";
+import { groundBirdAt, groundBirdStep, groundPoses, groundSpeed } from "../kit/groundbird.js";
+import { circlerPerch, goHome, unhidden } from "../kit/perch.js";
 import {
   blob,
   CLEARING,
@@ -60,10 +48,14 @@ import {
   makePlant,
   placeLandmarks,
   rect,
+  rng,
   scatter,
   sortPlants,
 } from "../kit/pixel.js";
 import { crossFlower } from "../kit/plants.js";
+import { ANIMAL_BOX, bird, owlPerched, soarSprites, walk } from "../kit/poses.js";
+import { crossingActor, drawStep, runCast, walkerActor } from "../kit/runner.js";
+import { snakeAt, snakePoses, tortoiseAt, tortoisePoses } from "../kit/shell.js";
 
 const MATURE = {
   tree: 3,
@@ -637,182 +629,419 @@ function meteorAt(g, m) {
   g.ctx.globalAlpha = 1;
 }
 
-const extras = {
-  init(f) {
-    return {
-      cat: walker(f),
-      stars: starField(f, STARS, 70),
-      band: milkyWay(f),
-      milky: null,
-      hawk: {
-        ...soarer(f, 44 + f.rand() * 20),
-        next: 30 + f.rand() * 20,
-        stoop: null,
-        x: 0,
-        y: 0,
-        dir: 1,
+const extras = runCast(
+  [
+    drawStep(
+      "sky",
+      (g, f) => {
+        if (f.theme !== "dark") return;
+        skyAt(g, f, g.time);
+        if (!f.reduced) for (const m of f.extra.sky.meteors) meteorAt(g, m);
       },
-      runner: walker(f),
-      rabbit: { ...walker(f), kind: "jackrabbit", frozen: 0 },
-      tortoise: walker(f),
-      snake: walker(f),
-      snakeShows: f.rand() < 0.4,
-      coyotes: [
-        { ...walker(f), kind: "coyote" },
-        { ...walker(f, 0.6), kind: "coyote" },
+      { back: true },
+    ),
+    walkerActor({
+      id: "cat",
+      label: "desert bobcat, out at night",
+      kind: "animal",
+      family: "cats",
+      sprites: ["bobcat", "bobcat-sitting", "bobcat-arching", "bobcat-lying", "bobcat-stretching"],
+      arrives: 7,
+      when: "night",
+      phone: "hide",
+      move: { speed: 8, stride: 7, sit: [4, 9], walk: [3, 6] },
+      poses: () => felidPoses("bobcat"),
+      draw: (g, w, f) => felidAt(g, { ...w, kind: "bobcat", pal: "bobcatDesert" }, f.time),
+    }),
+    drawStep("hawk", (g, f) => {
+      if (f.stage >= 2 && !isNight(f)) hawkAt(g, f.extra.hawk, f.time);
+    }),
+    crossingActor({
+      id: "vultures",
+      label: "turkey vultures (a lone one perches on a Joshua tree now and then)",
+      kind: "bird",
+      family: "soaring-birds",
+      sprites: [
+        "vulture",
+        "vulture-rocking",
+        "vulture-landing",
+        "vulture-takeoff",
+        "vulture-perched",
+        "vulture-perched-preening",
+        "vulture-perched-stretching",
       ],
-      howl: { next: 8 + f.rand() * 10, until: -1 },
-      tumble: { next: 5, bird: null },
-      vultures: { next: 0, bird: null },
-      sheep: null,
-      owl: null,
-      sky: { turn: Math.floor(f.rand() * SHOWERS.length), mode: "quiet", until: 0, next: 0, rx: 0, ry: 0, meteors: [] },
-    };
-  },
+      arrives: 6,
+      when: "day",
+      first: 0,
+      mode: "perch",
+      every: [8, 3],
+      speed: 18,
+      margin: 30,
+      spawn: (f) => ({ y: 20 + f.rand() * 35, members: flock(f, f.stage >= 8 ? 2 : 1, 12, 5) }),
+      spots: vultureSpots,
+      stay: [14, 26],
+      odds: 0.4,
+      clearOnOff: "perched",
+      onUpdate: (_f, slot) => {
+        if (slot.bird?.visit) slot.bird.members = slot.bird.members.slice(0, 1);
+      },
+      draw: (g, b, f) => glideAt(g, "vulture", b, f.time),
+    }),
+    crossingActor({
+      id: "tumble",
+      label: "tumbleweed",
+      kind: "effect",
+      sprites: ["tumbleweed"],
+      arrives: 4,
+      first: 5,
+      every: [8, 8],
+      speed: 30,
+      spawn: () => ({}),
+      draw: (g, b, f) => tumbleAt(g, b, f.time),
+    }),
+    drawStep("bighorn-owl", (g, f) => {
+      const { sheep, owl } = f.extra;
+      if (sheep) bighornAt(g, sheep, f.time);
+      if (owl && isNight(f)) owlPerchAt(g, owl, f.time);
+    }),
+    walkerActor({
+      id: "tortoise",
+      label: "desert tortoise",
+      kind: "animal",
+      family: "shelled-scaled",
+      sprites: ["tortoise", "tortoise-resting", "tortoise-grazing", "tortoise-looking"],
+      arrives: 4,
+      phone: "hide",
+      move: { speed: 1.5, stride: 2, sit: [4, 9], walk: [5, 10] },
+      poses: () => tortoisePoses,
+      draw: (g, w, f) => tortoiseAt(g, w, g.groundY + 6, f.time),
+    }),
+    drawStep("coyotes-snake-rabbit", (g, f) => {
+      const x = f.extra;
+      for (const c of x.coyotes) if (c.active) canidAt(g, c, f.time);
+      if (x.snake.active) snakeAt(g, x.snake, f.time);
+      if (x.rabbit.active) hareAt(g, x.rabbit, f.time);
+    }),
+    walkerActor({
+      id: "runner",
+      label: "roadrunner",
+      kind: "animal",
+      family: "ground-birds",
+      sprites: [
+        "roadrunner",
+        "roadrunner-standing",
+        "roadrunner-pumping",
+        "roadrunner-preening",
+        "roadrunner-stretching",
+      ],
+      arrives: 3,
+      move: { speed: groundSpeed("runner"), stride: 1, sit: [2, 5.5], walk: [1.5, 4] },
+      poses: (w) => groundPoses(w, "runner"),
+      step: (f, w, dt, x0) => groundBirdStep(f, w, dt, "runner", x0),
+      draw: (g, w, f) => roadrunnerAt(g, w, f.time),
+    }),
+    {
+      label: "red-tailed hawk",
+      kind: "bird",
+      family: "soaring-birds",
+      arrives: 2,
+      fixed: "1, circling by day; stoops at the jackrabbit about once a minute; perches on a rock pile now and then",
+      sprites: [
+        "hawk",
+        "hawk-bank",
+        "hawk-flapping",
+        "hawk-stoop",
+        "hawk-pullout",
+        "hawk-landing",
+        "hawk-takeoff",
+        "hawk-perched",
+        "hawk-perched-preening",
+        "hawk-perched-stretching",
+      ],
+    },
+    {
+      label: "snake",
+      kind: "animal",
+      family: "shelled-scaled",
+      arrives: 6,
+      fixed: "1, on about 4 visits in 10",
+      sprites: ["snake", "snake-coiled", "snake-rearing"],
+    },
+    {
+      label: "jackrabbit",
+      kind: "animal",
+      family: "hares-rodents",
+      presence: ["rabbit"],
+      sprites: ["rabbit", "rabbit-looking-out", "rabbit-freezing"],
+    },
+    {
+      label: "coyote and pup",
+      kind: "animal",
+      family: "dogs",
+      presence: ["coyotes[0]", "coyotes[1]"],
+      sprites: ["coyote", "coyote-howl", "coyote-pup", "coyote-pup-sitting", "coyote-pup-howl"],
+    },
+    {
+      label: "stars and the Milky Way (dark theme)",
+      kind: "effect",
+      layer: "behind the plants (drawBack, dark theme only)",
+      arrives: 0,
+      fixed: `${STARS} stars and the Milky Way`,
+      sprites: ["sky"],
+    },
+    {
+      label: "desert bighorn on its granite pile",
+      kind: "animal",
+      family: "cattle-sheep",
+      arrives: 3,
+      fixed: "1, perched",
+      sprites: ["bighorn", "bighorn-look", "bighorn-grazing", "bighorn-lying"],
+    },
+    {
+      label: "great horned owl (night)",
+      kind: "bird",
+      family: "owls",
+      arrives: 1,
+      fixed: "1, perched on a Joshua tree at night",
+      sprites: ["owl", "owl-swivel", "owl-fluff"],
+    },
+    {
+      label: "Perseid showers (night): a wide burst from Perseus, then a rain across the sky",
+      kind: "effect",
+      layer: "behind the plants (drawBack, dark theme only)",
+      arrives: 3,
+      fixed: "taking turns with quiet spells",
+      sprites: ["meteors"],
+    },
+  ],
+  {
+    init(f) {
+      return {
+        stars: starField(f, STARS, 70),
+        band: milkyWay(f),
+        milky: null,
+        hawk: {
+          ...soarer(f, 44 + f.rand() * 20),
+          next: 30 + f.rand() * 20,
+          stoop: null,
+          x: 0,
+          y: 0,
+          dir: 1,
+        },
+        rabbit: { ...walker(f), kind: "jackrabbit", frozen: 0 },
+        snake: walker(f),
+        snakeShows: f.rand() < 0.4,
+        coyotes: [
+          { ...walker(f), kind: "coyote" },
+          { ...walker(f, 0.6), kind: "coyote" },
+        ],
+        howl: { next: 8 + f.rand() * 10, until: -1 },
+        sheep: null,
+        owl: null,
+        sky: {
+          turn: Math.floor(f.rand() * SHOWERS.length),
+          mode: "quiet",
+          until: 0,
+          next: 0,
+          rx: 0,
+          ry: 0,
+          meteors: [],
+        },
+      };
+    },
 
-  // The jackrabbit comes at stage 1, a roadrunner at 3, the tortoise at 4, a coyote with its pup at
-  // 5; the snake shows itself on some visits only. The hawk stoops at the jackrabbit from stage 7.
-  onGrow(f) {
-    if (f.stage >= 7 && !narrow(f)) enter(f, f.extra.cat);
-    const x = f.extra;
-    if (f.stage >= 3) enter(f, x.runner);
-    if (f.stage >= 4 && !narrow(f)) enter(f, x.tortoise);
-    if (f.stage >= 5) {
-      const [coyote, pup] = x.coyotes;
-      enter(f, coyote);
-      if (!narrow(f)) enterBehind(f, pup, coyote, 13);
-    }
-    if (f.stage >= 6 && x.snakeShows) enter(f, x.snake);
-    if (f.stage >= 1) enter(f, x.rabbit);
-  },
-
-  busy: () => true,
-
-  update(f, dt) {
-    // The cat wanders, and when it stops it rests in one of its poses, by night only.
-    if (isNight(f)) {
-      wander(f, f.extra.cat, dt, { speed: 8, stride: 7, sit: [4, 9], walk: [3, 6] });
-      rest(f, f.extra.cat, felidPoses("bobcat"));
-    }
-    const x = f.extra;
-    const night = isNight(f);
-    const runnerX = x.runner.x;
-    wander(f, x.runner, dt, { speed: groundSpeed("runner"), stride: 1, sit: [2, 5.5], walk: [1.5, 4] });
-    rest(f, x.runner, groundPoses(x.runner, "runner"));
-    groundBirdStep(f, x.runner, dt, "runner", runnerX);
-    if (x.rabbit.frozen > 0) x.rabbit.frozen -= dt;
-    else wander(f, x.rabbit, dt, { speed: 14, stride: 10, sit: [2, 5], walk: [1.5, 3] });
-    rest(f, x.rabbit, harePoses("jackrabbit"));
-    wander(f, x.tortoise, dt, { speed: 1.5, stride: 2, sit: [4, 9], walk: [5, 10] });
-    rest(f, x.tortoise, tortoisePoses);
-    wander(f, x.snake, dt, { speed: 4, stride: 4, sit: [4, 8], walk: [3, 6] });
-    rest(f, x.snake, snakePoses);
-    const [coyote, pup] = x.coyotes;
-    // At night the coyote sits up and howls now and then; the pup sits with it.
-    if (night && coyote.active && f.time >= x.howl.next) {
-      x.howl.until = f.time + 3.5;
-      x.howl.next = f.time + 25 + f.rand() * 15;
-    }
-    if (f.time < x.howl.until) {
-      coyote.state = "howl";
-      pup.state = "sit";
-    } else {
-      if (coyote.state === "howl") coyote.state = "sit";
-      wander(f, coyote, dt, { speed: 13, stride: 9, sit: [2, 5], walk: [2, 5] });
-      follow(pup, coyote, dt, 13);
-      pup.state = coyote.state;
-      pup.phase = coyote.phase;
-    }
-    settleCanid(f, coyote);
-    settleCanid(f, pup, coyote);
-    if (f.stage >= 2 && !night) {
-      const h = x.hawk;
-      const away =
-        !h.stoop && circlerPerch(f, h, dt, { first: [20, 20], every: [60, 40], stay: [14, 26], spots: hawkSpots });
-      if (!away) moveHawk(f, h, x.rabbit, dt);
-    } else goHome(f, x.hawk);
-    if (f.stage >= 4) flyBy(f, x.tumble, dt, { every: [8, 8], speed: 30, spawn: () => ({}) });
-    if (f.stage >= 6 && !night) {
-      flyByPerch(f, x.vultures, dt, {
-        every: [8, 3],
-        speed: 18,
-        margin: 30,
-        spawn: () => ({ y: 20 + f.rand() * 35, members: flock(f, f.stage >= 8 ? 2 : 1, 12, 5) }),
-        spots: vultureSpots,
-        stay: [14, 26],
-        odds: 0.4,
-      });
-      const v = x.vultures.bird;
-      if (v?.visit) v.members = v.members.slice(0, 1); // a lone vulture comes down
-    } else if (x.vultures.bird?.visit) {
-      goHome(f, x.vultures.bird);
-      x.vultures.bird = null;
-    }
-    const pile = f.plants.find((p) => p.kind === "granite" && p.home);
-    if (!x.sheep && pile && pile.shown - pile.born >= 3) {
-      const dir = pile.x < f.cols / 2 ? 1 : -1;
-      x.sheep = percher(f, pile.x - dir * 7, graniteTop(pile, f.groundY), dir, {
-        look: { every: [5, 10], lasts: 5 },
-        chew: { every: [2, 5], lasts: 1.5 },
-        stamp: { every: [9, 16], lasts: 0.4 },
-        graze: { every: [10, 18], lasts: 3.6 },
-        lie: { every: [20, 32], lasts: 7 },
-      });
-      x.sheep.pal = "sheep";
-    }
-    if (x.sheep) fidget(f, x.sheep);
-    if (!x.owl) {
-      const trees = f.plants
-        .filter(
-          (p) =>
-            p.kind === "tree" &&
-            p.layer === 1 &&
-            p.shown - p.born >= MATURE.tree &&
-            Math.abs(p.x - f.cols / 2) > CLEARING,
-        )
-        .map((p) => ({ p, top: joshuaTop(p, f.groundY, f.time) }));
-      if (trees.length) {
-        const { top } = trees.reduce((tall, t) => (t.top.y < tall.top.y ? t : tall));
-        x.owl = percher(f, top.x, top.y, 1, OWL_MOVES);
-        x.owl.species = "horned";
-        x.owl.look = top.x < f.cols / 2 ? 1 : -1;
+    // The jackrabbit comes at stage 1, a roadrunner at 3, the tortoise at 4, a coyote with its pup at
+    // 5; the snake shows itself on some visits only. The hawk stoops at the jackrabbit from stage 7.
+    onGrow(f) {
+      const x = f.extra;
+      if (f.stage >= 5) {
+        const [coyote, pup] = x.coyotes;
+        enter(f, coyote);
+        if (!narrow(f)) enterBehind(f, pup, coyote, 13);
       }
-    }
-    if (x.owl) fidget(f, x.owl);
-    if (night && f.stage >= 3) moveSky(f, x.sky, dt);
-    else x.sky.meteors = [];
-  },
+      if (f.stage >= 6 && x.snakeShows) enter(f, x.snake);
+      if (f.stage >= 1) enter(f, x.rabbit);
+    },
 
-  // At night the sky has stars and the Milky Way. It is drawn still under reduced motion.
-  drawBack(g, f) {
-    if (f.theme !== "dark") return;
-    skyAt(g, f, g.time);
-    if (!f.reduced) for (const m of f.extra.sky.meteors) meteorAt(g, m);
-  },
+    busy: () => true,
 
-  draw(g, f) {
-    if (f.extra.cat.active && isNight(f)) felidAt(g, { ...f.extra.cat, kind: "bobcat", pal: "bobcatDesert" }, f.time);
-    const x = f.extra;
-    const night = isNight(f);
-    if (f.stage >= 2 && !night) hawkAt(g, x.hawk, f.time);
-    if (x.vultures.bird && !night) glideAt(g, "vulture", x.vultures.bird, f.time);
-    if (x.tumble.bird) tumbleAt(g, x.tumble.bird, f.time);
-    if (x.sheep) bighornAt(g, x.sheep, f.time);
-    if (x.owl && night) {
-      owlPerchAt(g, x.owl, f.time);
+    update(f, dt) {
+      const x = f.extra;
+      const night = isNight(f);
+      if (x.rabbit.frozen > 0) x.rabbit.frozen -= dt;
+      else wander(f, x.rabbit, dt, { speed: 14, stride: 10, sit: [2, 5], walk: [1.5, 3] });
+      rest(f, x.rabbit, harePoses("jackrabbit"));
+      wander(f, x.snake, dt, { speed: 4, stride: 4, sit: [4, 8], walk: [3, 6] });
+      rest(f, x.snake, snakePoses);
+      const [coyote, pup] = x.coyotes;
+      // At night the coyote sits up and howls now and then; the pup sits with it.
+      if (night && coyote.active && f.time >= x.howl.next) {
+        x.howl.until = f.time + 3.5;
+        x.howl.next = f.time + 25 + f.rand() * 15;
+      }
+      if (f.time < x.howl.until) {
+        coyote.state = "howl";
+        pup.state = "sit";
+      } else {
+        if (coyote.state === "howl") coyote.state = "sit";
+        wander(f, coyote, dt, { speed: 13, stride: 9, sit: [2, 5], walk: [2, 5] });
+        follow(pup, coyote, dt, 13);
+        pup.state = coyote.state;
+        pup.phase = coyote.phase;
+      }
+      settleCanid(f, coyote);
+      settleCanid(f, pup, coyote);
+      if (f.stage >= 2 && !night) {
+        const h = x.hawk;
+        const away =
+          !h.stoop && circlerPerch(f, h, dt, { first: [20, 20], every: [60, 40], stay: [14, 26], spots: hawkSpots });
+        if (!away) moveHawk(f, h, x.rabbit, dt);
+      } else goHome(f, x.hawk);
+      const pile = f.plants.find((p) => p.kind === "granite" && p.home);
+      if (!x.sheep && pile && pile.shown - pile.born >= 3) {
+        const dir = pile.x < f.cols / 2 ? 1 : -1;
+        x.sheep = percher(f, pile.x - dir * 7, graniteTop(pile, f.groundY), dir, {
+          look: { every: [5, 10], lasts: 5 },
+          chew: { every: [2, 5], lasts: 1.5 },
+          stamp: { every: [9, 16], lasts: 0.4 },
+          graze: { every: [10, 18], lasts: 3.6 },
+          lie: { every: [20, 32], lasts: 7 },
+        });
+        x.sheep.pal = "sheep";
+      }
+      if (x.sheep) fidget(f, x.sheep);
+      if (!x.owl) {
+        const trees = f.plants
+          .filter(
+            (p) =>
+              p.kind === "tree" &&
+              p.layer === 1 &&
+              p.shown - p.born >= MATURE.tree &&
+              Math.abs(p.x - f.cols / 2) > CLEARING,
+          )
+          .map((p) => ({ p, top: joshuaTop(p, f.groundY, f.time) }));
+        if (trees.length) {
+          const { top } = trees.reduce((tall, t) => (t.top.y < tall.top.y ? t : tall));
+          x.owl = percher(f, top.x, top.y, 1, OWL_MOVES);
+          x.owl.species = "horned";
+          x.owl.look = top.x < f.cols / 2 ? 1 : -1;
+        }
+      }
+      if (x.owl) fidget(f, x.owl);
+      if (night && f.stage >= 3) moveSky(f, x.sky, dt);
+      else x.sky.meteors = [];
+    },
+  },
+);
+
+const SPRITES = {
+  ...soarSprites("vulture", "vulture", { vulture: true }),
+  ...soarSprites("hawk", "hawk", { stoop: true }),
+  bobcat: (g, frame) => felidAt(g, walk(frame, { kind: "bobcat", pal: "bobcatDesert" }), 0),
+  "bobcat-sitting": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "bobcat", pal: "bobcatDesert", state: "sit", pose: "sit" }), 0),
+  "bobcat-arching": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "bobcat", pal: "bobcatDesert", state: "sit", pose: "arch" }), 0),
+  "bobcat-lying": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "bobcat", pal: "bobcatDesert", state: "sit", pose: "lie" }), 0),
+  "bobcat-stretching": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "bobcat", pal: "bobcatDesert", state: "sit", pose: "bow" }), 0),
+  roadrunner: (g, frame) => roadrunnerAt(g, walk(frame, { c: frame.phase * 0.25, amp: 1 }), 0),
+  "roadrunner-standing": (g, frame) => roadrunnerAt(g, walk(frame, { state: "sit", amp: 0 }), 0),
+  "roadrunner-pumping": (g, frame) =>
+    roadrunnerAt(g, walk(frame, { state: "sit", pose: "pump", since: 0, timer: 6, amp: 0 }), 1.0),
+  "roadrunner-preening": (g, frame) =>
+    roadrunnerAt(g, walk(frame, { state: "sit", pose: "preen", since: 0, timer: 6, amp: 0 }), 2.0),
+  "roadrunner-stretching": (g, frame) =>
+    roadrunnerAt(g, walk(frame, { state: "sit", pose: "stretch", since: 0, timer: 6, amp: 0 }), 1.5),
+  rabbit: (g, frame) => hareAt(g, walk(frame, { kind: "jackrabbit" })),
+  "rabbit-looking-out": (g, frame) => hareAt(g, walk(frame, { kind: "jackrabbit", state: "sit", pose: "tall" }), 0),
+  "rabbit-freezing": (g, frame) => hareAt(g, walk(frame, { kind: "jackrabbit", state: "sit", frozen: 1.5 }), 0),
+  snake: (g, frame) => snakeAt(g, walk(frame), 0),
+  "snake-coiled": (g, frame) => snakeAt(g, walk(frame, { state: "sit", pose: "coil", since: 0, timer: 30 }), 5),
+  "snake-rearing": (g, frame) => snakeAt(g, walk(frame, { state: "sit", pose: "rear", since: 0, timer: 30 }), 5),
+  tortoise: (g, frame) => tortoiseAt(g, walk(frame), g.groundY + 6),
+  "tortoise-resting": (g, frame) =>
+    tortoiseAt(g, walk(frame, { state: "sit", pose: "tuck", since: 0, timer: 30 }), g.groundY + 6, 4),
+  "tortoise-grazing": (g, frame) =>
+    tortoiseAt(g, walk(frame, { state: "sit", pose: "graze", since: 0, timer: 30 }), g.groundY + 6, 2),
+  "tortoise-looking": (g, frame) =>
+    tortoiseAt(g, walk(frame, { state: "sit", pose: "look", since: 0, timer: 30 }), g.groundY + 6, 2),
+  coyote: (g, frame) => canidAt(g, walk(frame, { kind: "coyote" })),
+  "coyote-howl": (g, frame) => canidAt(g, walk(frame, { kind: "coyote", state: "howl" })),
+  "coyote-pup": (g, frame) => canidAt(g, walk(frame, { kind: "coyote", scale: 0.6 })),
+  "coyote-pup-sitting": (g, frame) => canidAt(g, walk(frame, { kind: "coyote", scale: 0.6, state: "sit" })),
+  "coyote-pup-howl": (g, frame) => canidAt(g, walk(frame, { kind: "coyote", scale: 0.6, state: "howl" })),
+  bighorn: (g, frame) => bighornAt(g, walk(frame, { state: "sit" })),
+  "bighorn-look": (g, frame) => bighornAt(g, walk(frame, { state: "sit", act: "look", actAt: 2.5 })),
+  "bighorn-grazing": (g, frame) => bighornAt(g, walk(frame, { state: "sit", act: "graze", actAt: 1.8 })),
+  "bighorn-lying": (g, frame) => bighornAt(g, walk(frame, { state: "sit", act: "lie", actAt: 3 })),
+  owl: (g) => owlPerched(DARK, g, "horned", { s: 0 }),
+  "owl-swivel": (g) => owlPerched(DARK, g, "horned", { s: 0.9 }),
+  "owl-fluff": (g) => owlPerched(DARK, g, "horned", { fluff: 1, shiver: 1 }),
+  meteors: (g) => {
+    g.pal = DARK;
+    // A burst round a radiant: short streaks near it, longer ones farther out.
+    const rays = [
+      [0, 1, 8],
+      [0.8, 0.5, 14],
+      [-0.8, 0.5, 10],
+      [0.6, -0.5, 18],
+      [-0.6, -0.5, 12],
+    ];
+    for (const [dx, dy, dist] of rays) {
+      const m = { x: 40 + dx * dist, y: 28 + dy * dist, dx, dy, speed: 30 };
+      meteorAt(g, { ...m, length: 3 + dist * 0.6, age: 0.3, life: 0.6, linger: 1, keep: 0.8 });
     }
-    if (x.tortoise.active) tortoiseAt(g, x.tortoise, g.groundY + 6, f.time);
-    for (const c of x.coyotes) if (c.active) canidAt(g, c, f.time);
-    if (x.snake.active) snakeAt(g, x.snake, f.time);
-    if (x.rabbit.active) hareAt(g, x.rabbit, f.time);
-    if (x.runner.active) roadrunnerAt(g, x.runner, f.time);
+  },
+  tumbleweed: (g, frame) => tumbleAt(g, bird(frame), 0),
+  sky: (g) => {
+    const extra = extras.init({
+      rand: rng(3),
+      cols: ANIMAL_BOX.w,
+      groundY: ANIMAL_BOX.ground,
+    });
+    skyAt(g, { cols: ANIMAL_BOX.w, groundY: ANIMAL_BOX.ground, extra }, 0);
+  },
+};
+
+const PLANT_FAMILIES = {
+  tree: "desert-plants",
+  yucca: "desert-plants",
+  cholla: "desert-plants",
+  ocotillo: "desert-plants",
+  pad: "desert-plants",
+};
+
+export const META = {
+  id: "desert",
+  label: "Joshua Tree Desert",
+  group: "drylands",
+  density: "open",
+  tint: ["#fbcfa6", "rgb(220 110 80)"],
+  backdrop: {
+    light: {
+      green: "#c9e0f2",
+      "green-soft": "#f5deb0",
+      peach: "#fbcfa6",
+      blush: "#f8e0ea",
+      bloom: "#f6bfd6",
+    },
+    dark: {
+      green: "rgb(70 70 170 / 0.42)",
+      "green-soft": "rgb(200 150 80 / 0.16)",
+      peach: "rgb(220 110 80 / 0.2)",
+      blush: "rgb(190 80 150 / 0.16)",
+      bloom: "rgb(210 90 150 / 0.3)",
+    },
   },
 };
 
 export default {
-  id: "desert",
-  label: "Joshua Tree Desert",
-  group: "drylands",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.4, 0.6], dark: [0.5, 0.7] },
   mature: MATURE,

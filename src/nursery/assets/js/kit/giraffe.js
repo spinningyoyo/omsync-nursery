@@ -7,11 +7,12 @@
 // paces (GAIT): each side swings nearly as one. Coordinates are the giraffe's own: x runs from the
 // rump (0) toward the nose and h is the height above the ground; `plot(x, h, colour)` paints a
 // pixel, so the caller places and mirrors it. Rest poses: stand, browse (the head reaches up into
-// the leaves) and drink (the fore legs splay, the neck curves down to the water). animals.js's
-// giraffeAt places and poses it; muzzleAt says where the muzzle is.
+// the leaves) and drink (the fore legs splay, the neck curves down to the water). giraffeAt (below)
+// places and poses it; muzzleAt says where the muzzle is.
 import { column, curve, dipAlong, footRest, pairMix, plant, profile, shapeCache, standFeet, stepAt } from "./build.js";
 import { hoofDips, hoofLeg, hoofRoot, hoofRow, restShape } from "./hoof.js";
-import { clamp, frac, hash, lerp, mix, smooth } from "./pixel.js";
+import { clamp, frac, hash, lerp, mix, shadowColour, smooth } from "./pixel.js";
+import { blinkAt, breathAt, bump, ease, feet, loopAt, paintAt, sinceOf, tonesFor, within } from "./place.js";
 
 const RAD = Math.PI / 180;
 
@@ -414,3 +415,87 @@ export function giraffeTones([fur, patch, dark, muzzle]) {
     D: dark,
   };
 }
+
+// Built from parts (giraffe.js): a Masai giraffe that paces with its feet planted (each side's hooves
+// step almost together), eases to a stop and spends the stop in the pose rest() picked as it stopped:
+// "browse" (the neck leans forward and the head reaches into an acacia's leaves, the tongue curling
+// round a twig, then a leaf at its lips as it munches), "drink" (the fore legs splay, the shoulders
+// sink and the neck curves down to the water, now and then lifting the head to watch the plain) or
+// "chew" (standing, the jaw working and an ear flicking). Standing it breathes, blinks and swishes
+// its tail. n.since (settle, critters.js) is when its state last changed and n.timer the seconds its
+// stop has left. giraffeMuzzle(pose) says where the muzzle is in a still pose, as [px from x in the
+// way it faces, px above the hooves], so the scene can tell whether a tree is in reach and where the
+// water is. Its palette is the scene's `giraffe` array ([fur, patch, dark, muzzle]) with the scene's
+// groundShadow and leaf beside it.
+const GIRAFFE_EASE = 0.3; // seconds a walk takes to start or stop
+// Its shadow: a row from 3 px behind its x to 18 ahead, and a fainter one 2 px shorter at each end below.
+const GIRAFFE_SHADOW = { span: [-3, 18], rows: [[2, 0.5]] };
+export const giraffeMuzzle = (pose) => muzzleAt(GIRAFFE, pose);
+
+export function giraffeAt(g, n, time = 0) {
+  if (g.trace) return g.trace.draw(giraffeAt, g, n, time);
+  const colours = g.pal[n.pal ?? "giraffe"];
+  const pal = tonesFor(colours, "giraffe", () => giraffeTones(colours));
+  pal.leaf = g.pal.leaf;
+  const bodyX = n.x * n.dir;
+  const walking = n.state === "walk";
+  const since = sinceOf(n, time);
+  const stop = since + (n.timer ?? 0);
+  const phase = bodyX / (GIRAFFE.stride / GAIT.stance);
+  const pose = {
+    phase,
+    bodyX,
+    amp: ease(walking, since, GIRAFFE_EASE),
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.9 : Math.sin(time * 1.3) * 0.5,
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, n.phase ?? 0, 2.9, 0.07),
+  };
+  if (!walking && since >= GIRAFFE_EASE) {
+    const name = n.pose === "browse" || n.pose === "drink" ? n.pose : "stand";
+    const hold = [1.5, stop - 1.7];
+    if (name !== "stand") {
+      pose.rest = loopAt(
+        [
+          [0, 0.4, "stand", "stand"],
+          [0.4, hold[0], "stand", name],
+          [hold[0], hold[1], name, name],
+          [hold[1], stop - 0.3, name, "stand"],
+        ],
+        since,
+      );
+    }
+    const held = within(since, hold[0], hold[1]);
+    if (name === "browse" && held) {
+      // The tongue reaches round a twig, the giraffe munches with a leaf at its lips, and reaches again.
+      const c = (since - hold[0] - 0.2) % 2.8;
+      if (c >= 0 && c < 0.7) pose.tongue = Math.sin((Math.PI * c) / 0.7) ** 0.6;
+      else if (c >= 0.7 && c < 1.4) Object.assign(pose, { leaf: c < 1.15, chew: Math.floor(time * 6) % 2 === 0 });
+      else if (c >= 1.4 && c < 2.1) pose.tongue = Math.sin((Math.PI * (c - 1.4)) / 0.7) ** 0.6;
+      else if (c >= 2.1) pose.chew = Math.floor(time * 6) % 2 === 0;
+    } else if (name === "drink" && held) {
+      // It dips to sip, and lifts its head for a moment to watch the plain.
+      const mid = (hold[0] + hold[1]) / 2;
+      const sip = 1.2 * Math.sin((since - hold[0]) * 2.6) ** 2;
+      const watch = hold[1] - hold[0] > 2.4 ? bump(since, mid - 0.4, mid + 0.4, 0.3) * 26 : 0;
+      pose.head = watch - sip;
+    } else if (name === "stand") {
+      // Chewing, with an ear flick or two, and now and then a look up.
+      pose.chew = since > 0.6 && Math.floor(time * 6) % 2 === 0;
+      const flick = [1.4, 2.8, 4.4].find((a) => within(since, a, a + 0.35));
+      if (flick !== undefined) pose.ear = Math.sin((Math.PI * (since - flick)) / 0.35);
+      if (since > 5.4) pose.head = bump(since, 5.4, 6.2, 0.3) * 9;
+    }
+  }
+  const shadow = { ...GIRAFFE_SHADOW, colour: shadowColour(g.pal) };
+  paintAt(g, Math.round(n.x), feet(g, n), n.dir, (plot) => drawGiraffe(GIRAFFE, pal, plot, pose), shadow);
+}
+
+export const FAMILY = {
+  id: "giraffes",
+  title: "Giraffes",
+  group: "Animals",
+  differ: "size, pattern",
+  drivers: {
+    giraffeAt: { role: "walker", member: () => "giraffe" },
+  },
+};

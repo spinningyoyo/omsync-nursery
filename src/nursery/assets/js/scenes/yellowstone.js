@@ -6,38 +6,30 @@
 // the cold air condenses far more of the hot spring's steam, and after each eruption it stacks into
 // a moonlit tower that climbs past the peaks.
 // A cougar slips along the valley and rests on it: sitting, lying or stretching.
-import {
-  bearAt,
-  bearPoses,
-  bighornAt,
-  bisonAt,
-  bisonPoses,
-  canidAt,
-  cervidAt,
-  felidAt,
-  felidPoses,
-  settleCanid,
-  swanAt,
-} from "../kit/animals.js";
+
+import { bearAt, bearPoses } from "../kit/bear.js";
+import { bighornAt, bisonAt, bisonPoses } from "../kit/bovid.js";
+import { canidAt, settleCanid } from "../kit/canid.js";
 import {
   enter,
   enterBehind,
   fidget,
-  flyBy,
   follow,
   isNight,
   narrow,
   percher,
   rest,
   settle,
-  soarer,
   walker,
   wander,
 } from "../kit/critters.js";
+import { cervidAt } from "../kit/deer.js";
 import { dithered, starField, starFieldAt } from "../kit/effects.js";
+import { felidAt, felidPoses } from "../kit/felid.js";
 import { circlerAt, eagleFlyAt, flyerAt } from "../kit/flyers.js";
 import { peak } from "../kit/landforms.js";
-import { flyByPerch, goHome, unhidden } from "../kit/perch.js";
+import { swanAt } from "../kit/longneck.js";
+import { unhidden } from "../kit/perch.js";
 import {
   blob,
   clamp,
@@ -46,12 +38,16 @@ import {
   hash,
   makePlant,
   rect,
+  rng,
   row,
   scatter,
   smooth,
   sortPlants,
   wind,
 } from "../kit/pixel.js";
+import { ANIMAL_BOX, bird, soarSprites, walk } from "../kit/poses.js";
+import { circlerActor, crossingActor, drawStep, runCast, walkerActor } from "../kit/runner.js";
+import { blendPose, perchedSmall } from "../kit/smallbird.js";
 import { broadleafTree, coniferTree } from "../kit/trees.js";
 
 const MATURE = {
@@ -611,223 +607,474 @@ const HOWL_SECONDS = 3.4; // a howl: 0.4 s to sit up and 3 s of song (canidAt)
 const YEARLING_LAG = 1.5; // seconds after the wolf starts that the yearling answers
 const HOWL_EVERY = [20, 25]; // seconds between howls: 20 plus up to 25
 
-const extras = {
-  init(f) {
-    const cone = f.plants.find((p) => p.kind === "geyserCone");
-    const spring = f.plants.find((p) => p.kind === "hotSpring");
-    return {
-      cat: walker(f),
-      stars: starField(f, STARS, 70),
-      cone: { x: cone.x, top: f.groundY + cone.depth - CONE_ROWS },
-      spring,
-      geyser: { start: -Infinity, length: 6, next: Infinity, drops: [] },
-      surge: -Infinity,
-      fluff: [],
-      eagle: { next: 0, bird: null },
-      soarer: soarer(f, 44 + f.rand() * 10, 2),
-      bluebird: { next: 4, bird: null },
-      swan: { next: 0, bird: null },
-      pronghorn: { ...walker(f), kind: "pronghorn", sex: "m" },
-      bison: walker(f),
-      calf: walker(f, 0.55),
-      howl: { start: -Infinity, next: 14 + f.rand() * 10 },
-      wolves: [
-        { ...walker(f), kind: "wolf" },
-        { ...walker(f, 0.9), kind: "wolf" },
-      ],
-      bighorn: null,
-      grizzly: { ...walker(f), kind: "grizzly" },
-      elk: [
-        { ...walker(f), kind: "elk", sex: "m" },
-        { ...walker(f, 0.9), kind: "elk", sex: "f" },
-      ],
-    };
-  },
-
-  // The pronghorn comes at stage 1, the bison at 4, the wolves at 5 (the geyser starts erupting
-  // then), the elk at 6, the grizzly at 7 and the bison calf at 8. The bighorn takes its crag once
-  // the crag has grown.
-  onGrow(f) {
-    if (f.stage >= 6 && !narrow(f)) enter(f, f.extra.cat);
-    const x = f.extra;
-    if (f.stage >= 1) enter(f, x.pronghorn);
-    if (f.stage >= 4) enter(f, x.bison);
-    if (f.stage >= 5) {
-      enter(f, x.wolves[0]);
-      enterBehind(f, x.wolves[1], x.wolves[0], 14);
-      if (x.geyser.next === Infinity) x.geyser.next = f.time + 2;
-    }
-    if (f.stage >= 6) {
-      enter(f, x.elk[0]);
-      if (!narrow(f)) enterBehind(f, x.elk[1], x.elk[0], 20);
-    }
-    if (f.stage >= 7) enter(f, x.grizzly);
-    if (f.stage >= 8 && !narrow(f)) enterBehind(f, x.calf, x.bison, BISON_GAP);
-  },
-
-  busy: () => true,
-
-  update(f, dt) {
-    wander(f, f.extra.cat, dt, { speed: 9, stride: 7, sit: [4, 9], walk: [3, 6] });
-    rest(f, f.extra.cat, felidPoses("cougar"));
-    const x = f.extra;
-    const g = x.geyser;
-    if (f.stage >= 5 && f.time >= g.next) {
-      g.start = f.time;
-      g.length = 5 + f.rand() * 2;
-      g.next = f.time + 25 + f.rand() * 15;
-      // At night the steam surges in the quiet after each eruption, and has faded before the next.
-      if (isNight(f)) x.surge = g.start + g.length + 0.5;
-    }
-    if (f.time - g.start < g.length && f.rand() < dt * SPRAY_RATE) {
-      g.drops.push({
-        x: x.cone.x + (f.rand() - 0.5) * 6,
-        y: x.cone.top - COLUMN_ROWS,
-        vx: (f.rand() - 0.5) * 16,
-        vy: -(4 + f.rand() * 10),
-      });
-    }
-    for (const d of g.drops) {
-      d.vy += GRAVITY * dt;
-      d.x += d.vx * dt;
-      d.y += d.vy * dt;
-    }
-    g.drops = g.drops.filter((d) => d.y < x.cone.top);
-
-    const aspens = f.plants.filter((p) => p.kind === "aspen" && p.crown);
-    if (aspens.length && x.fluff.length < MAX_FLUFF && f.rand() < dt * FLUFF_RATE) {
-      const { cx, top, half, bottom } = aspens[Math.floor(f.rand() * aspens.length)].crown;
-      x.fluff.push({
-        x: cx + (f.rand() * 2 - 1) * half,
-        y: top + f.rand() * (bottom - top),
-        vy: 1 + f.rand() * 2,
-        phase: f.rand() * 6.28,
-      });
-    }
-    for (const d of x.fluff) {
-      d.x += (5 + Math.sin(f.time * 0.8 + d.phase) * 3) * dt;
-      d.y += d.vy * dt;
-    }
-    x.fluff = x.fluff.filter((d) => d.y < f.groundY + 1 && d.x < f.cols + 2);
-
-    wander(f, x.pronghorn, dt, { speed: 16, stride: 12, sit: [1, 2], walk: [3, 6] });
-    settle(f, x.pronghorn);
-    wander(f, x.bison, dt, { speed: 4, stride: 3, sit: [5, 12], walk: [3, 6] });
-    rest(f, x.bison, bisonPoses(x.bison));
-    follow(x.calf, x.bison, dt, BISON_GAP);
-    for (const k of ["state", "phase", "timer", "pose"]) x.calf[k] = x.bison[k];
-    settle(f, x.calf);
-    const [wolf, yearling] = x.wolves;
-    // At night the wolf stops and howls now and then (x.howl.next, which the studio's Trigger row
-    // fires); the yearling sits by it, then answers, and the pair walk on together.
-    const howl = x.howl;
-    const night = isNight(f);
-    if (night && wolf.active && f.time >= howl.next) {
-      howl.start = f.time;
-      howl.next = f.time + HOWL_EVERY[0] + f.rand() * HOWL_EVERY[1];
-    }
-    const age = f.time - howl.start;
-    const choir = night && wolf.active && age >= 0 && age < HOWL_SECONDS + YEARLING_LAG;
-    if (choir && age < HOWL_SECONDS) wolf.state = "howl";
-    else {
-      if (wolf.state === "howl") {
-        wolf.state = "sit";
-        wolf.timer = 3;
+const extras = runCast(
+  [
+    drawStep(
+      "stars",
+      (g, f) => {
+        if (f.theme !== "dark") return;
+        starFieldAt(g, f.extra.stars, g.time);
+      },
+      { back: true },
+    ),
+    {
+      label: "stars (dark theme)",
+      kind: "effect",
+      layer: "behind the plants (drawBack, dark theme only)",
+      arrives: 0,
+      fixed: `${STARS} stars`,
+      sprites: ["stars"],
+    },
+    walkerActor({
+      id: "cat",
+      label: "cougar",
+      kind: "animal",
+      family: "cats",
+      sprites: ["cougar", "cougar-sitting", "cougar-lying", "cougar-stretching"],
+      arrives: 6,
+      phone: "hide",
+      move: { speed: 9, stride: 7, sit: [4, 9], walk: [3, 6] },
+      poses: () => felidPoses("cougar"),
+      draw: (g, w, f) => felidAt(g, { ...w, kind: "cougar" }, f.time),
+    }),
+    {
+      label: "geyser eruption",
+      kind: "effect",
+      arrives: 5,
+      fixed: "one at a time, 5 to 7 s, every 25 to 40 s",
+      sprites: ["geyser"],
+    },
+    {
+      label: "hot spring steam",
+      kind: "effect",
+      arrives: 2,
+      fixed: `a veil and ${BILLOWS} billows (taller at night)`,
+      sprites: ["steam", "steam-night"],
+    },
+    {
+      label: "steam surge (dark theme)",
+      kind: "effect",
+      arrives: 5,
+      fixed: "one at a time, about 16 s, after each eruption",
+      sprites: ["surge"],
+    },
+    {
+      label: "aspen seed fluff",
+      kind: "effect",
+      arrives: 3,
+      fixed: `up to ${MAX_FLUFF} at once`,
+      sprites: ["fluff"],
+    },
+    drawStep("geyser", (g, f) => {
+      const x = f.extra;
+      const night = isNight(f);
+      if (x.spring.shown > 1) {
+        const surge = f.time - x.surge;
+        steamAt(g, x.spring, f.time, night, night && surge >= 0 && surge < SURGE_LENGTH ? surge : -1);
       }
-      wander(f, wolf, dt, { speed: 11, stride: 9, sit: [2, 4], walk: [3, 6] });
-    }
-    follow(yearling, wolf, dt, 14);
-    yearling.phase = wolf.phase;
-    yearling.state = choir ? (age >= YEARLING_LAG ? "howl" : "sit") : wolf.state;
-    settleCanid(f, wolf);
-    settleCanid(f, yearling, wolf);
-    const [bull, cow] = x.elk;
-    wander(f, bull, dt, { speed: 6, stride: 5, sit: [4, 8], walk: [3, 5] });
-    follow(cow, bull, dt, 20);
-    cow.phase = bull.phase + 1;
-    cow.state = bull.state;
-    cow.timer = bull.timer;
-    settle(f, bull);
-    settle(f, cow);
-    wander(f, x.grizzly, dt, { speed: 5, stride: 4, sit: [4, 8], walk: [3, 6] });
-    rest(f, x.grizzly, bearPoses(x.grizzly));
-    const rock = f.plants.find((p) => p.kind === "crag");
-    if (!x.bighorn && rock && rock.shown - rock.born >= 2.5) {
-      const dir = rock.x < f.cols / 2 ? 1 : -1;
-      x.bighorn = percher(f, rock.x - dir * 7, cragTop(rock, f.groundY), dir, {
-        look: { every: [5, 10], lasts: 5 },
-        chew: { every: [2, 5], lasts: 1.5 },
-        stamp: { every: [9, 16], lasts: 0.4 },
-        graze: { every: [10, 18], lasts: 3.6 },
-        lie: { every: [20, 32], lasts: 7 },
-      });
-    }
-    if (x.bighorn) fidget(f, x.bighorn);
-    if (f.stage >= 2 && !isNight(f)) {
-      const spawn = () => ({ y: f.groundY - 46 - f.rand() * 20 });
-      flyByPerch(f, x.eagle, dt, { every: [5, 8], speed: 13, spawn, spots: perchSpots, stay: [14, 28] });
-    } else if (x.eagle.bird?.visit) {
-      goHome(f, x.eagle.bird);
-      x.eagle.bird = null;
-    }
-    x.soarer.active = f.stage >= 6 && !isNight(f);
-    if (f.stage >= 6 && !isNight(f)) {
-      const spawn = () => ({ y: f.groundY - 30 - f.rand() * 16 });
-      flyBy(f, x.swan, dt, { every: [9, 12], speed: 22, spawn });
-    }
-    if (f.stage >= 3 && !isNight(f)) {
-      const spawn = () => ({ y: f.groundY - 34 - f.rand() * 24 });
-      // Now and then the bluebird stops on a lodgepole's leader, then flies on.
-      flyByPerch(f, x.bluebird, dt, {
-        every: [6, 8],
-        speed: 42,
-        spawn,
-        spots: perchSpots,
-        small: "bluebird",
-        odds: 0.3,
-        stay: [8, 16],
-      });
-    } else if (x.bluebird.bird?.visit) goHome(f, x.bluebird.bird);
-  },
+      for (const d of x.fluff) rect(g, g.pal.fluff, Math.round(d.x), Math.round(d.y), 1, 1);
+      const age = f.time - x.geyser.start;
+      if (age >= 0 && age < x.geyser.length) columnAt(g, x.cone, age, x.geyser.length, g.time);
+      for (const d of x.geyser.drops) {
+        rect(g, g.pal.spout[1], Math.round(d.x), Math.round(d.y), 1, 1);
+      }
+    }),
+    {
+      label: "bighorn ram on its crag",
+      kind: "animal",
+      family: "cattle-sheep",
+      arrives: 3,
+      fixed: "1, perched",
+      sprites: ["bighorn", "bighorn-look", "bighorn-grazing", "bighorn-lying"],
+    },
+    drawStep("bighorn", (g, f) => {
+      if (f.extra.bighorn) bighornAt(g, f.extra.bighorn, f.time);
+    }),
+    walkerActor({
+      id: "pronghorn",
+      label: "pronghorn",
+      kind: "animal",
+      family: "deer",
+      sprites: ["pronghorn"],
+      arrives: 1,
+      props: { kind: "pronghorn", sex: "m" },
+      move: { speed: 16, stride: 12, sit: [1, 2], walk: [3, 6] },
+      draw: (g, w, f) => cervidAt(g, w, f.time),
+    }),
+    {
+      label: "elk (bull and cow)",
+      kind: "animal",
+      family: "deer",
+      presence: ["elk[0]", "elk[1]"],
+      sprites: ["elk", "elk-cow", "elk-cow-grazing", "elk-lying"],
+    },
+    {
+      label: "bison and calf",
+      kind: "animal",
+      family: "cattle-sheep",
+      presence: ["bison", "calf"],
+      sprites: ["bison", "bison-grazing", "bison-wallowing", "bison-calf", "bison-calf-lying"],
+    },
+    {
+      label: "gray wolf and yearling",
+      kind: "animal",
+      family: "dogs",
+      presence: ["wolves[0]", "wolves[1]"],
+      sprites: [
+        "wolf",
+        "wolf-sitting",
+        "wolf-lying",
+        "wolf-bow",
+        "wolf-howl",
+        "wolf-yearling",
+        "wolf-yearling-sitting",
+        "wolf-yearling-howl",
+      ],
+    },
+    drawStep("herd", (g, f) => {
+      const x = f.extra;
+      for (const e of x.elk) if (e.active) cervidAt(g, e, f.time);
+      if (x.bison.active) bisonAt(g, x.bison, f.time);
+      if (x.calf.active) bisonAt(g, x.calf, f.time);
+      for (const w of x.wolves) if (w.active) canidAt(g, w, f.time);
+    }),
+    walkerActor({
+      id: "grizzly",
+      label: "grizzly bear",
+      kind: "animal",
+      family: "bears",
+      sprites: ["grizzly", "grizzly-foraging", "grizzly-rearing", "grizzly-sitting", "grizzly-lying"],
+      arrives: 7,
+      props: { kind: "grizzly" },
+      move: { speed: 5, stride: 4, sit: [4, 8], walk: [3, 6] },
+      poses: (w) => bearPoses(w),
+      draw: (g, w, f) => bearAt(g, w, f.time),
+    }),
+    crossingActor({
+      id: "eagle",
+      label: "bald eagle (slow flyby, side-on, perches now and then)",
+      kind: "bird",
+      sprites: [
+        "eagle-side",
+        "eagle-side-flapping",
+        "eagle-landing",
+        "eagle-takeoff",
+        "eagle-perched",
+        "eagle-perched-preening",
+        "eagle-perched-stretching",
+      ],
+      arrives: 2,
+      when: "day",
+      first: 0,
+      mode: "perch",
+      every: [5, 8],
+      speed: 13,
+      spawn: (f) => ({ y: f.groundY - 46 - f.rand() * 20 }),
+      spots: perchSpots,
+      stay: [14, 28],
+      clearOnOff: "perched",
+      draw: (g, b, f) => eagleFlyAt(g, "bald", b, f.time),
+    }),
+    circlerActor({
+      id: "soarer",
+      label: "bald eagle (circling)",
+      kind: "bird",
+      sprites: ["eagle", "eagle-bank", "eagle-flapping"],
+      phase: 2,
+      arrives: 6,
+      when: "day",
+      cy: (f) => 44 + f.rand() * 10,
+      draw: (g, s, f) => circlerAt(g, "bald", s, f.time),
+    }),
+    crossingActor({
+      id: "bluebird",
+      label: "mountain bluebird",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["bluebird", "bluebird-perched"],
+      arrives: 3,
+      when: "day",
+      first: 4,
+      mode: "perch",
+      every: [6, 8],
+      speed: 42,
+      spawn: (f) => ({ y: f.groundY - 34 - f.rand() * 24 }),
+      spots: perchSpots,
+      small: "bluebird",
+      odds: 0.3,
+      stay: [8, 16],
+      draw: (g, b, f) => flyerAt(g, b, f.time, "bluebird"),
+    }),
+    crossingActor({
+      id: "swan",
+      label: "trumpeter swan",
+      kind: "bird",
+      family: "long-necked-birds",
+      sprites: ["swan", "swan-flapping"],
+      arrives: 6,
+      when: "day",
+      first: 0,
+      every: [9, 12],
+      speed: 22,
+      spawn: (f) => ({ y: f.groundY - 30 - f.rand() * 16 }),
+      draw: (g, b, f) => swanAt(g, { ...b, pose: "fly" }, f.time),
+    }),
+  ],
+  {
+    init(f) {
+      const cone = f.plants.find((p) => p.kind === "geyserCone");
+      const spring = f.plants.find((p) => p.kind === "hotSpring");
+      return {
+        stars: starField(f, STARS, 70),
+        cone: { x: cone.x, top: f.groundY + cone.depth - CONE_ROWS },
+        spring,
+        geyser: { start: -Infinity, length: 6, next: Infinity, drops: [] },
+        surge: -Infinity,
+        fluff: [],
+        bison: walker(f),
+        calf: walker(f, 0.55),
+        howl: { start: -Infinity, next: 14 + f.rand() * 10 },
+        wolves: [
+          { ...walker(f), kind: "wolf" },
+          { ...walker(f, 0.9), kind: "wolf" },
+        ],
+        bighorn: null,
+        elk: [
+          { ...walker(f), kind: "elk", sex: "m" },
+          { ...walker(f, 0.9), kind: "elk", sex: "f" },
+        ],
+      };
+    },
 
-  // The night sky: stars that twinkle, behind the plants. Still under reduced motion.
-  drawBack(g, f) {
-    if (f.theme !== "dark") return;
-    starFieldAt(g, f.extra.stars, g.time);
-  },
+    // The pronghorn comes at stage 1, the bison at 4, the wolves at 5 (the geyser starts erupting
+    // then), the elk at 6, the grizzly at 7 and the bison calf at 8. The bighorn takes its crag once
+    // the crag has grown.
+    onGrow(f) {
+      const x = f.extra;
+      if (f.stage >= 4) enter(f, x.bison);
+      if (f.stage >= 5) {
+        enter(f, x.wolves[0]);
+        enterBehind(f, x.wolves[1], x.wolves[0], 14);
+        if (x.geyser.next === Infinity) x.geyser.next = f.time + 2;
+      }
+      if (f.stage >= 6) {
+        enter(f, x.elk[0]);
+        if (!narrow(f)) enterBehind(f, x.elk[1], x.elk[0], 20);
+      }
+      if (f.stage >= 8 && !narrow(f)) enterBehind(f, x.calf, x.bison, BISON_GAP);
+    },
 
-  draw(g, f) {
-    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "cougar" }, f.time);
-    const x = f.extra;
-    const night = isNight(f);
-    if (x.spring.shown > 1) {
-      const surge = f.time - x.surge;
-      steamAt(g, x.spring, f.time, night, night && surge >= 0 && surge < SURGE_LENGTH ? surge : -1);
+    busy: () => true,
+
+    update(f, dt) {
+      const x = f.extra;
+      const g = x.geyser;
+      if (f.stage >= 5 && f.time >= g.next) {
+        g.start = f.time;
+        g.length = 5 + f.rand() * 2;
+        g.next = f.time + 25 + f.rand() * 15;
+        // At night the steam surges in the quiet after each eruption, and has faded before the next.
+        if (isNight(f)) x.surge = g.start + g.length + 0.5;
+      }
+      if (f.time - g.start < g.length && f.rand() < dt * SPRAY_RATE) {
+        g.drops.push({
+          x: x.cone.x + (f.rand() - 0.5) * 6,
+          y: x.cone.top - COLUMN_ROWS,
+          vx: (f.rand() - 0.5) * 16,
+          vy: -(4 + f.rand() * 10),
+        });
+      }
+      for (const d of g.drops) {
+        d.vy += GRAVITY * dt;
+        d.x += d.vx * dt;
+        d.y += d.vy * dt;
+      }
+      g.drops = g.drops.filter((d) => d.y < x.cone.top);
+
+      const aspens = f.plants.filter((p) => p.kind === "aspen" && p.crown);
+      if (aspens.length && x.fluff.length < MAX_FLUFF && f.rand() < dt * FLUFF_RATE) {
+        const { cx, top, half, bottom } = aspens[Math.floor(f.rand() * aspens.length)].crown;
+        x.fluff.push({
+          x: cx + (f.rand() * 2 - 1) * half,
+          y: top + f.rand() * (bottom - top),
+          vy: 1 + f.rand() * 2,
+          phase: f.rand() * 6.28,
+        });
+      }
+      for (const d of x.fluff) {
+        d.x += (5 + Math.sin(f.time * 0.8 + d.phase) * 3) * dt;
+        d.y += d.vy * dt;
+      }
+      x.fluff = x.fluff.filter((d) => d.y < f.groundY + 1 && d.x < f.cols + 2);
+
+      wander(f, x.bison, dt, { speed: 4, stride: 3, sit: [5, 12], walk: [3, 6] });
+      rest(f, x.bison, bisonPoses(x.bison));
+      follow(x.calf, x.bison, dt, BISON_GAP);
+      for (const k of ["state", "phase", "timer", "pose"]) x.calf[k] = x.bison[k];
+      settle(f, x.calf);
+      const [wolf, yearling] = x.wolves;
+      // At night the wolf stops and howls now and then (x.howl.next, which the studio's Trigger row
+      // fires); the yearling sits by it, then answers, and the pair walk on together.
+      const howl = x.howl;
+      const night = isNight(f);
+      if (night && wolf.active && f.time >= howl.next) {
+        howl.start = f.time;
+        howl.next = f.time + HOWL_EVERY[0] + f.rand() * HOWL_EVERY[1];
+      }
+      const age = f.time - howl.start;
+      const choir = night && wolf.active && age >= 0 && age < HOWL_SECONDS + YEARLING_LAG;
+      if (choir && age < HOWL_SECONDS) wolf.state = "howl";
+      else {
+        if (wolf.state === "howl") {
+          wolf.state = "sit";
+          wolf.timer = 3;
+        }
+        wander(f, wolf, dt, { speed: 11, stride: 9, sit: [2, 4], walk: [3, 6] });
+      }
+      follow(yearling, wolf, dt, 14);
+      yearling.phase = wolf.phase;
+      yearling.state = choir ? (age >= YEARLING_LAG ? "howl" : "sit") : wolf.state;
+      settleCanid(f, wolf);
+      settleCanid(f, yearling, wolf);
+      const [bull, cow] = x.elk;
+      wander(f, bull, dt, { speed: 6, stride: 5, sit: [4, 8], walk: [3, 5] });
+      follow(cow, bull, dt, 20);
+      cow.phase = bull.phase + 1;
+      cow.state = bull.state;
+      cow.timer = bull.timer;
+      settle(f, bull);
+      settle(f, cow);
+      const rock = f.plants.find((p) => p.kind === "crag");
+      if (!x.bighorn && rock && rock.shown - rock.born >= 2.5) {
+        const dir = rock.x < f.cols / 2 ? 1 : -1;
+        x.bighorn = percher(f, rock.x - dir * 7, cragTop(rock, f.groundY), dir, {
+          look: { every: [5, 10], lasts: 5 },
+          chew: { every: [2, 5], lasts: 1.5 },
+          stamp: { every: [9, 16], lasts: 0.4 },
+          graze: { every: [10, 18], lasts: 3.6 },
+          lie: { every: [20, 32], lasts: 7 },
+        });
+      }
+      if (x.bighorn) fidget(f, x.bighorn);
+    },
+  },
+);
+
+const SPRITES = {
+  ...soarSprites("eagle", "bald", { side: true }),
+  cougar: (g, frame) => felidAt(g, walk(frame, { kind: "cougar" }), 0),
+  "cougar-sitting": (g, frame) => felidAt(g, walk(frame, { kind: "cougar", state: "sit", pose: "sit" }), 0),
+  "cougar-lying": (g, frame) => felidAt(g, walk(frame, { kind: "cougar", state: "sit", pose: "lie" }), 0),
+  "cougar-stretching": (g, frame) => felidAt(g, walk(frame, { kind: "cougar", state: "sit", pose: "bow" }), 0),
+  bison: (g, frame) => bisonAt(g, walk(frame, { scale: 1 }), 0),
+  "bison-grazing": (g, frame) => bisonAt(g, walk(frame, { state: "sit", pose: "graze", since: 0, timer: 5 }), 2.5),
+  "bison-wallowing": (g, frame) => bisonAt(g, walk(frame, { state: "sit", pose: "wallow", since: 0, timer: 10 }), 4),
+  "bison-calf": (g, frame) => bisonAt(g, walk(frame, { scale: 0.55 }), 0),
+  "bison-calf-lying": (g, frame) =>
+    bisonAt(g, walk(frame, { scale: 0.55, state: "sit", pose: "lie", since: 0, timer: 6 }), 3),
+  wolf: (g, frame) => canidAt(g, walk(frame, { kind: "wolf" })),
+  "wolf-sitting": (g, frame) => canidAt(g, walk(frame, { kind: "wolf", state: "sit" })),
+  "wolf-lying": (g, frame) => canidAt(g, walk(frame, { kind: "wolf", state: "sit", pose: "lie" })),
+  "wolf-bow": (g, frame) =>
+    canidAt(g, walk(frame, { kind: "wolf", state: "sit", pose: "sit", bows: true, stopEnd: 10 }), 9.3),
+  "wolf-howl": (g, frame) => canidAt(g, walk(frame, { kind: "wolf", state: "howl", actAt: 1.4 })),
+  "wolf-yearling": (g, frame) => canidAt(g, walk(frame, { kind: "wolf", scale: 0.9 })),
+  "wolf-yearling-sitting": (g, frame) => canidAt(g, walk(frame, { kind: "wolf", scale: 0.9, state: "sit" })),
+  "wolf-yearling-howl": (g, frame) => canidAt(g, walk(frame, { kind: "wolf", scale: 0.9, state: "howl", actAt: 1.4 })),
+  pronghorn: (g, frame) => cervidAt(g, walk(frame, { kind: "pronghorn", sex: "m" })),
+  bighorn: (g, frame) => bighornAt(g, walk(frame, { state: "sit" })),
+  "bighorn-look": (g, frame) => bighornAt(g, walk(frame, { state: "sit", act: "look", actAt: 2.5 })),
+  "bighorn-grazing": (g, frame) => bighornAt(g, walk(frame, { state: "sit", act: "graze", actAt: 1.8 })),
+  "bighorn-lying": (g, frame) => bighornAt(g, walk(frame, { state: "sit", act: "lie", actAt: 3 })),
+  grizzly: (g, frame) => bearAt(g, walk(frame, { kind: "grizzly" })),
+  "grizzly-foraging": (g, frame) =>
+    bearAt(g, walk(frame, { kind: "grizzly", state: "sit", pose: "forage", since: 0, timer: 30 }), 5),
+  "grizzly-rearing": (g, frame) => bearAt(g, walk(frame, { kind: "grizzly", state: "rear", since: 0, timer: 30 }), 5),
+  "grizzly-sitting": (g, frame) =>
+    bearAt(g, walk(frame, { kind: "grizzly", state: "sit", pose: "sit", since: 0, timer: 30 }), 5),
+  "grizzly-lying": (g, frame) =>
+    bearAt(g, walk(frame, { kind: "grizzly", state: "sit", pose: "lie", since: 0, timer: 30 }), 5),
+  elk: (g, frame) => cervidAt(g, walk(frame, { kind: "elk", sex: "m" })),
+  "elk-cow": (g, frame) => cervidAt(g, walk(frame, { kind: "elk", sex: "f", scale: 0.9 })),
+  "elk-cow-grazing": (g, frame) => cervidAt(g, walk(frame, { kind: "elk", sex: "f", scale: 0.9, state: "sit" })),
+  "elk-lying": (g, frame) => cervidAt(g, walk(frame, { kind: "elk", sex: "m", state: "sit", pose: "lie" })),
+  bluebird: (g, frame) => flyerAt(g, bird(frame), 0, "bluebird"),
+  "bluebird-perched": (g) => perchedSmall(g, "bluebird", 40, 40, 0, blendPose({})),
+  swan: (g, frame) => swanAt(g, bird(frame, { pose: "fly" }), 0),
+  "swan-flapping": (g, frame) => swanAt(g, bird(frame, { pose: "fly" }), 0.5),
+  geyser: (g) => columnAt(g, { x: 40, top: ANIMAL_BOX.ground }, 2.5, 6, 1),
+  steam: (g) => steamAt(g, { x: 40, scale: 1 }, 1.5, false),
+  "steam-night": (g) => {
+    g.pal = DARK;
+    steamAt(g, { x: 40, scale: 1 }, 1.5, true);
+  },
+  surge: (g) => {
+    g.pal = DARK;
+    steamAt(g, { x: 40, scale: 1 }, 1.5, true, 2);
+  },
+  fluff: (g) => {
+    for (const [x, y] of [
+      [8, 8],
+      [14, 12],
+      [21, 6],
+      [27, 14],
+      [33, 9],
+      [38, 16],
+      [44, 11],
+    ]) {
+      rect(g, g.pal.fluff, x, y, 1, 1);
     }
-    for (const d of x.fluff) rect(g, g.pal.fluff, Math.round(d.x), Math.round(d.y), 1, 1);
-    const age = f.time - x.geyser.start;
-    if (age >= 0 && age < x.geyser.length) columnAt(g, x.cone, age, x.geyser.length, g.time);
-    for (const d of x.geyser.drops) {
-      rect(g, g.pal.spout[1], Math.round(d.x), Math.round(d.y), 1, 1);
-    }
-    if (x.bighorn) bighornAt(g, x.bighorn, f.time);
-    if (x.pronghorn.active) cervidAt(g, x.pronghorn, f.time);
-    for (const e of x.elk) if (e.active) cervidAt(g, e, f.time);
-    if (x.bison.active) bisonAt(g, x.bison, f.time);
-    if (x.calf.active) bisonAt(g, x.calf, f.time);
-    for (const w of x.wolves) if (w.active) canidAt(g, w, f.time);
-    if (x.grizzly.active) bearAt(g, x.grizzly, f.time);
-    if (x.eagle.bird && !night) eagleFlyAt(g, "bald", x.eagle.bird, f.time);
-    if (x.soarer.active) circlerAt(g, "bald", x.soarer, f.time);
-    if (x.bluebird.bird && !night) flyerAt(g, x.bluebird.bird, f.time, "bluebird");
-    if (x.swan.bird && !night) swanAt(g, { ...x.swan.bird, pose: "fly" }, f.time);
+  },
+  stars: (g) => {
+    g.pal = DARK;
+    // The cone and spring are the plants init looks up; the cone's depth is CONE_DEPTH.
+    const plants = [
+      { kind: "geyserCone", x: 40, depth: 15 },
+      { kind: "hotSpring", x: 40 },
+    ];
+    const { stars } = extras.init({
+      rand: rng(3),
+      cols: ANIMAL_BOX.w,
+      groundY: ANIMAL_BOX.ground,
+      plants,
+    });
+    extras.drawBack(g, { theme: "dark", extra: { stars } });
+  },
+};
+
+const PLANT_FAMILIES = {
+  aspen: "broadleaf",
+  lodgepole: "conifers",
+};
+
+export const META = {
+  id: "yellowstone",
+  label: "Yellowstone",
+  group: "woods",
+  tint: ["#cfe3ec", "rgb(60 110 170)"],
+  backdrop: {
+    light: {
+      green: "#bcd9e6",
+      "green-soft": "#f2e6b0",
+      peach: "#f5c3a0",
+      blush: "#dfe6dc",
+      bloom: "#f2c66e",
+    },
+    dark: {
+      green: "rgb(70 120 180 / 0.4)",
+      "green-soft": "rgb(200 180 90 / 0.18)",
+      peach: "rgb(200 100 60 / 0.2)",
+      blush: "rgb(90 130 120 / 0.16)",
+      bloom: "rgb(230 150 50 / 0.3)",
+    },
   },
 };
 
 export default {
-  id: "yellowstone",
-  label: "Yellowstone",
-  group: "woods",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.35, 0.55], dark: [0.45, 0.62] },
   mature: MATURE,

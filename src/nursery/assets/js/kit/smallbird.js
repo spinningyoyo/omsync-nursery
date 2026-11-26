@@ -7,7 +7,7 @@
 // belly shaded), the far wing in its own darker tone, and a soft ground shadow for birds standing.
 // `birdCells` builds one (its `upright` tilts the body up to 60 degrees, so one build serves flying and
 // perched), `flyingBird` flies it, `perchedSmall` perches it and `puffinStand` is the puffins' standing
-// template. animals.js's small-flyer drivers place and pose them. Palettes, from the scene: cardinal,
+// template. flyers.js's flyerAt places and poses them. Palettes, from the scene: cardinal,
 // swift, bluebird, jay, iiwi, sparrow and swallow are { C, H, E, K, T, b, B, l, t, p, d } (crown, head, eye, bill, tail
 // tip, tail, back, breast, wing leading edge, patch, trailing edge); kingfisher [blue, orange, bill,
 // white], hornbill [black, white, yellow, casque], roller [lilac, teal, blue, dark] with rollerDepth

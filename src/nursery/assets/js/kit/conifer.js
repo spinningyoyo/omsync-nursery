@@ -367,3 +367,10 @@ export function bookPine(g, p, s, base, spec) {
     bottom: base - Math.round(height * 0.6),
   };
 }
+
+export const FAMILY = {
+  id: "conifers",
+  title: "Conifers",
+  group: "Trees",
+  differ: "height, colour, how wide and low the tiers reach, droop and hang",
+};

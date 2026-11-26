@@ -3,8 +3,18 @@ subject=$(head -n 1 "$1")
 case "$subject" in
     "Merge "* | "Revert "* | "fixup! "* | "squash! "* | "amend! "*) exit 0 ;;
 esac
-if echo "$subject" | grep -qE '^(feat|fix|docs|refactor|test|chore|perf|build|ci|style)(\([a-z0-9/-]+\))?: [a-z]'; then
-    exit 0
+if ! echo "$subject" | grep -qE '^(feat|fix|docs|refactor|test|chore|perf|build|ci|style)(\([a-z0-9/-]+\))?: [a-z]'; then
+    echo "commit-msg: expected 'type(scope): imperative summary', got: $subject" >&2
+    exit 1
 fi
-echo "commit-msg: expected 'type(scope): imperative summary', got: $subject" >&2
-exit 1
+case "$subject" in
+    refactor:* | refactor\(*)
+        changed=$(git diff --cached --name-only -- scripts/scene_records/)
+        if [ -n "$changed" ]; then
+            echo "commit-msg: refactor commits cannot modify scripts/scene_records/ (behaviour changed):" >&2
+            echo "$changed" >&2
+            exit 1
+        fi
+        ;;
+esac
+exit 0

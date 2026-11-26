@@ -264,3 +264,10 @@ export function broadleafTree(g, p, s, base, spec) {
   p.clumps = drawn;
   return p.crown;
 }
+
+export const FAMILY = {
+  id: "broadleaf",
+  title: "Broadleaf trees",
+  group: "Trees",
+  differ: "height, colour, bark, airiness",
+};

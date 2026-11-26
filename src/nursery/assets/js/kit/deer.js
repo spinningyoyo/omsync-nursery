@@ -4,7 +4,7 @@
 // full thigh above a slim cannon) ending in a dark hoof, a tail from the rump, a neck that swings the
 // head from grazing (attitude -1) through its carriage (0) to the elk's bugle (+1), and a head whose
 // antlers or horns sit on its crown in every pose. Four tones lit from above. One spec per member,
-// drawn by drawDeer(spec, pal, plot, pose); animals.js's cervidAt places and poses it. Coordinates are
+// drawn by drawDeer(spec, pal, plot, pose); cervidAt (below) places and poses it. Coordinates are
 // the deer's own: x runs from the rump (0) toward the nose and h is the height above the ground;
 // `plot(x, h, colour)` paints a pixel, so the caller places and mirrors it. Rest poses: stand, graze,
 // lie. Gaits: walk, trot (the pronghorn), bound (a startled white-tail, its tail up as a white flag).
@@ -23,7 +23,8 @@ import {
   stepAt,
 } from "./build.js";
 import { GAIT, headFor, hoofDips, hoofFeet, hoofLeg, hoofRoot, hoofRow, hoofShapes, restShape } from "./hoof.js";
-import { clamp, frac, hash, lerp, mix, smooth } from "./pixel.js";
+import { clamp, frac, hash, lerp, mix, shadowColour, smooth } from "./pixel.js";
+import { blinkAt, breathAt, ease, feet, paintAt, sinceOf, tonesFor } from "./place.js";
 
 // Gaits: when each leg's step starts (near hind, near fore, far hind, far fore), the share of the
 // stride a hoof is down, and how much longer and higher the stride is than the walk's. The walk is
@@ -743,3 +744,125 @@ export function boundRise(phase) {
   const gather = p >= 0.34 && p < 0.5 ? Math.sin((Math.PI * (p - 0.34)) / 0.16) * 0.5 : 0;
   return 2 * leap + gather;
 }
+
+// Deer
+
+// Built from parts (deer.js): the elk, the white-tailed deer, the wild reindeer and the pronghorn. A
+// deer walks with its hooves planted (the pronghorn trots), eases to a stop, and while it stops
+// (state "sit") lowers its head to graze, or in a long stop lies down and gets up again before it
+// walks on; standing it breathes, blinks and flicks its tail. A white-tail running (state "run")
+// bounds with its tail raised as a white flag; a bull elk bugling (state "bugle") tips his head up
+// and his breath shows. d.since (settle, critters.js) is when its state last changed and d.timer the
+// seconds its stop has left; d.hearSince and d.hearUntil (times) hold its head up to listen; d.pose "lie" lays it down and d.actAt sets how far into a bugle a
+// still pose is. `sex` is "m" or "f": a cow elk wears no rack, a reindeer cow a small one. Its palette
+// is the scene's array under its kind (or d.pal): elk [coat, dark, pale, antler, deep, shade],
+// whitetail and reindeer [coat, dark, pale, antler], pronghorn [coat, dark, pale, horn, deep].
+const DEER_BUILD = {
+  elk: {
+    m: [DEER_SPECS.ELK, [-1, 18]],
+    f: [DEER_SPECS.ELK_COW, [-1, 17]],
+    tones: (c, sex) => elkTones(c, sex === "f"),
+  },
+  whitetail: { m: [DEER_SPECS.WT_BUCK, [-1, 14]], f: [DEER_SPECS.WHITETAIL, [-1, 14]], tones: whitetailTones },
+  reindeer: { m: [DEER_SPECS.RD_BULL, [-1, 16]], f: [DEER_SPECS.RD_COWDEER, [-1, 15]], tones: reindeerTones },
+  pronghorn: { m: [DEER_SPECS.PRONGHORN, [-1, 14]], f: [DEER_SPECS.PRONGHORN, [-1, 14]], tones: pronghornTones },
+};
+const DEER_EASE = 0.3; // seconds a walk takes to start or stop
+const DEER_GRAZE = 0.7; // seconds the head takes to go down to the grass or come up
+const DEER_LIE = [0.6, 1.6]; // into a long stop: it lies down over this, and gets up as long before it ends
+const DEER_BOUND = 0.5; // seconds a bound takes
+const DEER_HEAR = 0.4; // seconds a deer takes to lift its head to listen, and to lower it
+const DEER_LISTEN = 0.35; // how far the head lifts above its carriage while it listens
+
+export function cervidAt(g, d, time = 0) {
+  if (g.trace) return g.trace.draw(cervidAt, g, d, time);
+  const build = DEER_BUILD[d.kind];
+  const [spec, [s0, s1]] = build[d.sex === "f" ? "f" : "m"];
+  const colours = g.pal[d.pal ?? d.kind];
+  const pal = tonesFor(colours, `deer:${d.sex === "f" ? "f" : "m"}`, () => build.tones(colours, d.sex));
+  // The state it came from, remembered for easing out of a run or a graze.
+  if (d.seen !== d.state) {
+    d.prev = d.seen;
+    d.seen = d.state;
+  }
+  const since = sinceOf(d, time);
+  const bodyX = d.x * d.dir;
+  const running = d.state === "run";
+  const gait = running ? "bound" : d.kind === "pronghorn" ? "trot" : "walk";
+  const G = GAITS[gait];
+  const moving = d.state === "walk" || running;
+  const pose = {
+    gait,
+    bodyX: running ? null : bodyX,
+    phase: running ? time / DEER_BOUND : bodyX / ((spec.stride * G.stride) / G.stance),
+    amp: ease(moving, since, DEER_EASE),
+    sway: Math.sin(time * 1.3) * 0.3,
+    breath: breathAt(time),
+    blink: blinkAt(time, d.phase ?? 0, 3.3),
+  };
+  if (d.state === "walk") pose.sway = Math.sin(pose.phase * 2 * Math.PI) * 0.6;
+  if (running) {
+    pose.amp = 1;
+    pose.flag = Math.min(1, since / 0.25);
+    pose.rise = boundRise(pose.phase);
+  } else if (d.prev === "run" && since < 0.25) {
+    pose.flag = 1 - since / 0.25;
+  }
+  if (d.state === "bugle") {
+    const act = bugleAt(d.actAt ?? since);
+    const from = d.prev === "sit" && (d.grazed ?? 0) > 0.5 ? "graze" : "stand";
+    pose.rest = { from, to: "stand", u: Math.min(1, (d.actAt ?? since) / 0.5) };
+    if (act) Object.assign(pose, act, { blink: false });
+  } else if (d.state === "sit") {
+    const stop = since + (d.timer ?? 100); // how long this stop lasts
+    const r = hash(Math.round((d.since ?? 0) * 100), 3, 11);
+    const [d0, d1] = DEER_LIE;
+    if (d.pose === "lie") pose.rest = { from: "lie", to: "lie", u: 0 };
+    else if (d.pose !== "graze" && stop >= 6 && r < 0.5 && since >= d0 && since < stop - d0) {
+      if (since < d1) pose.rest = { from: "stand", to: "lie", u: (since - d0) / (d1 - d0) };
+      else if (since < stop - d1) pose.rest = { from: "lie", to: "lie", u: 0 };
+      else pose.rest = { from: "lie", to: "stand", u: (since - (stop - d1)) / (d1 - d0) };
+    } else {
+      const down =
+        stop >= 2 ? Math.max(0, Math.min(1, (since - DEER_EASE) / DEER_GRAZE, (stop - since) / DEER_GRAZE)) : 0;
+      d.grazed = down;
+      pose.rest = { from: "stand", to: "graze", u: down };
+    }
+  } else if (d.state === "walk" && d.prev === "sit" && (d.grazed ?? 0) > 0 && since < DEER_GRAZE) {
+    // A walk that starts before the head is up lifts it as the deer steps off.
+    pose.rest = { from: "stand", to: "graze", u: d.grazed * (1 - since / DEER_GRAZE) };
+  }
+  if (d.hearSince != null) {
+    // Listening to a bugle: still, the head up (the graze comes up with it), over 0.4 s each way.
+    const u = smooth(
+      Math.max(0, Math.min(1, (time - d.hearSince) / DEER_HEAR, ((d.hearUntil ?? time) - time) / DEER_HEAR)),
+    );
+    pose.head = (pose.head ?? 0) + DEER_LISTEN * u;
+    if (pose.rest?.to === "graze") pose.rest = { ...pose.rest, u: pose.rest.u * (1 - u) };
+  }
+  if (d.state !== "sit" && since >= DEER_GRAZE) d.grazed = 0;
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  paintAt(g, Math.round(d.x), feet(g, d), d.dir, (plot) => drawDeer(spec, pal, plot, pose), shadow);
+}
+
+export const FAMILY = {
+  id: "deer",
+  title: "Deer",
+  group: "Animals",
+  differ: "size, antlers or horns, mane",
+  members: {
+    pronghorn: { spec: DEER_SPECS.PRONGHORN, realLength: 1.4 },
+    deer: { spec: DEER_SPECS.WHITETAIL, realLength: 1.6 },
+    "deer-buck": { spec: DEER_SPECS.WT_BUCK, realLength: 1.9 },
+    "stag-cow": { spec: DEER_SPECS.RD_COWDEER, realLength: 1.7 },
+    stag: { spec: DEER_SPECS.RD_BULL, realLength: 2.0 },
+    "elk-cow": { spec: DEER_SPECS.ELK_COW, realLength: 2.1 },
+    elk: { spec: DEER_SPECS.ELK, realLength: 2.4 },
+  },
+  drivers: {
+    cervidAt: {
+      role: "walker",
+      member: (a) => (a.kind === "whitetail" ? "deer" : a.kind === "reindeer" ? "stag" : a.kind),
+    },
+  },
+};

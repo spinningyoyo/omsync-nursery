@@ -82,6 +82,7 @@ max-complexity = 10  # ruff's default; split a function that grows past it, do n
 # Some start git, uv, Chrome or a local web server with a fixed argument list and no shell. The
 # program name comes from PATH on purpose, and no argument is user input (S404, S603, S607).
 "src/nursery/brand.py" = ["T201"]
+"src/nursery/scenes_build.py" = ["T201", "S404", "S603"]
 "src/nursery/catalog.py" = ["T201", "S404", "S603", "S310"]  # S310: urlopen of its own localhost server
 "src/nursery/launcher.py" = ["S404", "S603"]
 "src/nursery/release.py" = ["T201", "S404", "S603", "S607"]
@@ -89,6 +90,7 @@ max-complexity = 10  # ruff's default; split a function that grows past it, do n
 "src/nursery/verify/run.py" = ["T201"]
 "src/nursery/studio/server.py" = ["T201", "S404", "S603", "S607"]
 "scripts/check_js_imports.py" = ["T201"]
+"scripts/check_scenes.py" = ["T201", "S404", "S603"]
 # The end-to-end tests assert (S101), start git, uv, Chrome and the command with fixed arguments and
 # no shell (S404, S603, S607), and open the studio's local port (S310).
 "tests/**" = ["S101", "S404", "S603", "S607", "S310"]

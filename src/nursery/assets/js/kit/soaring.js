@@ -7,7 +7,7 @@
 // the body; the stoop folds both. Seen from the side (sideBird), the wing swings round the shoulder: its
 // lit upper face while it is up, its darker underside once it sweeps below the back; feet hang under it
 // for a landing and a take-off. A perched bird (perchedBird) folds its wing over its side, looks about,
-// blinks, preens and stretches a wing. animals.js's soaring drivers place and pose them. Palettes, from
+// blinks, preens and stretches a wing. flyers.js's eagleFlyAt, circlerAt, glideAt and hawkAt place and pose them. Palettes, from
 // the scene: eagleGolden or eagleBald [dark, pale, tail, beak, silver], hawk [dark, pale, rufous, _,
 // black, streak], vulture or vultureAfrica [dark, _, _, red, silver] and serpent [dark, _, _, yellow, _,
 // white].

@@ -1,0 +1,1191 @@
+{
+  "scene": "hundredacre",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:balloonAt": 12,
+        "front:eeyoreAt": 48,
+        "front:kessieAt": 84,
+        "front:owlHomeAt": 84,
+        "front:pigletAt": 60,
+        "front:poohAt": 72,
+        "front:rabbitAt": 96,
+        "front:rooAt": 24,
+        "front:step:fireflies": 108,
+        "front:step:flight-bees": 108,
+        "front:step:kessie": 108,
+        "front:step:owl": 108,
+        "front:step:pooh-and-piglet": 108,
+        "front:swarmAt": 84,
+        "front:tiggerAt": 24,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:balloonAt",
+        "back:step:sky < front:eeyoreAt",
+        "back:step:sky < front:kessieAt",
+        "back:step:sky < front:owlHomeAt",
+        "back:step:sky < front:pigletAt",
+        "back:step:sky < front:poohAt",
+        "back:step:sky < front:rabbitAt",
+        "back:step:sky < front:rooAt",
+        "back:step:sky < front:step:fireflies",
+        "back:step:sky < front:step:flight-bees",
+        "back:step:sky < front:step:kessie",
+        "back:step:sky < front:step:owl",
+        "back:step:sky < front:step:pooh-and-piglet",
+        "back:step:sky < front:swarmAt",
+        "back:step:sky < front:tiggerAt",
+        "back:step:sky < plants",
+        "front:balloonAt < front:eeyoreAt",
+        "front:balloonAt < front:pigletAt",
+        "front:balloonAt < front:poohAt",
+        "front:balloonAt < front:rabbitAt",
+        "front:balloonAt < front:rooAt",
+        "front:balloonAt < front:step:fireflies",
+        "front:balloonAt < front:step:flight-bees",
+        "front:balloonAt < front:step:pooh-and-piglet",
+        "front:balloonAt < front:tiggerAt",
+        "front:eeyoreAt < front:pigletAt",
+        "front:eeyoreAt < front:poohAt",
+        "front:eeyoreAt < front:rabbitAt",
+        "front:eeyoreAt < front:rooAt",
+        "front:eeyoreAt < front:step:fireflies",
+        "front:eeyoreAt < front:step:pooh-and-piglet",
+        "front:eeyoreAt < front:tiggerAt",
+        "front:kessieAt < front:balloonAt",
+        "front:kessieAt < front:eeyoreAt",
+        "front:kessieAt < front:pigletAt",
+        "front:kessieAt < front:poohAt",
+        "front:kessieAt < front:rabbitAt",
+        "front:kessieAt < front:rooAt",
+        "front:kessieAt < front:step:fireflies",
+        "front:kessieAt < front:step:flight-bees",
+        "front:kessieAt < front:step:pooh-and-piglet",
+        "front:kessieAt < front:swarmAt",
+        "front:kessieAt < front:tiggerAt",
+        "front:owlHomeAt < front:balloonAt",
+        "front:owlHomeAt < front:eeyoreAt",
+        "front:owlHomeAt < front:kessieAt",
+        "front:owlHomeAt < front:pigletAt",
+        "front:owlHomeAt < front:poohAt",
+        "front:owlHomeAt < front:rabbitAt",
+        "front:owlHomeAt < front:rooAt",
+        "front:owlHomeAt < front:step:fireflies",
+        "front:owlHomeAt < front:step:flight-bees",
+        "front:owlHomeAt < front:step:kessie",
+        "front:owlHomeAt < front:step:pooh-and-piglet",
+        "front:owlHomeAt < front:swarmAt",
+        "front:owlHomeAt < front:tiggerAt",
+        "front:pigletAt < front:step:fireflies",
+        "front:poohAt < front:pigletAt",
+        "front:poohAt < front:step:fireflies",
+        "front:rabbitAt < front:pigletAt",
+        "front:rabbitAt < front:poohAt",
+        "front:rabbitAt < front:rooAt",
+        "front:rabbitAt < front:step:fireflies",
+        "front:rabbitAt < front:step:pooh-and-piglet",
+        "front:rabbitAt < front:tiggerAt",
+        "front:rooAt < front:pigletAt",
+        "front:rooAt < front:poohAt",
+        "front:rooAt < front:step:fireflies",
+        "front:rooAt < front:step:pooh-and-piglet",
+        "front:step:flight-bees < front:eeyoreAt",
+        "front:step:flight-bees < front:pigletAt",
+        "front:step:flight-bees < front:poohAt",
+        "front:step:flight-bees < front:rabbitAt",
+        "front:step:flight-bees < front:rooAt",
+        "front:step:flight-bees < front:step:fireflies",
+        "front:step:flight-bees < front:step:pooh-and-piglet",
+        "front:step:flight-bees < front:tiggerAt",
+        "front:step:kessie < front:balloonAt",
+        "front:step:kessie < front:eeyoreAt",
+        "front:step:kessie < front:kessieAt",
+        "front:step:kessie < front:pigletAt",
+        "front:step:kessie < front:poohAt",
+        "front:step:kessie < front:rabbitAt",
+        "front:step:kessie < front:rooAt",
+        "front:step:kessie < front:step:fireflies",
+        "front:step:kessie < front:step:flight-bees",
+        "front:step:kessie < front:step:pooh-and-piglet",
+        "front:step:kessie < front:swarmAt",
+        "front:step:kessie < front:tiggerAt",
+        "front:step:owl < front:balloonAt",
+        "front:step:owl < front:eeyoreAt",
+        "front:step:owl < front:kessieAt",
+        "front:step:owl < front:owlHomeAt",
+        "front:step:owl < front:pigletAt",
+        "front:step:owl < front:poohAt",
+        "front:step:owl < front:rabbitAt",
+        "front:step:owl < front:rooAt",
+        "front:step:owl < front:step:fireflies",
+        "front:step:owl < front:step:flight-bees",
+        "front:step:owl < front:step:kessie",
+        "front:step:owl < front:step:pooh-and-piglet",
+        "front:step:owl < front:swarmAt",
+        "front:step:owl < front:tiggerAt",
+        "front:step:pooh-and-piglet < front:pigletAt",
+        "front:step:pooh-and-piglet < front:poohAt",
+        "front:step:pooh-and-piglet < front:step:fireflies",
+        "front:swarmAt < front:balloonAt",
+        "front:swarmAt < front:eeyoreAt",
+        "front:swarmAt < front:pigletAt",
+        "front:swarmAt < front:poohAt",
+        "front:swarmAt < front:rabbitAt",
+        "front:swarmAt < front:rooAt",
+        "front:swarmAt < front:step:fireflies",
+        "front:swarmAt < front:step:flight-bees",
+        "front:swarmAt < front:step:pooh-and-piglet",
+        "front:swarmAt < front:tiggerAt",
+        "front:tiggerAt < front:pigletAt",
+        "front:tiggerAt < front:poohAt",
+        "front:tiggerAt < front:rooAt",
+        "front:tiggerAt < front:step:fireflies",
+        "front:tiggerAt < front:step:pooh-and-piglet",
+        "plants < front:balloonAt",
+        "plants < front:eeyoreAt",
+        "plants < front:kessieAt",
+        "plants < front:owlHomeAt",
+        "plants < front:pigletAt",
+        "plants < front:poohAt",
+        "plants < front:rabbitAt",
+        "plants < front:rooAt",
+        "plants < front:step:fireflies",
+        "plants < front:step:flight-bees",
+        "plants < front:step:kessie",
+        "plants < front:step:owl",
+        "plants < front:step:pooh-and-piglet",
+        "plants < front:swarmAt",
+        "plants < front:tiggerAt"
+      ],
+      "actors": {
+        "owl": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            -12,
+            229.5
+          ],
+          "yRange": [
+            0,
+            34.1
+          ],
+          "speed": 14.5
+        },
+        "kessie": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            -12,
+            257.5
+          ],
+          "yRange": [
+            0,
+            24.5
+          ],
+          "speed": 22.5
+        },
+        "bees": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            -12,
+            174.8
+          ],
+          "yRange": [
+            79.2,
+            79.2
+          ],
+          "speed": 9,
+          "poses": [
+            "fly"
+          ]
+        },
+        "balloon": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -12,
+            1.8
+          ],
+          "yRange": [
+            20.5,
+            20.5
+          ],
+          "speed": 5,
+          "poses": [
+            "fly"
+          ]
+        },
+        "eeyore": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -11.2,
+            0.8
+          ],
+          "speed": 3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            192,
+            249
+          ],
+          "speed": 12,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "tigger": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            222,
+            249.5
+          ],
+          "speed": 10,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "roo": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            225,
+            249.8
+          ],
+          "speed": 9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "pooh": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -10.7,
+            31.8
+          ],
+          "speed": 5,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "piglet": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            14,
+            42.7
+          ],
+          "speed": 4.4,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:balloonAt": 12,
+        "front:eeyoreAt": 48,
+        "front:kessieAt": 84,
+        "front:owlHomeAt": 84,
+        "front:pigletAt": 60,
+        "front:poohAt": 72,
+        "front:rabbitAt": 96,
+        "front:rooAt": 24,
+        "front:step:fireflies": 108,
+        "front:step:flight-bees": 108,
+        "front:step:kessie": 108,
+        "front:step:owl": 108,
+        "front:step:pooh-and-piglet": 108,
+        "front:swarmAt": 56,
+        "front:tiggerAt": 24,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:balloonAt",
+        "back:step:sky < front:eeyoreAt",
+        "back:step:sky < front:kessieAt",
+        "back:step:sky < front:owlHomeAt",
+        "back:step:sky < front:pigletAt",
+        "back:step:sky < front:poohAt",
+        "back:step:sky < front:rabbitAt",
+        "back:step:sky < front:rooAt",
+        "back:step:sky < front:step:fireflies",
+        "back:step:sky < front:step:flight-bees",
+        "back:step:sky < front:step:kessie",
+        "back:step:sky < front:step:owl",
+        "back:step:sky < front:step:pooh-and-piglet",
+        "back:step:sky < front:swarmAt",
+        "back:step:sky < front:tiggerAt",
+        "back:step:sky < plants",
+        "front:balloonAt < front:eeyoreAt",
+        "front:balloonAt < front:pigletAt",
+        "front:balloonAt < front:poohAt",
+        "front:balloonAt < front:rabbitAt",
+        "front:balloonAt < front:rooAt",
+        "front:balloonAt < front:step:fireflies",
+        "front:balloonAt < front:step:flight-bees",
+        "front:balloonAt < front:step:pooh-and-piglet",
+        "front:balloonAt < front:tiggerAt",
+        "front:eeyoreAt < front:pigletAt",
+        "front:eeyoreAt < front:poohAt",
+        "front:eeyoreAt < front:rabbitAt",
+        "front:eeyoreAt < front:rooAt",
+        "front:eeyoreAt < front:step:fireflies",
+        "front:eeyoreAt < front:step:pooh-and-piglet",
+        "front:eeyoreAt < front:tiggerAt",
+        "front:kessieAt < front:balloonAt",
+        "front:kessieAt < front:eeyoreAt",
+        "front:kessieAt < front:pigletAt",
+        "front:kessieAt < front:poohAt",
+        "front:kessieAt < front:rabbitAt",
+        "front:kessieAt < front:rooAt",
+        "front:kessieAt < front:step:fireflies",
+        "front:kessieAt < front:step:flight-bees",
+        "front:kessieAt < front:step:pooh-and-piglet",
+        "front:kessieAt < front:swarmAt",
+        "front:kessieAt < front:tiggerAt",
+        "front:owlHomeAt < front:balloonAt",
+        "front:owlHomeAt < front:eeyoreAt",
+        "front:owlHomeAt < front:kessieAt",
+        "front:owlHomeAt < front:pigletAt",
+        "front:owlHomeAt < front:poohAt",
+        "front:owlHomeAt < front:rabbitAt",
+        "front:owlHomeAt < front:rooAt",
+        "front:owlHomeAt < front:step:fireflies",
+        "front:owlHomeAt < front:step:flight-bees",
+        "front:owlHomeAt < front:step:kessie",
+        "front:owlHomeAt < front:step:pooh-and-piglet",
+        "front:owlHomeAt < front:swarmAt",
+        "front:owlHomeAt < front:tiggerAt",
+        "front:pigletAt < front:step:fireflies",
+        "front:poohAt < front:pigletAt",
+        "front:poohAt < front:step:fireflies",
+        "front:rabbitAt < front:pigletAt",
+        "front:rabbitAt < front:poohAt",
+        "front:rabbitAt < front:rooAt",
+        "front:rabbitAt < front:step:fireflies",
+        "front:rabbitAt < front:step:pooh-and-piglet",
+        "front:rabbitAt < front:tiggerAt",
+        "front:rooAt < front:pigletAt",
+        "front:rooAt < front:poohAt",
+        "front:rooAt < front:step:fireflies",
+        "front:rooAt < front:step:pooh-and-piglet",
+        "front:step:flight-bees < front:eeyoreAt",
+        "front:step:flight-bees < front:pigletAt",
+        "front:step:flight-bees < front:poohAt",
+        "front:step:flight-bees < front:rabbitAt",
+        "front:step:flight-bees < front:rooAt",
+        "front:step:flight-bees < front:step:fireflies",
+        "front:step:flight-bees < front:step:pooh-and-piglet",
+        "front:step:flight-bees < front:tiggerAt",
+        "front:step:kessie < front:balloonAt",
+        "front:step:kessie < front:eeyoreAt",
+        "front:step:kessie < front:kessieAt",
+        "front:step:kessie < front:pigletAt",
+        "front:step:kessie < front:poohAt",
+        "front:step:kessie < front:rabbitAt",
+        "front:step:kessie < front:rooAt",
+        "front:step:kessie < front:step:fireflies",
+        "front:step:kessie < front:step:flight-bees",
+        "front:step:kessie < front:step:pooh-and-piglet",
+        "front:step:kessie < front:swarmAt",
+        "front:step:kessie < front:tiggerAt",
+        "front:step:owl < front:balloonAt",
+        "front:step:owl < front:eeyoreAt",
+        "front:step:owl < front:kessieAt",
+        "front:step:owl < front:owlHomeAt",
+        "front:step:owl < front:pigletAt",
+        "front:step:owl < front:poohAt",
+        "front:step:owl < front:rabbitAt",
+        "front:step:owl < front:rooAt",
+        "front:step:owl < front:step:fireflies",
+        "front:step:owl < front:step:flight-bees",
+        "front:step:owl < front:step:kessie",
+        "front:step:owl < front:step:pooh-and-piglet",
+        "front:step:owl < front:swarmAt",
+        "front:step:owl < front:tiggerAt",
+        "front:step:pooh-and-piglet < front:pigletAt",
+        "front:step:pooh-and-piglet < front:poohAt",
+        "front:step:pooh-and-piglet < front:step:fireflies",
+        "front:swarmAt < front:balloonAt",
+        "front:swarmAt < front:eeyoreAt",
+        "front:swarmAt < front:pigletAt",
+        "front:swarmAt < front:poohAt",
+        "front:swarmAt < front:rabbitAt",
+        "front:swarmAt < front:rooAt",
+        "front:swarmAt < front:step:fireflies",
+        "front:swarmAt < front:step:flight-bees",
+        "front:swarmAt < front:step:pooh-and-piglet",
+        "front:swarmAt < front:tiggerAt",
+        "front:tiggerAt < front:pigletAt",
+        "front:tiggerAt < front:poohAt",
+        "front:tiggerAt < front:rooAt",
+        "front:tiggerAt < front:step:fireflies",
+        "front:tiggerAt < front:step:pooh-and-piglet",
+        "plants < front:balloonAt",
+        "plants < front:eeyoreAt",
+        "plants < front:kessieAt",
+        "plants < front:owlHomeAt",
+        "plants < front:pigletAt",
+        "plants < front:poohAt",
+        "plants < front:rabbitAt",
+        "plants < front:rooAt",
+        "plants < front:step:fireflies",
+        "plants < front:step:flight-bees",
+        "plants < front:step:kessie",
+        "plants < front:step:owl",
+        "plants < front:step:pooh-and-piglet",
+        "plants < front:swarmAt",
+        "plants < front:tiggerAt"
+      ],
+      "actors": {
+        "owl": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            -12,
+            107
+          ],
+          "yRange": [
+            0,
+            32.2
+          ],
+          "speed": 15
+        },
+        "kessie": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            -12,
+            109
+          ],
+          "yRange": [
+            0,
+            24.5
+          ],
+          "speed": 23.1
+        },
+        "bees": {
+          "firstStage": 2,
+          "activeSteps": 56,
+          "xRange": [
+            -12,
+            102.8
+          ],
+          "yRange": [
+            77.8,
+            79.2
+          ],
+          "speed": 9,
+          "poses": [
+            "fly"
+          ]
+        },
+        "balloon": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -12,
+            1.8
+          ],
+          "yRange": [
+            20.5,
+            20.5
+          ],
+          "speed": 5,
+          "poses": [
+            "fly"
+          ]
+        },
+        "eeyore": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -11.2,
+            0.8
+          ],
+          "speed": 3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            42,
+            99
+          ],
+          "speed": 12,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "tigger": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            72,
+            99.5
+          ],
+          "speed": 10,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "roo": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            75,
+            99.8
+          ],
+          "speed": 9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "pooh": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -10.7,
+            23
+          ],
+          "speed": 5,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "piglet": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            14,
+            34
+          ],
+          "speed": 4.2,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:balloonAt": 12,
+        "front:eeyoreAt": 48,
+        "front:fireflyAt": 108,
+        "front:owlHomeAt": 84,
+        "front:pigletAt": 60,
+        "front:poohAt": 72,
+        "front:rabbitAt": 96,
+        "front:rooAt": 24,
+        "front:step:fireflies": 108,
+        "front:step:flight-bees": 108,
+        "front:step:kessie": 108,
+        "front:step:owl": 108,
+        "front:step:pooh-and-piglet": 108,
+        "front:swarmAt": 84,
+        "front:tiggerAt": 24,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:balloonAt",
+        "back:step:sky < front:eeyoreAt",
+        "back:step:sky < front:fireflyAt",
+        "back:step:sky < front:owlHomeAt",
+        "back:step:sky < front:pigletAt",
+        "back:step:sky < front:poohAt",
+        "back:step:sky < front:rabbitAt",
+        "back:step:sky < front:rooAt",
+        "back:step:sky < front:step:fireflies",
+        "back:step:sky < front:step:flight-bees",
+        "back:step:sky < front:step:kessie",
+        "back:step:sky < front:step:owl",
+        "back:step:sky < front:step:pooh-and-piglet",
+        "back:step:sky < front:swarmAt",
+        "back:step:sky < front:tiggerAt",
+        "back:step:sky < plants",
+        "front:balloonAt < front:eeyoreAt",
+        "front:balloonAt < front:fireflyAt",
+        "front:balloonAt < front:pigletAt",
+        "front:balloonAt < front:poohAt",
+        "front:balloonAt < front:rabbitAt",
+        "front:balloonAt < front:rooAt",
+        "front:balloonAt < front:step:fireflies",
+        "front:balloonAt < front:step:flight-bees",
+        "front:balloonAt < front:step:pooh-and-piglet",
+        "front:balloonAt < front:tiggerAt",
+        "front:eeyoreAt < front:fireflyAt",
+        "front:eeyoreAt < front:pigletAt",
+        "front:eeyoreAt < front:poohAt",
+        "front:eeyoreAt < front:rabbitAt",
+        "front:eeyoreAt < front:rooAt",
+        "front:eeyoreAt < front:step:fireflies",
+        "front:eeyoreAt < front:step:pooh-and-piglet",
+        "front:eeyoreAt < front:tiggerAt",
+        "front:owlHomeAt < front:balloonAt",
+        "front:owlHomeAt < front:eeyoreAt",
+        "front:owlHomeAt < front:fireflyAt",
+        "front:owlHomeAt < front:pigletAt",
+        "front:owlHomeAt < front:poohAt",
+        "front:owlHomeAt < front:rabbitAt",
+        "front:owlHomeAt < front:rooAt",
+        "front:owlHomeAt < front:step:fireflies",
+        "front:owlHomeAt < front:step:flight-bees",
+        "front:owlHomeAt < front:step:kessie",
+        "front:owlHomeAt < front:step:pooh-and-piglet",
+        "front:owlHomeAt < front:swarmAt",
+        "front:owlHomeAt < front:tiggerAt",
+        "front:pigletAt < front:fireflyAt",
+        "front:pigletAt < front:step:fireflies",
+        "front:poohAt < front:fireflyAt",
+        "front:poohAt < front:pigletAt",
+        "front:poohAt < front:step:fireflies",
+        "front:rabbitAt < front:fireflyAt",
+        "front:rabbitAt < front:pigletAt",
+        "front:rabbitAt < front:poohAt",
+        "front:rabbitAt < front:rooAt",
+        "front:rabbitAt < front:step:fireflies",
+        "front:rabbitAt < front:step:pooh-and-piglet",
+        "front:rabbitAt < front:tiggerAt",
+        "front:rooAt < front:fireflyAt",
+        "front:rooAt < front:pigletAt",
+        "front:rooAt < front:poohAt",
+        "front:rooAt < front:step:fireflies",
+        "front:rooAt < front:step:pooh-and-piglet",
+        "front:step:fireflies < front:fireflyAt",
+        "front:step:flight-bees < front:eeyoreAt",
+        "front:step:flight-bees < front:fireflyAt",
+        "front:step:flight-bees < front:pigletAt",
+        "front:step:flight-bees < front:poohAt",
+        "front:step:flight-bees < front:rabbitAt",
+        "front:step:flight-bees < front:rooAt",
+        "front:step:flight-bees < front:step:fireflies",
+        "front:step:flight-bees < front:step:pooh-and-piglet",
+        "front:step:flight-bees < front:tiggerAt",
+        "front:step:kessie < front:balloonAt",
+        "front:step:kessie < front:eeyoreAt",
+        "front:step:kessie < front:fireflyAt",
+        "front:step:kessie < front:pigletAt",
+        "front:step:kessie < front:poohAt",
+        "front:step:kessie < front:rabbitAt",
+        "front:step:kessie < front:rooAt",
+        "front:step:kessie < front:step:fireflies",
+        "front:step:kessie < front:step:flight-bees",
+        "front:step:kessie < front:step:pooh-and-piglet",
+        "front:step:kessie < front:swarmAt",
+        "front:step:kessie < front:tiggerAt",
+        "front:step:owl < front:balloonAt",
+        "front:step:owl < front:eeyoreAt",
+        "front:step:owl < front:fireflyAt",
+        "front:step:owl < front:owlHomeAt",
+        "front:step:owl < front:pigletAt",
+        "front:step:owl < front:poohAt",
+        "front:step:owl < front:rabbitAt",
+        "front:step:owl < front:rooAt",
+        "front:step:owl < front:step:fireflies",
+        "front:step:owl < front:step:flight-bees",
+        "front:step:owl < front:step:kessie",
+        "front:step:owl < front:step:pooh-and-piglet",
+        "front:step:owl < front:swarmAt",
+        "front:step:owl < front:tiggerAt",
+        "front:step:pooh-and-piglet < front:fireflyAt",
+        "front:step:pooh-and-piglet < front:pigletAt",
+        "front:step:pooh-and-piglet < front:poohAt",
+        "front:step:pooh-and-piglet < front:step:fireflies",
+        "front:swarmAt < front:balloonAt",
+        "front:swarmAt < front:eeyoreAt",
+        "front:swarmAt < front:fireflyAt",
+        "front:swarmAt < front:pigletAt",
+        "front:swarmAt < front:poohAt",
+        "front:swarmAt < front:rabbitAt",
+        "front:swarmAt < front:rooAt",
+        "front:swarmAt < front:step:fireflies",
+        "front:swarmAt < front:step:flight-bees",
+        "front:swarmAt < front:step:pooh-and-piglet",
+        "front:swarmAt < front:tiggerAt",
+        "front:tiggerAt < front:fireflyAt",
+        "front:tiggerAt < front:pigletAt",
+        "front:tiggerAt < front:poohAt",
+        "front:tiggerAt < front:rooAt",
+        "front:tiggerAt < front:step:fireflies",
+        "front:tiggerAt < front:step:pooh-and-piglet",
+        "plants < front:balloonAt",
+        "plants < front:eeyoreAt",
+        "plants < front:fireflyAt",
+        "plants < front:owlHomeAt",
+        "plants < front:pigletAt",
+        "plants < front:poohAt",
+        "plants < front:rabbitAt",
+        "plants < front:rooAt",
+        "plants < front:step:fireflies",
+        "plants < front:step:flight-bees",
+        "plants < front:step:kessie",
+        "plants < front:step:owl",
+        "plants < front:step:pooh-and-piglet",
+        "plants < front:swarmAt",
+        "plants < front:tiggerAt"
+      ],
+      "actors": {
+        "owl": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            0,
+            252
+          ],
+          "yRange": [
+            0,
+            42.7
+          ],
+          "speed": 14
+        },
+        "kessie": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            0,
+            0
+          ],
+          "yRange": [
+            0,
+            0
+          ]
+        },
+        "bees": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            -12,
+            174.8
+          ],
+          "yRange": [
+            79.2,
+            79.2
+          ],
+          "speed": 9,
+          "poses": [
+            "fly"
+          ]
+        },
+        "balloon": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -12,
+            1.8
+          ],
+          "yRange": [
+            20.5,
+            20.5
+          ],
+          "speed": 5,
+          "poses": [
+            "fly"
+          ]
+        },
+        "eeyore": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -11.2,
+            0.8
+          ],
+          "speed": 3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            192,
+            249
+          ],
+          "speed": 12,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "tigger": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            222,
+            249.5
+          ],
+          "speed": 10,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "roo": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            225,
+            249.8
+          ],
+          "speed": 9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "pooh": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -10.7,
+            20.5
+          ],
+          "speed": 5,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "piglet": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            14,
+            31.5
+          ],
+          "speed": 4.1,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:balloonAt": 12,
+        "front:eeyoreAt": 48,
+        "front:fireflyAt": 108,
+        "front:owlHomeAt": 84,
+        "front:pigletAt": 60,
+        "front:poohAt": 72,
+        "front:rabbitAt": 96,
+        "front:rooAt": 24,
+        "front:step:fireflies": 108,
+        "front:step:flight-bees": 108,
+        "front:step:kessie": 108,
+        "front:step:owl": 108,
+        "front:step:pooh-and-piglet": 108,
+        "front:swarmAt": 56,
+        "front:tiggerAt": 24,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:balloonAt",
+        "back:step:sky < front:eeyoreAt",
+        "back:step:sky < front:fireflyAt",
+        "back:step:sky < front:owlHomeAt",
+        "back:step:sky < front:pigletAt",
+        "back:step:sky < front:poohAt",
+        "back:step:sky < front:rabbitAt",
+        "back:step:sky < front:rooAt",
+        "back:step:sky < front:step:fireflies",
+        "back:step:sky < front:step:flight-bees",
+        "back:step:sky < front:step:kessie",
+        "back:step:sky < front:step:owl",
+        "back:step:sky < front:step:pooh-and-piglet",
+        "back:step:sky < front:swarmAt",
+        "back:step:sky < front:tiggerAt",
+        "back:step:sky < plants",
+        "front:balloonAt < front:eeyoreAt",
+        "front:balloonAt < front:fireflyAt",
+        "front:balloonAt < front:pigletAt",
+        "front:balloonAt < front:poohAt",
+        "front:balloonAt < front:rabbitAt",
+        "front:balloonAt < front:rooAt",
+        "front:balloonAt < front:step:fireflies",
+        "front:balloonAt < front:step:flight-bees",
+        "front:balloonAt < front:step:pooh-and-piglet",
+        "front:balloonAt < front:tiggerAt",
+        "front:eeyoreAt < front:fireflyAt",
+        "front:eeyoreAt < front:pigletAt",
+        "front:eeyoreAt < front:poohAt",
+        "front:eeyoreAt < front:rabbitAt",
+        "front:eeyoreAt < front:rooAt",
+        "front:eeyoreAt < front:step:fireflies",
+        "front:eeyoreAt < front:step:pooh-and-piglet",
+        "front:eeyoreAt < front:tiggerAt",
+        "front:owlHomeAt < front:balloonAt",
+        "front:owlHomeAt < front:eeyoreAt",
+        "front:owlHomeAt < front:fireflyAt",
+        "front:owlHomeAt < front:pigletAt",
+        "front:owlHomeAt < front:poohAt",
+        "front:owlHomeAt < front:rabbitAt",
+        "front:owlHomeAt < front:rooAt",
+        "front:owlHomeAt < front:step:fireflies",
+        "front:owlHomeAt < front:step:flight-bees",
+        "front:owlHomeAt < front:step:kessie",
+        "front:owlHomeAt < front:step:pooh-and-piglet",
+        "front:owlHomeAt < front:swarmAt",
+        "front:owlHomeAt < front:tiggerAt",
+        "front:pigletAt < front:fireflyAt",
+        "front:pigletAt < front:step:fireflies",
+        "front:poohAt < front:fireflyAt",
+        "front:poohAt < front:pigletAt",
+        "front:poohAt < front:step:fireflies",
+        "front:rabbitAt < front:fireflyAt",
+        "front:rabbitAt < front:pigletAt",
+        "front:rabbitAt < front:poohAt",
+        "front:rabbitAt < front:rooAt",
+        "front:rabbitAt < front:step:fireflies",
+        "front:rabbitAt < front:step:pooh-and-piglet",
+        "front:rabbitAt < front:tiggerAt",
+        "front:rooAt < front:fireflyAt",
+        "front:rooAt < front:pigletAt",
+        "front:rooAt < front:poohAt",
+        "front:rooAt < front:step:fireflies",
+        "front:rooAt < front:step:pooh-and-piglet",
+        "front:step:fireflies < front:fireflyAt",
+        "front:step:flight-bees < front:eeyoreAt",
+        "front:step:flight-bees < front:fireflyAt",
+        "front:step:flight-bees < front:pigletAt",
+        "front:step:flight-bees < front:poohAt",
+        "front:step:flight-bees < front:rabbitAt",
+        "front:step:flight-bees < front:rooAt",
+        "front:step:flight-bees < front:step:fireflies",
+        "front:step:flight-bees < front:step:pooh-and-piglet",
+        "front:step:flight-bees < front:tiggerAt",
+        "front:step:kessie < front:balloonAt",
+        "front:step:kessie < front:eeyoreAt",
+        "front:step:kessie < front:fireflyAt",
+        "front:step:kessie < front:pigletAt",
+        "front:step:kessie < front:poohAt",
+        "front:step:kessie < front:rabbitAt",
+        "front:step:kessie < front:rooAt",
+        "front:step:kessie < front:step:fireflies",
+        "front:step:kessie < front:step:flight-bees",
+        "front:step:kessie < front:step:pooh-and-piglet",
+        "front:step:kessie < front:swarmAt",
+        "front:step:kessie < front:tiggerAt",
+        "front:step:owl < front:balloonAt",
+        "front:step:owl < front:eeyoreAt",
+        "front:step:owl < front:fireflyAt",
+        "front:step:owl < front:owlHomeAt",
+        "front:step:owl < front:pigletAt",
+        "front:step:owl < front:poohAt",
+        "front:step:owl < front:rabbitAt",
+        "front:step:owl < front:rooAt",
+        "front:step:owl < front:step:fireflies",
+        "front:step:owl < front:step:flight-bees",
+        "front:step:owl < front:step:kessie",
+        "front:step:owl < front:step:pooh-and-piglet",
+        "front:step:owl < front:swarmAt",
+        "front:step:owl < front:tiggerAt",
+        "front:step:pooh-and-piglet < front:fireflyAt",
+        "front:step:pooh-and-piglet < front:pigletAt",
+        "front:step:pooh-and-piglet < front:poohAt",
+        "front:step:pooh-and-piglet < front:step:fireflies",
+        "front:swarmAt < front:balloonAt",
+        "front:swarmAt < front:eeyoreAt",
+        "front:swarmAt < front:fireflyAt",
+        "front:swarmAt < front:pigletAt",
+        "front:swarmAt < front:poohAt",
+        "front:swarmAt < front:rabbitAt",
+        "front:swarmAt < front:rooAt",
+        "front:swarmAt < front:step:fireflies",
+        "front:swarmAt < front:step:flight-bees",
+        "front:swarmAt < front:step:pooh-and-piglet",
+        "front:swarmAt < front:tiggerAt",
+        "front:tiggerAt < front:fireflyAt",
+        "front:tiggerAt < front:pigletAt",
+        "front:tiggerAt < front:poohAt",
+        "front:tiggerAt < front:rooAt",
+        "front:tiggerAt < front:step:fireflies",
+        "front:tiggerAt < front:step:pooh-and-piglet",
+        "plants < front:balloonAt",
+        "plants < front:eeyoreAt",
+        "plants < front:fireflyAt",
+        "plants < front:owlHomeAt",
+        "plants < front:pigletAt",
+        "plants < front:poohAt",
+        "plants < front:rabbitAt",
+        "plants < front:rooAt",
+        "plants < front:step:fireflies",
+        "plants < front:step:flight-bees",
+        "plants < front:step:kessie",
+        "plants < front:step:owl",
+        "plants < front:step:pooh-and-piglet",
+        "plants < front:swarmAt",
+        "plants < front:tiggerAt"
+      ],
+      "actors": {
+        "owl": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            -17,
+            102
+          ],
+          "yRange": [
+            0,
+            40.7
+          ],
+          "speed": 14
+        },
+        "kessie": {
+          "firstStage": 2,
+          "activeSteps": 84,
+          "xRange": [
+            0,
+            0
+          ],
+          "yRange": [
+            0,
+            0
+          ]
+        },
+        "bees": {
+          "firstStage": 2,
+          "activeSteps": 56,
+          "xRange": [
+            -12,
+            102.8
+          ],
+          "yRange": [
+            77.8,
+            79.2
+          ],
+          "speed": 9,
+          "poses": [
+            "fly"
+          ]
+        },
+        "balloon": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -12,
+            1.8
+          ],
+          "yRange": [
+            20.5,
+            20.5
+          ],
+          "speed": 5,
+          "poses": [
+            "fly"
+          ]
+        },
+        "eeyore": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -11.2,
+            0.8
+          ],
+          "speed": 3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            42,
+            99
+          ],
+          "speed": 12,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "tigger": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            72,
+            99.5
+          ],
+          "speed": 10,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "roo": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            75,
+            99.8
+          ],
+          "speed": 9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "pooh": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            -10.7,
+            25.5
+          ],
+          "speed": 5,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "piglet": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            14,
+            36.5
+          ],
+          "speed": 4.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    }
+  }
+}

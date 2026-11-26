@@ -5,12 +5,14 @@
 // stays rooted on the shoulder and changes shape through its beat, four tones lit from above, a darker
 // far wing and far leg, and a soft ground shadow. drawSwan and drawFlamingo draw one pose; the pose
 // builders (swanFly, swanSwim, swanWalk, flamingoFly, flamingoWade, ...) and the rest poses (swanRest,
-// flamingoRest) are what animals.js's swanAt and flamingoAt choose between. Palettes: swan (or whooper,
+// flamingoRest) are what swanAt and flamingoAt (below) choose between. Palettes: swan (or whooper,
 // as the scene names it) [white, shade, bill base, bill tip] and flamingo [pink, wing, dark], with
 // groundShadow (the soft shadow on the ground) and pond (shallow, deep, foam, for a swimmer's wake; a scene's
 // fjord or water serves) beside them.
 import { ease, joint, mixPose } from "./build.js";
-import { clamp, frac, lerp, mix, shadowColour, TAU } from "./pixel.js";
+import { stride } from "./critters.js";
+import { clamp, frac, lerp, mix, shadowColour, smooth, TAU } from "./pixel.js";
+import { feet, stillOf } from "./place.js";
 import { Cells, capsule, tidy } from "./swimmer.js";
 
 export { mixPose };
@@ -664,3 +666,118 @@ export function flamingoRest(name, since, total, { legs = null, time = 0 } = {})
   }
   return { ...p, look: p.look > 0.5 || blink(time, 3.7, 1) ? 1 : 0 };
 }
+
+// Long-necked birds
+
+// Built from parts (longneck.js): the trumpeter and whooper swans (Yellowstone, Iceland) and the lesser
+// flamingo (Serengeti). A swan walks with its feet planted: its stride clock s.c (critters.js stride) grows
+// with the ground it covers, SWAN_STRIDE being [px a stride, seconds a stride] and SWAN_SPEED the speed that
+// goes with it; swanStep() keeps it. It eases into a stop and plays the pose rest() picked from
+// swanPoses(s): on land it stands, grazes with its neck bent to the grass (a stop with no pose
+// grazes), looks about, preens or stretches and flaps; on the water (s.swimming, at the water line s.y)
+// it glides with a wake, dabbles with its head under and its tail up, preens or flaps. A flyer (pose
+// "fly") beats slow and deep with its neck stretched out and its feet trailing. A flamingo flies the
+// same way, or, when it has a state (a walker), wades on slow high steps (b.water the depth of the
+// water over its feet) and rests: it filters with its head down or stands on one leg. Palettes: swan [white, shade, bill base, bill tip] (the scene may name another, as `pal`)
+// and flamingo [pink, wing, dark], with groundShadow, and pond (or fjord, or water) for the water.
+export const SWAN_STRIDE = [SWAN_SPEED, 1.1];
+export const swanSpeed = SWAN_SPEED / SWAN_STRIDE[1];
+export const swanPoses = (s) => SWAN_RESTS[s.swimming ? "water" : "land"];
+
+// Keeps a swan's or a flamingo's stride clock; call it after wander(), with x0 where it stood before.
+export function longNeckStep(w, x0, dt, [px, cycle]) {
+  stride(w, x0, dt, px, cycle);
+}
+
+// The swan's and the flamingo's shared gait and rest: the walking pose at stride c, or the rest pose
+// the bird eased into once its feet stopped where they were.
+function walkOrRest(s, time, { walkAt, rest, stand }) {
+  const c = s.c ?? (s.phase ?? 0) * 0.25;
+  const moving = s.moving ?? s.state === "walk";
+  const held = s.c != null && c - Math.floor(c) > 1e-6;
+  if (moving || held) {
+    const w = walkAt(c);
+    const since = s.since == null ? 1 : time - s.since;
+    return moving && since < 0.3 ? mixPose(stand(w), w, smooth(since / 0.3)) : w;
+  }
+  const still = stillOf(s, time);
+  const w = walkAt(Math.round(c));
+  const r = rest(still, still + (s.timer ?? 60), w);
+  return s.c == null ? r : mixPose(w, r, smooth(Math.min(1, still / 0.3)));
+}
+
+export function swanAt(g, s, time = 0) {
+  if (g.trace) return g.trace.draw(swanAt, g, s, time);
+  const T = swanTones(g, s.pal ?? "swan");
+  const dir = s.dir;
+  const phase = s.phase ?? 0;
+  if (s.pose === "fly") {
+    const c = time * 1.5 + phase * 0.37;
+    const y = Math.round(s.y + Math.sin(time * 1.1 + phase));
+    drawSwan(g, Math.round(s.x), y + 7, dir, swanFly(c), T, { time, drop: Math.sin(c * Math.PI * 2) * 0.4 });
+    return;
+  }
+  const y = feet(g, s);
+  const ox = Math.round(s.x) + dir * 3;
+  const sit = s.state === "sit" ? (s.pose ?? "graze") : "stand";
+  if (s.swimming) {
+    const moving = s.moving ?? s.state === "walk";
+    if (moving) {
+      wake(g, ox, y, dir, time, { speed: 1 });
+      drawSwan(g, ox, y, dir, swanSwim(time + phase), T, { time });
+      return;
+    }
+    const still = stillOf(s, time);
+    const total = still + (s.timer ?? 60);
+    wake(g, ox, y, dir, time, { speed: 0.3 });
+    drawSwan(g, ox, y, dir, swanRest(s.pose ?? "glide", still, total, { water: true, time }), T, { time });
+    if (s.pose === "dabble") for (const a of [1.4, 2.2, 3]) ring(g, ox + dir * 4, y, (still - a) / 0.8, 6);
+    return;
+  }
+  const p = walkOrRest(s, time, {
+    walkAt: (c) => swanWalk(c),
+    rest: (since, total, w) => swanRest(sit, since, total, { legs: [w.legs.n, w.legs.f], time }),
+    stand: (w) => swanRest("stand", 1, 60, { legs: [w.legs.n, w.legs.f], time }),
+  });
+  drawSwan(g, ox, y, dir, p, T, { time });
+}
+
+// A flamingo in flight: a pale pink body, a red wing with black flight feathers, its neck held out
+// ahead and its legs trailing. On the ground (b.state) it wades or rests. Its palette is flamingo:
+// [pink, wing, dark].
+export function flamingoAt(g, b, time = 0) {
+  if (g.trace) return g.trace.draw(flamingoAt, g, b, time);
+  const T = flamingoTones(g);
+  const dir = b.dir;
+  if (b.state == null || b.pose === "fly") {
+    const c = time * 1.5 + (b.phase ?? 0) * 0.37 + 0.2;
+    const y = Math.round(b.y + Math.sin(time * 1.2 + (b.phase ?? 0)) * 2);
+    drawFlamingo(g, Math.round(b.x), y + 7, dir, flamingoFly(c), T, { time, drop: Math.sin(c * Math.PI * 2) * 0.4 });
+    return;
+  }
+  const y = feet(g, b);
+  const ox = Math.round(b.x) + dir * 2;
+  const sit = b.state === "sit" ? (b.pose ?? "stand") : "stand";
+  const keep = (w) => w.legs;
+  const p = walkOrRest(b, time, {
+    walkAt: (c) => flamingoWade(c),
+    rest: (since, total, w) => flamingoRest(sit, since, total, { legs: keep(w), time }),
+    stand: (w) => flamingoRest("stand", 1, 60, { legs: keep(w), time }),
+  });
+  drawFlamingo(g, ox, y, dir, { ...p, water: b.water ?? 0 }, T, { time });
+}
+
+export const FAMILY = {
+  id: "long-necked-birds",
+  title: "Long-necked birds",
+  group: "Birds",
+  differ: "neck, colour, legs",
+  drivers: {
+    swanAt: {
+      member: () => "swan",
+      role: (a) => (a.pose === "fly" ? "flyer" : a.swimming ? "swimmer" : "walker"),
+      day: (a, _args, scene) => scene === "yellowstone" || a?.pose === "fly",
+    },
+    flamingoAt: { role: "flyer", member: () => "flamingo", day: true },
+  },
+};

@@ -17,11 +17,13 @@
 // balloons give out. The first flight comes a little after the wood is grown; each one after that
 // waits until Pooh has walked to the far edge of the page, the one opposite where he came in, and
 // then to the other edge, back and forth.
-import { drawLooseBalloon, eeyoreAt, pigletAt, poohAt, rabbitAt, rooAt, swarmAt, tiggerAt } from "../kit/animals.js";
+
 import { broadleafLayout } from "../kit/broadleaf.js";
-import { doing, enter, fidget, flyBy, isNight, percher, settle, walker, wander } from "../kit/critters.js";
+import { drawLooseBalloon, pigletAt, poohAt, rabbitAt, rooAt, swarmAt, tiggerAt } from "../kit/cast.js";
+import { doing, enter, fidget, isNight, percher, settle, walker, wander } from "../kit/critters.js";
 import { starField } from "../kit/effects.js";
-import { OWL_MOVES, owlPerchPose } from "../kit/flyers.js";
+import { flyerAt, OWL_MOVES, owlFlyAt, owlPerchPose } from "../kit/flyers.js";
+import { eeyoreAt } from "../kit/horse.js";
 import { fireflyAt as glowAt, glowTones } from "../kit/insect.js";
 import { drawFlight, drawPerch, SPECIES as OWL_SPECIES, flightPose as owlFlight, owlTones } from "../kit/owl.js";
 import {
@@ -37,12 +39,16 @@ import {
   part,
   placeLandmarks,
   rect,
+  rng,
   scatter,
   smooth,
   sortPlants,
   stroke,
 } from "../kit/pixel.js";
+import { ANIMAL_BOX, bird, owlPerched, walk } from "../kit/poses.js";
+import { crossingActor, drawStep, runCast, walkerActor } from "../kit/runner.js";
 import {
+  blendPose,
   footOf,
   groundOf,
   movePose,
@@ -1317,145 +1323,366 @@ function kessieAt(g, f, k) {
   transitBird(g, "kessie", Math.round(k.x), Math.round(k.y), k.dir, time, lift, k.phase);
 }
 
-const extras = {
-  init(f) {
-    return {
-      motes: Array.from({ length: MOTES }, () => ({
-        x: f.rand() * f.cols,
-        y: f.groundY - 6 - f.rand() * 90,
-        phase: f.rand() * 6.28,
-      })),
-      stars: starField(f, STARS, 70),
-      birds: Array.from({ length: BIRDS }, () => ({
-        x: f.rand() * f.cols,
-        y: 12 + f.rand() * 40,
-        speed: 3 + f.rand() * 3,
-        phase: f.rand() * 6.28,
-      })),
-      owl: {
-        active: false,
-        mode: "away",
-        p: null,
-        t: 0,
-        next: 0,
-        x: 0,
-        y: 0,
-        dir: 1,
-        cruiseY: 32,
-        landing: false,
-        takeoff: false,
-        glide: null,
-        phase: 0,
+const extras = runCast(
+  [
+    drawStep(
+      "sky",
+      (g, f) => {
+        if (f.theme === "dark") skyAt(g, f);
+        else birdsAt(g, f);
       },
-      kessie: {
-        active: false,
-        mode: "away",
-        p: null,
-        t: 0,
-        next: 0,
-        x: 0,
-        y: 0,
-        dir: -1,
-        cruiseY: 32,
-        landing: false,
-        takeoff: false,
-        stay: 14,
-        phase: 0,
-      },
-      bees: { next: 5, bird: null },
-      balloon: { next: 2, bird: null },
-      pooh: { ...walker(f), lift: 0, held: null },
-      piglet: { ...walker(f), lift: 0, held: null },
-      flight: { next: Infinity, t: null, first: true, goal: 0, armed: false },
-      eeyore: walker(f),
-      rabbit: walker(f),
-      tigger: walker(f),
-      roo: walker(f),
-    };
-  },
+      { back: true },
+    ),
+    {
+      label: "shepard's birds (light theme)",
+      kind: "effect",
+      layer: "behind the plants (drawBack, light theme only)",
+      arrives: 0,
+      fixed: `${BIRDS} birds`,
+      sprites: ["birds"],
+    },
+    {
+      label: "stars and a moon (dark theme)",
+      kind: "effect",
+      layer: "behind the plants (drawBack, dark theme only)",
+      arrives: 0,
+      fixed: `${STARS} stars and a moon`,
+      sprites: ["sky"],
+    },
+    {
+      label: "owl",
+      kind: "bird",
+      family: "owls",
+      presence: ["owl"],
+      sprites: ["owl", "owl-glide", "owl-perched", "owl-swivel"],
+    },
+    drawStep("owl", (g, f) => {
+      if (f.extra.owl.active) owlHomeAt(g, f, f.extra.owl);
+    }),
+    {
+      label: "Kessie",
+      kind: "bird",
+      family: "small-flyers",
+      presence: ["kessie"],
+      sprites: ["kessie", "kessie-perched"],
+    },
+    drawStep("kessie", (g, f) => {
+      if (f.extra.kessie.active && !isNight(f)) kessieAt(g, f, f.extra.kessie);
+    }),
+    crossingActor({
+      id: "bees",
+      label: "bee swarm",
+      kind: "bird",
+      family: "insects",
+      sprites: ["bees"],
+      arrives: 2,
+      first: 5,
+      every: [5, 6],
+      speed: 9,
+      spawn: (f) => ({ y: 40 + f.rand() * 40 }),
+      draw: (g, b, f) => swarmAt(g, b, f.time),
+    }),
+    crossingActor({
+      id: "balloon",
+      label: "blue balloon",
+      kind: "bird",
+      family: "storybook",
+      storybook: true,
+      sprites: ["balloon"],
+      arrives: 8,
+      first: 2,
+      every: [6, 8],
+      speed: 5,
+      spawn: (f) => ({ y: 16 + f.rand() * 30 }),
+      draw: (g, b, f) => balloonAt(g, b, f.time),
+    }),
+    {
+      label: "balloon flight (pooh and piglet, with the bees)",
+      kind: "effect",
+      family: "bears",
+      storybook: true,
+      arrives: 8,
+      fixed: "one at 12 s after growth, then one each time pooh walks to the far edge",
+      sprites: ["pooh-balloon", "piglet-balloon", "bees"],
+    },
+    drawStep("flight-bees", (g, f) => {
+      if (f.extra.flight.bees) swarmAt(g, f.extra.flight.bees, f.time);
+    }),
+    walkerActor({
+      id: "eeyore",
+      label: "eeyore",
+      kind: "animal",
+      family: "horses",
+      storybook: true,
+      sprites: ["eeyore", "eeyore-standing", "eeyore-sitting"],
+      arrives: 5,
+      move: { speed: 3, stride: 3, sit: [5, 9], walk: [3, 5] },
+      draw: (g, w, f) => eeyoreAt(g, w, f.time),
+    }),
+    walkerActor({
+      id: "rabbit",
+      label: "rabbit",
+      kind: "animal",
+      family: "hares-rodents",
+      storybook: true,
+      sprites: ["rabbit", "rabbit-relaxed"],
+      arrives: 1,
+      move: { speed: 12, stride: 10, sit: [3, 6], walk: [1.5, 3] },
+      draw: (g, w, f) => rabbitAt(g, w, f.time),
+    }),
+    walkerActor({
+      id: "tigger",
+      label: "tigger",
+      kind: "animal",
+      family: "cats",
+      storybook: true,
+      sprites: ["tigger", "tigger-sitting"],
+      arrives: 7,
+      move: { speed: 10, sit: [3, 7] },
+      draw: (g, w, f) => tiggerAt(g, w, f.time),
+    }),
+    walkerActor({
+      id: "roo",
+      label: "roo",
+      kind: "animal",
+      family: "hares-rodents",
+      storybook: true,
+      sprites: ["roo", "roo-sitting"],
+      arrives: 7,
+      move: { speed: 9, stride: 9, sit: [3, 6], walk: [2, 4] },
+      draw: (g, w, f) => rooAt(g, w, f.time),
+    }),
+    {
+      label: "pooh bear",
+      kind: "animal",
+      family: "bears",
+      storybook: true,
+      presence: ["pooh"],
+      sprites: ["pooh", "pooh-sitting"],
+    },
+    {
+      label: "piglet, at pooh's side",
+      kind: "animal",
+      family: "pigs",
+      storybook: true,
+      presence: ["piglet"],
+      sprites: ["piglet", "piglet-sitting"],
+    },
+    drawStep("pooh-and-piglet", (g, f) => {
+      const x = f.extra;
+      if (x.pooh.active) poohAt(g, x.pooh, f.time);
+      if (x.piglet.active) pigletAt(g, x.piglet, f.time);
+    }),
+    {
+      label: "fireflies (dark theme)",
+      kind: "effect",
+      family: "insects",
+      arrives: 0,
+      fixed: `${MOTES} fireflies`,
+      sprites: ["firefly"],
+    },
+    drawStep("fireflies", (g, f) => {
+      if (f.theme === "dark") firefliesAt(g, f);
+    }),
+  ],
+  {
+    init(f) {
+      return {
+        motes: Array.from({ length: MOTES }, () => ({
+          x: f.rand() * f.cols,
+          y: f.groundY - 6 - f.rand() * 90,
+          phase: f.rand() * 6.28,
+        })),
+        stars: starField(f, STARS, 70),
+        birds: Array.from({ length: BIRDS }, () => ({
+          x: f.rand() * f.cols,
+          y: 12 + f.rand() * 40,
+          speed: 3 + f.rand() * 3,
+          phase: f.rand() * 6.28,
+        })),
+        owl: {
+          active: false,
+          mode: "away",
+          p: null,
+          t: 0,
+          next: 0,
+          x: 0,
+          y: 0,
+          dir: 1,
+          cruiseY: 32,
+          landing: false,
+          takeoff: false,
+          glide: null,
+          phase: 0,
+        },
+        kessie: {
+          active: false,
+          mode: "away",
+          p: null,
+          t: 0,
+          next: 0,
+          x: 0,
+          y: 0,
+          dir: -1,
+          cruiseY: 32,
+          landing: false,
+          takeoff: false,
+          stay: 14,
+          phase: 0,
+        },
 
-  // Rabbit at stage 1, Owl, Kessie and the bees from stage 2, then Pooh, Piglet at his side, Eeyore, Tigger
-  // and Roo, and last the blue balloon and, a little after it, the first balloon flight.
-  onGrow(f) {
-    const x = f.extra;
-    if (f.stage >= 1) enter(f, x.rabbit);
-    if (f.stage >= 2) {
-      x.owl.active = true;
-      x.kessie.active = true;
-    }
-    if (f.stage >= 3) enter(f, x.pooh);
-    if (x.pooh.active && !x.flight.goal) x.flight.goal = x.pooh.x < f.cols / 2 ? 1 : -1;
-    if (f.stage >= 4 && x.pooh.active && !x.piglet.active) {
-      x.piglet.active = true;
-      x.piglet.x = x.pooh.x + x.pooh.dir * PIGLET_GAP;
-    }
-    if (f.stage >= 5) enter(f, x.eeyore);
-    if (f.stage >= 7) {
-      enter(f, x.tigger);
-      enter(f, x.roo);
-    }
-    if (f.stage >= 8 && x.flight.next === Infinity) x.flight.next = f.time + 12;
-  },
+        pooh: { ...walker(f), lift: 0, held: null },
+        piglet: { ...walker(f), lift: 0, held: null },
+        flight: { next: Infinity, t: null, first: true, goal: 0, armed: false },
+      };
+    },
 
-  busy: () => true,
-
-  update(f, dt) {
-    const x = f.extra;
-    owlStep(f, x.owl, dt);
-    kessieStep(f, x.kessie, dt);
-    if (f.stage >= 2) {
-      flyBy(f, x.bees, dt, { every: [5, 6], speed: 9, spawn: () => ({ y: 40 + f.rand() * 40 }) });
-    }
-    if (f.stage >= 8) {
-      flyBy(f, x.balloon, dt, { every: [6, 8], speed: 5, spawn: () => ({ y: 16 + f.rand() * 30 }) });
-    }
-    if (!flight(f, dt)) {
-      const lean = x.flight.first ? null : { dir: x.flight.goal, odds: FLIGHT_LEAN };
-      wander(f, x.pooh, dt, { speed: 5, stride: 5, sit: [4, 8], walk: [3, 6], lean });
-      besidePooh(x.piglet, x.pooh, dt);
-    }
-    wander(f, x.eeyore, dt, { speed: 3, stride: 3, sit: [5, 9], walk: [3, 5] });
-    settle(f, x.eeyore);
-    wander(f, x.rabbit, dt, { speed: 12, stride: 10, sit: [3, 6], walk: [1.5, 3] });
-    wander(f, x.tigger, dt, { speed: 10, sit: [3, 7] });
-    wander(f, x.roo, dt, { speed: 9, stride: 9, sit: [3, 6], walk: [2, 4] });
-    for (const w of [x.pooh, x.piglet, x.rabbit, x.tigger, x.roo]) settle(f, w);
-    if (f.theme === "dark") {
-      for (const m of x.motes) {
-        m.x += Math.sin(f.time * 0.9 + m.phase) * 5 * dt;
-        m.y += Math.cos(f.time * 0.7 + m.phase) * 3 * dt;
-        m.x = ((m.x % (f.cols + 4)) + f.cols + 4) % (f.cols + 4);
-        m.y = clamp(m.y, f.groundY - 100, f.groundY + 2);
+    // Rabbit at stage 1, Owl, Kessie and the bees from stage 2, then Pooh, Piglet at his side, Eeyore, Tigger
+    // and Roo, and last the blue balloon and, a little after it, the first balloon flight.
+    onGrow(f) {
+      const x = f.extra;
+      if (f.stage >= 2) {
+        x.owl.active = true;
+        x.kessie.active = true;
       }
-    }
-  },
+      if (f.stage >= 3) enter(f, x.pooh);
+      if (x.pooh.active && !x.flight.goal) x.flight.goal = x.pooh.x < f.cols / 2 ? 1 : -1;
+      if (f.stage >= 4 && x.pooh.active && !x.piglet.active) {
+        x.piglet.active = true;
+        x.piglet.x = x.pooh.x + x.pooh.dir * PIGLET_GAP;
+      }
 
-  drawBack(g, f) {
-    if (f.theme === "dark") skyAt(g, f);
-    else birdsAt(g, f);
-  },
+      if (f.stage >= 8 && x.flight.next === Infinity) x.flight.next = f.time + 12;
+    },
 
-  draw(g, f) {
-    const x = f.extra;
-    if (x.owl.active) owlHomeAt(g, f, x.owl);
-    if (x.kessie.active && !isNight(f)) kessieAt(g, f, x.kessie);
-    if (x.bees.bird) swarmAt(g, x.bees.bird, f.time);
-    if (x.balloon.bird) balloonAt(g, x.balloon.bird, f.time);
-    if (x.flight.bees) swarmAt(g, x.flight.bees, f.time);
-    if (x.eeyore.active) eeyoreAt(g, x.eeyore, f.time);
-    if (x.rabbit.active) rabbitAt(g, x.rabbit, f.time);
-    if (x.tigger.active) tiggerAt(g, x.tigger, f.time);
-    if (x.roo.active) rooAt(g, x.roo, f.time);
-    if (x.pooh.active) poohAt(g, x.pooh, f.time);
-    if (x.piglet.active) pigletAt(g, x.piglet, f.time);
-    if (f.theme === "dark") firefliesAt(g, f);
+    busy: () => true,
+
+    update(f, dt) {
+      const x = f.extra;
+      owlStep(f, x.owl, dt);
+      kessieStep(f, x.kessie, dt);
+
+      if (!flight(f, dt)) {
+        const lean = x.flight.first ? null : { dir: x.flight.goal, odds: FLIGHT_LEAN };
+        wander(f, x.pooh, dt, { speed: 5, stride: 5, sit: [4, 8], walk: [3, 6], lean });
+        besidePooh(x.piglet, x.pooh, dt);
+      }
+      for (const w of [x.pooh, x.piglet]) settle(f, w);
+      if (f.theme === "dark") {
+        for (const m of x.motes) {
+          m.x += Math.sin(f.time * 0.9 + m.phase) * 5 * dt;
+          m.y += Math.cos(f.time * 0.7 + m.phase) * 3 * dt;
+          m.x = ((m.x % (f.cols + 4)) + f.cols + 4) % (f.cols + 4);
+          m.y = clamp(m.y, f.groundY - 100, f.groundY + 2);
+        }
+      }
+    },
+  },
+);
+
+const SPRITES = {
+  birds: (g) => {
+    const points = [
+      [10, 20],
+      [26, 14],
+      [40, 24],
+    ];
+    const birds = points.map(([x, y], i) => ({ x, y, speed: 0, phase: i }));
+    birdsAt(g, { cols: ANIMAL_BOX.w, extra: { birds } });
+  },
+  sky: (g) => {
+    // The moon sits at a fifth of the ground height, so a 60 px box needs a taller ground to keep
+    // the whole disc on the canvas.
+    g.pal = DARK;
+    const groundY = 100;
+    const extra = extras.init({ rand: rng(3), cols: ANIMAL_BOX.w, groundY });
+    skyAt(g, { cols: ANIMAL_BOX.w, groundY, extra });
+  },
+  firefly: (g) => {
+    g.pal = DARK;
+    const points = [
+      [8, 30],
+      [15, 22],
+      [23, 34],
+      [31, 18],
+      [40, 28],
+      [48, 36],
+      [56, 24],
+      [64, 32],
+    ];
+    const motes = points.map(([x, y], i) => ({ x, y, phase: i }));
+    firefliesAt(g, { time: 1, extra: { motes } });
+  },
+  owl: (g, frame) => owlFlyAt(g, bird(frame), 0.4, "horned"),
+  "owl-glide": (g, frame) => owlFlyAt(g, bird(frame), 2.2, "horned"),
+  "owl-perched": (g) => owlPerched(DARK, g, "horned", { s: 0 }),
+  "owl-swivel": (g) => owlPerched(DARK, g, "horned", { s: 0.9 }),
+  kessie: (g, frame) => flyerAt(g, bird(frame), 0, "kessie"),
+  "kessie-perched": (g) => {
+    g.pal = LIGHT;
+    g.ctx.fillStyle = "#6b4a2a";
+    g.ctx.fillRect(31, 40, 19, 1);
+    perchedSmall(g, "kessie", 40, 40, 0, blendPose({}));
+  },
+  balloon: (g, frame) => balloonAt(g, bird(frame), 0),
+  bees: (g, frame) => swarmAt(g, bird(frame), 0),
+  pooh: (g, frame) => poohAt(g, walk(frame, { step: frame.phase * 0.25 }), 0),
+  "pooh-sitting": (g, frame) => poohAt(g, walk(frame, { state: "sit", pose: "sit" }), 2.5),
+  "pooh-balloon": (g, frame) => poohAt(g, walk(frame, { state: "stand", lift: 8, held: 2 }), 0),
+  piglet: (g, frame) => pigletAt(g, walk(frame, { step: frame.phase * 0.25 }), 0),
+  "piglet-sitting": (g, frame) => pigletAt(g, walk(frame, { state: "sit", pose: "sit" }), 0),
+  "piglet-balloon": (g, frame) => pigletAt(g, walk(frame, { state: "stand", lift: 8, held: 2 }), 0),
+  eeyore: (g, frame) => eeyoreAt(g, walk(frame), 0),
+  "eeyore-standing": (g, frame) => eeyoreAt(g, walk(frame, { state: "sit", since: 0, timer: 6 }), 1),
+  "eeyore-sitting": (g, frame) => eeyoreAt(g, walk(frame, { state: "sit", pose: "sit", since: 0, timer: 6 }), 3.5),
+  rabbit: (g, frame) => rabbitAt(g, walk(frame, { step: frame.phase * 0.25 }), 0),
+  "rabbit-relaxed": (g, frame) => rabbitAt(g, walk(frame, { state: "sit", pose: "sit" }), 3.4),
+  tigger: (g, frame) => tiggerAt(g, walk(frame, { step: frame.phase * 0.25 }), 0),
+  "tigger-sitting": (g, frame) => tiggerAt(g, walk(frame, { state: "sit", pose: "sit" }), 0),
+  roo: (g, frame) => rooAt(g, walk(frame, { step: frame.phase * 0.25 }), 0),
+  "roo-sitting": (g, frame) => rooAt(g, walk(frame, { state: "sit", pose: "sit" }), 0),
+};
+
+const PLANT_FAMILIES = {
+  "tree-beech": "broadleaf",
+  "tree-oak": "broadleaf",
+  slim: "broadleaf",
+  beeTree: "broadleaf",
+  owlHouse: "broadleaf",
+  poohHouse: "broadleaf",
+  pigletHouse: "broadleaf",
+  pine: "conifers",
+  fir: "conifers",
+};
+
+export const META = {
+  id: "hundredacre",
+  label: "Hundred Acre Wood",
+  group: "storybook",
+  tint: ["#d3e2b0", "rgb(110 140 80)"],
+  backdrop: {
+    light: {
+      green: "#dbe6bd",
+      "green-soft": "#edf1da",
+      peach: "#f3e7c8",
+      blush: "#e2ecf0",
+      bloom: "#c9dca2",
+    },
+    dark: {
+      green: "rgb(110 140 80 / 0.3)",
+      "green-soft": "rgb(150 160 100 / 0.16)",
+      peach: "rgb(170 140 90 / 0.18)",
+      blush: "rgb(80 110 130 / 0.16)",
+      bloom: "rgb(140 170 90 / 0.3)",
+    },
   },
 };
 
 export default {
-  id: "hundredacre",
-  label: "Hundred Acre Wood",
-  group: "storybook",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.45, 0.65], dark: [0.45, 0.62] },
   mature: MATURE,

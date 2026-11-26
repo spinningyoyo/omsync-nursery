@@ -5,8 +5,9 @@ nursery studio [--port N] [--no-window]
 nursery check [SCENE]           compare saved pixel edits with what the code draws
 nursery render SCENE PROPOSAL   draw a proposal headless into its .sheet.png
 nursery proposals [SCENE]       print each proposal's review and pixel edits
-nursery catalog [--only IDS] [--out DIR]  rebuild docs/scenes/<id>.md from the code
+nursery catalog [--only IDS] --out DIR    write per-scene markdown tables to DIR
 nursery brand [--check]         build the mascot, the favicons and the studio's mark from the grid
+nursery scenes [--check]        build scenes.json and scenes.css from the scene modules
 nursery release [--patch|--minor|--major] [--dry-run]
                                 check the scenes and release them as a new version tag
 nursery preview scene|sheet ... render scenes or a sprite sheet headless (see the skill)
@@ -45,6 +46,11 @@ def parser() -> argparse.ArgumentParser:
     brand = commands.add_parser("brand", help="build the mascot and the favicons from its grid")
     brand.add_argument("--check", action="store_true", help="list stale files; change nothing")
 
+    scenes = commands.add_parser(
+        "scenes", help="build scenes.json and scenes.css from the scene modules"
+    )
+    scenes.add_argument("--check", action="store_true", help="list stale files; change nothing")
+
     release = commands.add_parser(
         "release", help="check the scenes and release them on the release branch"
     )
@@ -55,7 +61,7 @@ def parser() -> argparse.ArgumentParser:
     release.add_argument("--dry-run", action="store_true", help="check and say what would happen")
 
     commands.add_parser(
-        "catalog", help="rebuild docs/scenes/<id>.md, one file per scene", add_help=False
+        "catalog", help="write per-scene markdown tables to --out DIR", add_help=False
     )
     commands.add_parser("preview", help="render scenes or a sprite sheet", add_help=False)
     commands.add_parser("verify", help="check the art against the design rules", add_help=False)
@@ -101,6 +107,10 @@ def main(argv: list[str] | None = None) -> None:
             from nursery import brand
 
             sys.exit(brand.main(["--check"] if args.check else []))
+        if args.command == "scenes":
+            from nursery import scenes_build
+
+            sys.exit(scenes_build.main(["--check"] if args.check else []))
         if args.command == "release":
             from nursery.release import release
 

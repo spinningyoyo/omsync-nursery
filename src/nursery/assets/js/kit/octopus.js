@@ -219,3 +219,17 @@ export function inkAt(g, ink, life = 3) {
   }
   g.ctx.globalAlpha = a;
 }
+
+export const FAMILY = {
+  id: "cephalopods",
+  title: "Octopuses",
+  group: "Animals",
+  differ: "size, skin colour and its changes",
+  members: {
+    octopus: { spec: OCTOPUS, realLength: 0.16 },
+  },
+  drivers: {
+    octopusAt: { role: "walker", member: () => "octopus" },
+    inkAt: { role: "prop", member: () => "ink" },
+  },
+};

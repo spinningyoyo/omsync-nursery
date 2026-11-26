@@ -1,0 +1,748 @@
+{
+  "scene": "iceland",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "back:step:sky-and-fjord": 108,
+        "front:canidAt": 96,
+        "front:cervidAt": 24,
+        "front:felidAt": 72,
+        "front:flockAt": 37,
+        "front:nesterAt": 48,
+        "front:owlFlyAt": 72,
+        "front:step:aurora-and-mist": 108,
+        "front:step:nesters-and-swans": 108,
+        "front:swanAt": 72,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky-and-fjord < front:canidAt",
+        "back:step:sky-and-fjord < front:cervidAt",
+        "back:step:sky-and-fjord < front:felidAt",
+        "back:step:sky-and-fjord < front:flockAt",
+        "back:step:sky-and-fjord < front:nesterAt",
+        "back:step:sky-and-fjord < front:owlFlyAt",
+        "back:step:sky-and-fjord < front:step:aurora-and-mist",
+        "back:step:sky-and-fjord < front:step:nesters-and-swans",
+        "back:step:sky-and-fjord < front:swanAt",
+        "back:step:sky-and-fjord < plants",
+        "front:cervidAt < front:canidAt",
+        "front:felidAt < front:canidAt",
+        "front:felidAt < front:cervidAt",
+        "front:felidAt < front:flockAt",
+        "front:felidAt < front:nesterAt",
+        "front:felidAt < front:owlFlyAt",
+        "front:felidAt < front:step:aurora-and-mist",
+        "front:felidAt < front:step:nesters-and-swans",
+        "front:felidAt < front:swanAt",
+        "front:flockAt < front:canidAt",
+        "front:flockAt < front:cervidAt",
+        "front:flockAt < front:nesterAt",
+        "front:flockAt < front:step:nesters-and-swans",
+        "front:flockAt < front:swanAt",
+        "front:nesterAt < front:canidAt",
+        "front:nesterAt < front:cervidAt",
+        "front:nesterAt < front:swanAt",
+        "front:owlFlyAt < front:canidAt",
+        "front:owlFlyAt < front:cervidAt",
+        "front:owlFlyAt < front:flockAt",
+        "front:owlFlyAt < front:nesterAt",
+        "front:owlFlyAt < front:step:nesters-and-swans",
+        "front:owlFlyAt < front:swanAt",
+        "front:step:aurora-and-mist < front:canidAt",
+        "front:step:aurora-and-mist < front:cervidAt",
+        "front:step:aurora-and-mist < front:flockAt",
+        "front:step:aurora-and-mist < front:nesterAt",
+        "front:step:aurora-and-mist < front:owlFlyAt",
+        "front:step:aurora-and-mist < front:step:nesters-and-swans",
+        "front:step:aurora-and-mist < front:swanAt",
+        "front:step:nesters-and-swans < front:canidAt",
+        "front:step:nesters-and-swans < front:cervidAt",
+        "front:step:nesters-and-swans < front:nesterAt",
+        "front:step:nesters-and-swans < front:swanAt",
+        "front:swanAt < front:canidAt",
+        "front:swanAt < front:cervidAt",
+        "plants < front:canidAt",
+        "plants < front:cervidAt",
+        "plants < front:felidAt",
+        "plants < front:flockAt",
+        "plants < front:nesterAt",
+        "plants < front:owlFlyAt",
+        "plants < front:step:aurora-and-mist",
+        "plants < front:step:nesters-and-swans",
+        "plants < front:swanAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            208.3,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "owl": {
+          "firstStage": 2,
+          "activeSteps": 72,
+          "xRange": [
+            -12.6,
+            252
+          ],
+          "yRange": [
+            65.8,
+            80.9
+          ],
+          "speed": 14.9,
+          "poses": [
+            "fly"
+          ]
+        },
+        "swan": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            224,
+            250.9
+          ],
+          "speed": 4.5,
+          "poses": [
+            "flap",
+            "look",
+            "walk"
+          ]
+        },
+        "mate": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            238.2,
+            264.6
+          ],
+          "speed": 2.4,
+          "poses": [
+            "look",
+            "preen",
+            "walk"
+          ]
+        },
+        "puffins": {
+          "firstStage": 3,
+          "activeSteps": 37,
+          "xRange": [
+            -12,
+            276
+          ],
+          "yRange": [
+            39.4,
+            47.4
+          ],
+          "speed": 36,
+          "poses": [
+            "fly"
+          ]
+        },
+        "flyingSwan": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            75,
+            252
+          ],
+          "yRange": [
+            41.9,
+            41.9
+          ],
+          "speed": 12,
+          "poses": [
+            "fly"
+          ]
+        },
+        "stag": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -10.2,
+            9
+          ],
+          "speed": 7,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "hind": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -7,
+            -7
+          ],
+          "poses": [
+            "sit"
+          ]
+        },
+        "fox": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            144,
+            249.8
+          ],
+          "speed": 9,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "pup": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            156,
+            263.2
+          ],
+          "speed": 5.4,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "back:step:sky-and-fjord": 108,
+        "front:canidAt": 96,
+        "front:cervidAt": 24,
+        "front:flockAt": 32,
+        "front:nesterAt": 48,
+        "front:owlFlyAt": 38,
+        "front:step:aurora-and-mist": 108,
+        "front:step:nesters-and-swans": 108,
+        "front:swanAt": 72,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky-and-fjord < front:canidAt",
+        "back:step:sky-and-fjord < front:cervidAt",
+        "back:step:sky-and-fjord < front:flockAt",
+        "back:step:sky-and-fjord < front:nesterAt",
+        "back:step:sky-and-fjord < front:owlFlyAt",
+        "back:step:sky-and-fjord < front:step:aurora-and-mist",
+        "back:step:sky-and-fjord < front:step:nesters-and-swans",
+        "back:step:sky-and-fjord < front:swanAt",
+        "back:step:sky-and-fjord < plants",
+        "front:cervidAt < front:canidAt",
+        "front:flockAt < front:canidAt",
+        "front:flockAt < front:cervidAt",
+        "front:flockAt < front:nesterAt",
+        "front:flockAt < front:step:nesters-and-swans",
+        "front:flockAt < front:swanAt",
+        "front:nesterAt < front:canidAt",
+        "front:nesterAt < front:cervidAt",
+        "front:nesterAt < front:swanAt",
+        "front:owlFlyAt < front:canidAt",
+        "front:owlFlyAt < front:cervidAt",
+        "front:owlFlyAt < front:flockAt",
+        "front:owlFlyAt < front:nesterAt",
+        "front:owlFlyAt < front:step:nesters-and-swans",
+        "front:owlFlyAt < front:swanAt",
+        "front:step:aurora-and-mist < front:canidAt",
+        "front:step:aurora-and-mist < front:cervidAt",
+        "front:step:aurora-and-mist < front:flockAt",
+        "front:step:aurora-and-mist < front:nesterAt",
+        "front:step:aurora-and-mist < front:owlFlyAt",
+        "front:step:aurora-and-mist < front:step:nesters-and-swans",
+        "front:step:aurora-and-mist < front:swanAt",
+        "front:step:nesters-and-swans < front:canidAt",
+        "front:step:nesters-and-swans < front:cervidAt",
+        "front:step:nesters-and-swans < front:nesterAt",
+        "front:step:nesters-and-swans < front:swanAt",
+        "front:swanAt < front:canidAt",
+        "front:swanAt < front:cervidAt",
+        "plants < front:canidAt",
+        "plants < front:cervidAt",
+        "plants < front:flockAt",
+        "plants < front:nesterAt",
+        "plants < front:owlFlyAt",
+        "plants < front:step:aurora-and-mist",
+        "plants < front:step:nesters-and-swans",
+        "plants < front:swanAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "owl": {
+          "firstStage": 2,
+          "activeSteps": 38,
+          "xRange": [
+            -12,
+            102
+          ],
+          "yRange": [
+            68.4,
+            80.9
+          ],
+          "speed": 15.5,
+          "poses": [
+            "fly"
+          ]
+        },
+        "swan": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            74,
+            100.9
+          ],
+          "speed": 4.5,
+          "poses": [
+            "flap",
+            "look",
+            "walk"
+          ]
+        },
+        "mate": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            88.2,
+            114.6
+          ],
+          "speed": 2.4,
+          "poses": [
+            "look",
+            "preen",
+            "walk"
+          ]
+        },
+        "puffins": {
+          "firstStage": 3,
+          "activeSteps": 32,
+          "xRange": [
+            -12,
+            123
+          ],
+          "yRange": [
+            39.4,
+            47.4
+          ],
+          "speed": 36,
+          "poses": [
+            "fly"
+          ]
+        },
+        "flyingSwan": {
+          "firstStage": 4,
+          "activeSteps": 39,
+          "xRange": [
+            -12,
+            102
+          ],
+          "yRange": [
+            41.9,
+            41.9
+          ],
+          "speed": 12,
+          "poses": [
+            "fly"
+          ]
+        },
+        "stag": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -10.2,
+            9
+          ],
+          "speed": 7,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "hind": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -7,
+            -7
+          ],
+          "poses": [
+            "sit"
+          ]
+        },
+        "fox": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            3,
+            99.8
+          ],
+          "speed": 9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "pup": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            15,
+            113.2
+          ],
+          "speed": 5.2,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "back:step:sky-and-fjord": 108,
+        "front:canidAt": 96,
+        "front:cervidAt": 24,
+        "front:felidAt": 72,
+        "front:nesterAt": 48,
+        "front:owlFlyAt": 72,
+        "front:step:aurora-and-mist": 108,
+        "front:step:nesters-and-swans": 108,
+        "front:swanAt": 72,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky-and-fjord < front:canidAt",
+        "back:step:sky-and-fjord < front:cervidAt",
+        "back:step:sky-and-fjord < front:felidAt",
+        "back:step:sky-and-fjord < front:nesterAt",
+        "back:step:sky-and-fjord < front:owlFlyAt",
+        "back:step:sky-and-fjord < front:step:aurora-and-mist",
+        "back:step:sky-and-fjord < front:step:nesters-and-swans",
+        "back:step:sky-and-fjord < front:swanAt",
+        "back:step:sky-and-fjord < plants",
+        "front:cervidAt < front:canidAt",
+        "front:felidAt < front:canidAt",
+        "front:felidAt < front:cervidAt",
+        "front:felidAt < front:nesterAt",
+        "front:felidAt < front:owlFlyAt",
+        "front:felidAt < front:step:aurora-and-mist",
+        "front:felidAt < front:step:nesters-and-swans",
+        "front:felidAt < front:swanAt",
+        "front:nesterAt < front:canidAt",
+        "front:nesterAt < front:cervidAt",
+        "front:nesterAt < front:swanAt",
+        "front:owlFlyAt < front:canidAt",
+        "front:owlFlyAt < front:cervidAt",
+        "front:owlFlyAt < front:nesterAt",
+        "front:owlFlyAt < front:step:nesters-and-swans",
+        "front:owlFlyAt < front:swanAt",
+        "front:step:aurora-and-mist < front:canidAt",
+        "front:step:aurora-and-mist < front:cervidAt",
+        "front:step:aurora-and-mist < front:nesterAt",
+        "front:step:aurora-and-mist < front:owlFlyAt",
+        "front:step:aurora-and-mist < front:step:nesters-and-swans",
+        "front:step:aurora-and-mist < front:swanAt",
+        "front:step:nesters-and-swans < front:canidAt",
+        "front:step:nesters-and-swans < front:cervidAt",
+        "front:step:nesters-and-swans < front:nesterAt",
+        "front:step:nesters-and-swans < front:swanAt",
+        "front:swanAt < front:canidAt",
+        "front:swanAt < front:cervidAt",
+        "plants < front:canidAt",
+        "plants < front:cervidAt",
+        "plants < front:felidAt",
+        "plants < front:nesterAt",
+        "plants < front:owlFlyAt",
+        "plants < front:step:aurora-and-mist",
+        "plants < front:step:nesters-and-swans",
+        "plants < front:swanAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            208.3,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "owl": {
+          "firstStage": 2,
+          "activeSteps": 72,
+          "xRange": [
+            -12.6,
+            252
+          ],
+          "yRange": [
+            65.8,
+            80.9
+          ],
+          "speed": 14.9,
+          "poses": [
+            "fly"
+          ]
+        },
+        "swan": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            224,
+            250.9
+          ],
+          "speed": 4.5,
+          "poses": [
+            "flap",
+            "look",
+            "walk"
+          ]
+        },
+        "mate": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            238.2,
+            264.6
+          ],
+          "speed": 2.4,
+          "poses": [
+            "look",
+            "preen",
+            "walk"
+          ]
+        },
+        "puffins": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "flyingSwan": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "stag": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -10.2,
+            9
+          ],
+          "speed": 7,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "hind": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -7,
+            -7
+          ],
+          "poses": [
+            "sit"
+          ]
+        },
+        "fox": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            144,
+            249.8
+          ],
+          "speed": 9,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        },
+        "pup": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            156,
+            263.2
+          ],
+          "speed": 5.4,
+          "poses": [
+            "lie",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "back:step:sky-and-fjord": 108,
+        "front:canidAt": 96,
+        "front:cervidAt": 24,
+        "front:nesterAt": 48,
+        "front:owlFlyAt": 38,
+        "front:step:aurora-and-mist": 108,
+        "front:step:nesters-and-swans": 108,
+        "front:swanAt": 72,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky-and-fjord < front:canidAt",
+        "back:step:sky-and-fjord < front:cervidAt",
+        "back:step:sky-and-fjord < front:nesterAt",
+        "back:step:sky-and-fjord < front:owlFlyAt",
+        "back:step:sky-and-fjord < front:step:aurora-and-mist",
+        "back:step:sky-and-fjord < front:step:nesters-and-swans",
+        "back:step:sky-and-fjord < front:swanAt",
+        "back:step:sky-and-fjord < plants",
+        "front:cervidAt < front:canidAt",
+        "front:nesterAt < front:canidAt",
+        "front:nesterAt < front:cervidAt",
+        "front:nesterAt < front:swanAt",
+        "front:owlFlyAt < front:canidAt",
+        "front:owlFlyAt < front:cervidAt",
+        "front:owlFlyAt < front:nesterAt",
+        "front:owlFlyAt < front:step:nesters-and-swans",
+        "front:owlFlyAt < front:swanAt",
+        "front:step:aurora-and-mist < front:canidAt",
+        "front:step:aurora-and-mist < front:cervidAt",
+        "front:step:aurora-and-mist < front:nesterAt",
+        "front:step:aurora-and-mist < front:owlFlyAt",
+        "front:step:aurora-and-mist < front:step:nesters-and-swans",
+        "front:step:aurora-and-mist < front:swanAt",
+        "front:step:nesters-and-swans < front:canidAt",
+        "front:step:nesters-and-swans < front:cervidAt",
+        "front:step:nesters-and-swans < front:nesterAt",
+        "front:step:nesters-and-swans < front:swanAt",
+        "front:swanAt < front:canidAt",
+        "front:swanAt < front:cervidAt",
+        "plants < front:canidAt",
+        "plants < front:cervidAt",
+        "plants < front:nesterAt",
+        "plants < front:owlFlyAt",
+        "plants < front:step:aurora-and-mist",
+        "plants < front:step:nesters-and-swans",
+        "plants < front:swanAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "owl": {
+          "firstStage": 2,
+          "activeSteps": 38,
+          "xRange": [
+            -12,
+            102
+          ],
+          "yRange": [
+            68.4,
+            80.9
+          ],
+          "speed": 15.5,
+          "poses": [
+            "fly"
+          ]
+        },
+        "swan": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            74,
+            100.9
+          ],
+          "speed": 4.5,
+          "poses": [
+            "flap",
+            "look",
+            "walk"
+          ]
+        },
+        "mate": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            88.2,
+            114.6
+          ],
+          "speed": 2.4,
+          "poses": [
+            "look",
+            "preen",
+            "walk"
+          ]
+        },
+        "puffins": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "flyingSwan": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "stag": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -10.2,
+            9
+          ],
+          "speed": 7,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "hind": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -7,
+            -7
+          ],
+          "poses": [
+            "sit"
+          ]
+        },
+        "fox": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            3,
+            99.8
+          ],
+          "speed": 9,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "pup": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            15,
+            113.2
+          ],
+          "speed": 5.2,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    }
+  }
+}

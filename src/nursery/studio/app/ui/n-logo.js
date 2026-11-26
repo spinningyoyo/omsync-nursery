@@ -15,7 +15,8 @@ export class NLogo extends LitElement {
       flex: none;
       line-height: 0;
     }
-    .sprout {
+    .sprout,
+    .accessory {
       stroke: var(--accent);
     }
   `;

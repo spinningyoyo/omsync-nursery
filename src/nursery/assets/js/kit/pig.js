@@ -2,12 +2,13 @@
 // cells (u along the body from the rump, v up from the ground, facing right): a body of columns with a
 // bristle ridge along the spine, four short legs that cycle through four drawn poses (reach, under,
 // push back, lift) because they are too short to bend, a wedge head on a neck that goes down with it,
-// upright ears that sit on the head and a thin tail with a tuft that swings from the hips. animals.js's
-// puaaAt places and poses it; walkPose and restPose here choose the pose. Poses: the trot, standing,
+// upright ears that sit on the head and a thin tail with a tuft that swings from the hips. puaaAt (below)
+// places and poses it; walkPose and restPose here choose the pose. Poses: the trot, standing,
 // rooting (the snout in the ground, soil flying up) and the mud wallow (it kneels fore end first, rolls
 // onto its back and kicks, rises, shakes mud off and dries). Palette: the scene's pig
 // ([body, dark, snout]) with puaaMud, puaaDust and groundShadow beside it.
 import { frac, hash, mix, shadowColour, smooth } from "./pixel.js";
+import { blinkAt, feet, sinceOf, tonesFor } from "./place.js";
 
 function rectPx(g, colour, x, y, w, h) {
   g.ctx.fillStyle = colour;
@@ -459,3 +460,55 @@ export function restPose(kind, t, total = 6) {
   if (kind === "root") return rooting(t, total);
   return standing(t);
 }
+
+// Pigs
+
+// Built from parts (pig.js): the pua'a, a feral pig. It trots with its feet planted (the stride is the
+// scene's 6 px/s over 3.6 px a cycle), settles its legs one after the other into a stop and rests in the
+// pose rest() picked as it stopped (puaaPoses): "stand" (breathing, blinking, a look up), "root" (the head
+// eases down and the snout digs in strokes, soil flying up) or, in a stop long enough, "wallow", its
+// signature: a wet patch, it kneels fore end first, rolls onto its back and kicks, rises, shakes mud off
+// and dries. p.since (settle, critters.js) is when its state last changed, p.timer the seconds its stop
+// has left, p.sinceX and p.prevX where it changed; p.pose shows a pose on demand. Its palette is the
+// scene's pig ([body, dark, snout]) with puaaMud, puaaDust and groundShadow beside it.
+export const puaaPoses = (p) =>
+  (p.timer ?? 0) >= WALLOW_SECONDS
+    ? ["root", "root", "stand", "wallow", "wallow", "wallow"]
+    : ["root", "root", "stand"];
+
+// The pig's tones, made for each tenth of mud on its coat.
+const pigTonesFor = (g, mud) => {
+  const key = Math.round(mud * 10);
+  return tonesFor(g.pal, `pig:${key}`, () => pigTones(g, key / 10));
+};
+
+export function puaaAt(g, p, time = 0) {
+  if (g.trace) return g.trace.draw(puaaAt, g, p, time);
+  const since = sinceOf(p, time);
+  const walking = p.state === "walk";
+  const fy = feet(g, p);
+  let pose;
+  if (walking) {
+    const d = p.sinceX == null ? (p.phase ?? 0) * 1.2 : Math.abs(p.x - p.sinceX);
+    pose = walkPose(legClock(d, 0), legClock(d, 0.5), true);
+  } else {
+    const d = p.sinceX == null || p.prevX == null ? 0 : Math.abs(p.sinceX - p.prevX);
+    const total = since + (p.timer ?? 0);
+    pose = {
+      ...walkPose(legClock(d, 0, since), legClock(d, 0.5, since), false),
+      ...restPose(p.pose ?? "stand", since, total),
+    };
+  }
+  if (walking) pose.blink = blinkAt(time, 0, 3.7);
+  drawPig(g, Math.round(p.x), fy, p.dir, pose, pigTonesFor(g, pose.mud ?? 0));
+}
+
+export const FAMILY = {
+  id: "pigs",
+  title: "Pigs",
+  group: "Animals",
+  differ: "size, colour",
+  drivers: {
+    puaaAt: { role: "walker", member: () => "puaa" },
+  },
+};

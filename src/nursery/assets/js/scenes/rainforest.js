@@ -6,19 +6,7 @@
 // line of otters, a macaque and an elephant with her calf pass below. At night one tree of
 // fireflies flashes in time.
 // A clouded leopard, Khao Sok's secret cat, pads along the floor and rests between walks.
-import {
-  elephantAt,
-  felidAt,
-  felidPoses,
-  GIBBON_CALL_SECONDS,
-  gibbonAt,
-  LANGUR_HOP_SECONDS,
-  LANGUR_REACH_SECONDS,
-  langurAt,
-  macaqueAt,
-  OTTER_STRIDE,
-  otterAt,
-} from "../kit/animals.js";
+
 import {
   doing,
   enter,
@@ -37,6 +25,8 @@ import {
   wander,
 } from "../kit/critters.js";
 import { mistAt, mistBand } from "../kit/effects.js";
+import { elephantAt } from "../kit/elephant.js";
+import { felidAt, felidPoses } from "../kit/felid.js";
 import { circlerAt, flyerAt, kingfisherAt } from "../kit/flyers.js";
 import { fireflyAt as glowAt, treeFireflies } from "../kit/insect.js";
 import { bambooClump, cycadRosette, treeFern, wildBanana } from "../kit/palms.js";
@@ -56,6 +46,18 @@ import {
   sortPlants,
   stroke,
 } from "../kit/pixel.js";
+import { bird, soarSprites, swinging, walk } from "../kit/poses.js";
+import {
+  GIBBON_CALL_SECONDS,
+  gibbonAt,
+  LANGUR_HOP_SECONDS,
+  LANGUR_REACH_SECONDS,
+  langurAt,
+  macaqueAt,
+} from "../kit/primate.js";
+import { crossingActor, drawStep, runCast, walkerActor } from "../kit/runner.js";
+import { blendPose, perchedSmall } from "../kit/smallbird.js";
+import { OTTER_STRIDE, otterAt } from "../kit/swimmer.js";
 import { dipterocarpGeom, dipterocarpTree, figGeom, figTree } from "../kit/widecanopy.js";
 
 const MATURE = {
@@ -704,175 +706,373 @@ function hopLangur(f, l) {
   if (!l.hop) fidget(f, l);
 }
 
-const extras = {
-  init(f) {
-    return {
-      cat: walker(f),
-      flies: Array.from({ length: FIREFLIES }, (_, i) => ({
-        homeX: ((i + f.rand()) / FIREFLIES) * f.cols,
-        homeY: f.groundY - 6 - f.rand() * 30,
-        phase: f.rand() * 6.28,
-        speed: 0.3 + f.rand() * 0.4,
-        reach: 6 + f.rand() * 10,
-        u: f.rand() * 2 - 1,
-        v: f.rand(),
-      })),
-      mists: [
-        ...Array.from({ length: MISTS - 3 }, () => mistBand(f, 16, 40)),
-        ...Array.from({ length: 3 }, () => mistBand(f, 2, 4)),
+const extras = runCast(
+  [
+    walkerActor({
+      id: "cat",
+      label: "clouded leopard",
+      kind: "animal",
+      family: "cats",
+      sprites: [
+        "clouded-leopard",
+        "clouded-leopard-sitting",
+        "clouded-leopard-arching",
+        "clouded-leopard-lying",
+        "clouded-leopard-stretching",
       ],
-      hornbills: { next: 4, bird: null },
-      kingfisher: { next: 2, bird: null },
-      eagle: {
-        active: false,
-        cx: f.cols * (0.25 + f.rand() * 0.5),
-        reach: Math.min(60, f.cols * 0.3),
-        cy: 14 + f.rand() * 10,
-        phase: f.rand() * 6,
-      },
-      gibbon: { active: false, layer: 1, hx: 0, hy: 0, dir: 1, t: 0, leap: null, count: 0, call: null, next: Infinity },
-      langur: null,
-      monkey: walker(f),
-      otters: [walker(f), walker(f), walker(f)].map((o, i) => ({ ...o, c: i * 0.3 })), // c: the stride clock, staggered
-      elephants: [
-        { ...walker(f), kind: "asian" },
-        { ...walker(f, 0.55), kind: "asian" },
+      arrives: 5,
+      phone: "hide",
+      move: { speed: 7, stride: 7, sit: [4, 9], walk: [3, 6] },
+      poses: () => felidPoses("clouded"),
+      draw: (g, w, f) => felidAt(g, { ...w, kind: "clouded" }, f.time),
+    }),
+    {
+      label: "mist bands",
+      kind: "effect",
+      arrives: 2,
+      fixed: `${MISTS} bands`,
+      sprites: ["mist"],
+    },
+    drawStep("mist", (g, f) => {
+      if (f.stage >= 2) for (const m of f.extra.mists) mistAt(g, m, f.time, f.cols);
+    }),
+    {
+      label: "crested serpent eagle",
+      kind: "bird",
+      family: "soaring-birds",
+      arrives: 4,
+      fixed: "1, circling by day; perches on an emergent now and then",
+      sprites: [
+        "serpent",
+        "serpent-bank",
+        "serpent-flapping",
+        "serpent-landing",
+        "serpent-takeoff",
+        "serpent-perched",
+        "serpent-perched-preening",
+        "serpent-perched-stretching",
       ],
-    };
-  },
-
-  // Each stage brings something new: kingfishers, the hornbill pair, the gibbon, the
-  // macaque, the langur, the otters, the elephants. The first otter comes at stage 1, the rest of
-  // the line at 7.
-  onGrow(f) {
-    if (f.stage >= 5 && !narrow(f)) enter(f, f.extra.cat);
-    const { monkey, otters, elephants } = f.extra;
-    if (f.stage >= 4) enter(f, monkey);
-    if (f.stage >= 1) enter(f, otters[0]);
-    if (f.stage >= 7) {
-      enterBehind(f, otters[1], otters[0], 18);
-      if (!narrow(f)) enterBehind(f, otters[2], otters[1], 18);
-    }
-    if (f.stage >= 6) enter(f, elephants[0]);
-    if (f.stage >= 8) enterBehind(f, elephants[1], elephants[0], 17);
-  },
-
-  busy: (f) => f.stage >= 2,
-
-  update(f, dt) {
-    wander(f, f.extra.cat, dt, { speed: 7, stride: 7, sit: [4, 9], walk: [3, 6] });
-    rest(f, f.extra.cat, felidPoses("clouded"));
-    const x = f.extra;
-    // Hornbills cross in a pair; now and then a lone one comes instead and settles on a giant's crown. The
-    // kingfisher now and then stops on a bush.
-    if (f.stage >= 3 && !isNight(f)) {
-      flyByPerch(f, x.hornbills, dt, {
-        every: [8, 8],
-        speed: 18,
-        margin: 34,
-        spawn: () => {
-          const lone = f.rand() < 0.3;
-          return { y: 18 + f.rand() * Math.max(10, f.groundY - 110), members: flock(f, lone ? 1 : 2, 16, 2) };
+    },
+    drawStep("serpent", (g, f) => {
+      if (f.stage >= 4 && !isNight(f)) circlerAt(g, "serpent", f.extra.eagle, f.time);
+    }),
+    {
+      label: "Asian elephant and calf",
+      kind: "animal",
+      family: "elephants",
+      presence: ["elephants[0]", "elephants[1]"],
+      sprites: ["elephant", "elephant-calf"],
+    },
+    {
+      label: "small-clawed otters",
+      kind: "animal",
+      family: "swimmers",
+      presence: ["otters[0]", "otters[1]", "otters[2]"],
+      sprites: ["otter", "otter-standing"],
+    },
+    drawStep("herd", (g, f) => {
+      const x = f.extra;
+      for (const e of x.elephants) if (e.active) elephantAt(g, e, f.time);
+      for (const o of x.otters) if (o.active) otterAt(g, o);
+    }),
+    walkerActor({
+      id: "monkey",
+      label: "macaque",
+      kind: "animal",
+      family: "primates",
+      sprites: ["monkey", "monkey-sitting", "monkey-yawning"],
+      arrives: 4,
+      move: { speed: 11 },
+      draw: (g, w, f) => macaqueAt(g, w, f.time),
+    }),
+    {
+      label: "dusky langur",
+      kind: "animal",
+      family: "primates",
+      arrives: 6,
+      fixed: "1, sitting under a crown, hopping between two branches",
+      sprites: ["langur", "langur-reaching", "langur-eating", "langur-leaping"],
+    },
+    drawStep("langur", (g, f) => {
+      if (f.extra.langur) langurAt(g, f.extra.langur, f.time);
+    }),
+    {
+      label: "fireflies (night), one tree flashing in time",
+      kind: "effect",
+      family: "insects",
+      arrives: 1,
+      fixed: `up to ${FIREFLIES}`,
+      sprites: ["firefly", "firefly-rising", "firefly-tree"],
+    },
+    drawStep("fireflies", (g, f) => {
+      const x = f.extra;
+      if (isNight(f)) {
+        const tree = bigCrown(f)?.crown;
+        const count = clamp(Math.round(f.stage * 3.3), 0, FIREFLIES);
+        const crowd = [];
+        for (let i = 0; i < count; i += 1) {
+          if (i % 2 && tree) crowd.push(x.flies[i]);
+          else fireflyAt(g, x.flies[i], f.time);
+        }
+        if (tree) treeFireflies(g, crowd, tree, f.time, g.pal.fire);
+      }
+    }),
+    {
+      label: "gibbon",
+      kind: "animal",
+      family: "primates",
+      presence: ["gibbon"],
+      sprites: ["gibbon-behind", "gibbon", "gibbon-ahead", "gibbon-calling"],
+    },
+    drawStep("gibbon", (g, f) => {
+      const { gibbon } = f.extra;
+      // A gibbon in the middle row takes that row's faded colours, so it sits at the depth of its tree.
+      if (gibbon.active) {
+        gibbonAt(g, gibbon, gibbon.layer === 0 ? f.pal.far : g.pal, f.time, (at) => gibbonHold(f, at, gibbon.layer));
+      }
+    }),
+    {
+      label: "great hornbill pair",
+      kind: "bird",
+      family: "small-flyers",
+      presence: ["hornbills"],
+      sprites: ["hornbill", "hornbill-up", "hornbill-perched"],
+    },
+    drawStep("hornbills", (g, f) => {
+      const { bird } = f.extra.hornbills;
+      if (bird && !isNight(f)) pairAt(g, bird, f.time);
+    }),
+    crossingActor({
+      id: "kingfisher",
+      label: "kingfisher",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["kingfisher", "kingfisher-perched"],
+      arrives: 2,
+      when: "day",
+      first: 2,
+      mode: "perch",
+      every: [4, 5],
+      speed: 62,
+      spawn: (f) => ({ y: f.groundY - 14 - f.rand() * 34 }),
+      spots: bushSpots,
+      small: "kingfisher",
+      odds: 0.3,
+      stay: [8, 16],
+      draw: (g, b, f) => kingfisherAt(g, b, f.time),
+    }),
+  ],
+  {
+    init(f) {
+      return {
+        flies: Array.from({ length: FIREFLIES }, (_, i) => ({
+          homeX: ((i + f.rand()) / FIREFLIES) * f.cols,
+          homeY: f.groundY - 6 - f.rand() * 30,
+          phase: f.rand() * 6.28,
+          speed: 0.3 + f.rand() * 0.4,
+          reach: 6 + f.rand() * 10,
+          u: f.rand() * 2 - 1,
+          v: f.rand(),
+        })),
+        mists: [
+          ...Array.from({ length: MISTS - 3 }, () => mistBand(f, 16, 40)),
+          ...Array.from({ length: 3 }, () => mistBand(f, 2, 4)),
+        ],
+        hornbills: { next: 4, bird: null },
+        eagle: {
+          active: false,
+          cx: f.cols * (0.25 + f.rand() * 0.5),
+          reach: Math.min(60, f.cols * 0.3),
+          cy: 14 + f.rand() * 10,
+          phase: f.rand() * 6,
         },
-        spots: perchSpots,
-        small: "hornbill",
-        odds: 0.8,
-        only: (b) => b.members.length === 1,
-        stay: [8, 16],
-      });
-    } else if (x.hornbills.bird?.visit) goHome(f, x.hornbills.bird);
-    if (f.stage >= 2 && !isNight(f)) {
-      const spawn = () => ({ y: f.groundY - 14 - f.rand() * 34 });
-      flyByPerch(f, x.kingfisher, dt, {
-        every: [4, 5],
-        speed: 62,
-        spawn,
-        spots: bushSpots,
-        small: "kingfisher",
-        odds: 0.3,
-        stay: [8, 16],
-      });
-    } else if (x.kingfisher.bird?.visit) goHome(f, x.kingfisher.bird);
-    if (f.stage >= 4 && !isNight(f)) {
-      circlerPerch(f, x.eagle, dt, { first: [20, 20], every: [50, 40], stay: [14, 26], spots: perchSpots });
-    } else goHome(f, x.eagle);
-    if (f.stage >= 5) moveGibbon(f, x.gibbon, dt);
-    if (f.stage >= 6 && !x.langur) {
-      const tree = bigCrown(f);
-      if (tree) {
-        const side = tree.crown.cx < f.cols / 2 ? 1 : -1;
-        const { cx, half, bottom } = tree.crown;
-        const at = Math.round(cx + side * half * 0.4);
-        x.langur = percher(f, at, bottom + 1, -side, { reach: { every: [4, 7], lasts: LANGUR_REACH_SECONDS } });
-        // A second branch on the same crown, a leap away toward its far side, if the crown is wide enough.
-        const other = at - side * clamp(Math.round(half * 0.7), LANGUR_GAP[0], LANGUR_GAP[1]);
-        const fits = Math.abs(other - cx) <= half * 0.85 && other > 8 && other < f.cols - 8;
-        x.langur.perches = fits ? [at, other] : [at];
-        x.langur.hop = null;
-        x.langur.next = fits ? f.time + LANGUR_HOPS[0] + f.rand() * (LANGUR_HOPS[1] - LANGUR_HOPS[0]) : Infinity;
-      }
-    }
-    if (x.langur) hopLangur(f, x.langur);
-    wander(f, x.monkey, dt, { speed: 11 });
-    settle(f, x.monkey);
-    // The otters bound at 10 px/s, 5 px a stride (2 strides a second). The lead, when it stops, often stands up on
-    // its hind legs to look round; the others wait on all fours.
-    const [lead, ...trail] = x.otters;
-    const leadX = lead.x;
-    wander(f, lead, dt, { speed: 10, stride: 2, sit: [2, 4], walk: [3, 6] });
-    rest(f, lead, ["stand", "stand", "stay"]);
-    stride(lead, leadX, dt, OTTER_STRIDE[0], OTTER_STRIDE[1]);
-    let ahead = lead;
-    for (const o of trail) {
-      const ox = o.x;
-      follow(o, ahead, dt, 18);
-      o.state = lead.state;
-      o.timer = lead.timer;
-      settle(f, o);
-      stride(o, ox, dt, OTTER_STRIDE[0], OTTER_STRIDE[1]);
-      ahead = o;
-    }
-    const [mother, calf] = x.elephants;
-    stroll(f, mother, dt, 7);
-    follow(calf, mother, dt, 17);
-    calf.state = mother.state;
-    calf.phase = mother.phase + 1;
-  },
+        gibbon: {
+          active: false,
+          layer: 1,
+          hx: 0,
+          hy: 0,
+          dir: 1,
+          t: 0,
+          leap: null,
+          count: 0,
+          call: null,
+          next: Infinity,
+        },
+        langur: null,
+        otters: [walker(f), walker(f), walker(f)].map((o, i) => ({ ...o, c: i * 0.3 })), // c: the stride clock, staggered
+        elephants: [
+          { ...walker(f), kind: "asian" },
+          { ...walker(f, 0.55), kind: "asian" },
+        ],
+      };
+    },
 
-  draw(g, f) {
-    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "clouded" }, f.time);
-    const x = f.extra;
-    const night = isNight(f);
-    if (f.stage >= 2) for (const m of x.mists) mistAt(g, m, f.time, f.cols);
-    if (f.stage >= 4 && !night) circlerAt(g, "serpent", x.eagle, f.time);
-    for (const e of x.elephants) if (e.active) elephantAt(g, e, f.time);
-    for (const o of x.otters) if (o.active) otterAt(g, o);
-    if (x.monkey.active) macaqueAt(g, x.monkey, f.time);
-    if (x.langur) langurAt(g, x.langur, f.time);
-    if (night) {
-      const tree = bigCrown(f)?.crown;
-      const count = clamp(Math.round(f.stage * 3.3), 0, FIREFLIES);
-      const crowd = [];
-      for (let i = 0; i < count; i += 1) {
-        if (i % 2 && tree) crowd.push(x.flies[i]);
-        else fireflyAt(g, x.flies[i], f.time);
+    // Each stage brings something new: kingfishers, the hornbill pair, the gibbon, the
+    // macaque, the langur, the otters, the elephants. The first otter comes at stage 1, the rest of
+    // the line at 7.
+    onGrow(f) {
+      const { otters, elephants } = f.extra;
+      if (f.stage >= 1) enter(f, otters[0]);
+      if (f.stage >= 7) {
+        enterBehind(f, otters[1], otters[0], 18);
+        if (!narrow(f)) enterBehind(f, otters[2], otters[1], 18);
       }
-      if (tree) treeFireflies(g, crowd, tree, f.time, g.pal.fire);
-    }
-    // A gibbon in the middle row takes that row's faded colours, so it sits at the depth of its tree.
-    if (x.gibbon.active) {
-      const { gibbon } = x;
-      gibbonAt(g, gibbon, gibbon.layer === 0 ? f.pal.far : g.pal, f.time, (at) => gibbonHold(f, at, gibbon.layer));
-    }
-    if (x.hornbills.bird && !night) pairAt(g, x.hornbills.bird, f.time);
-    if (x.kingfisher.bird && !night) kingfisherAt(g, x.kingfisher.bird, f.time);
+      if (f.stage >= 6) enter(f, elephants[0]);
+      if (f.stage >= 8) enterBehind(f, elephants[1], elephants[0], 17);
+    },
+
+    busy: (f) => f.stage >= 2,
+
+    update(f, dt) {
+      const x = f.extra;
+      // Hornbills cross in a pair; now and then a lone one comes instead and settles on a giant's crown. The
+      // kingfisher now and then stops on a bush.
+      if (f.stage >= 3 && !isNight(f)) {
+        flyByPerch(f, x.hornbills, dt, {
+          every: [8, 8],
+          speed: 18,
+          margin: 34,
+          spawn: () => {
+            const lone = f.rand() < 0.3;
+            return { y: 18 + f.rand() * Math.max(10, f.groundY - 110), members: flock(f, lone ? 1 : 2, 16, 2) };
+          },
+          spots: perchSpots,
+          small: "hornbill",
+          odds: 0.8,
+          only: (b) => b.members.length === 1,
+          stay: [8, 16],
+        });
+      } else if (x.hornbills.bird?.visit) goHome(f, x.hornbills.bird);
+
+      if (f.stage >= 4 && !isNight(f)) {
+        circlerPerch(f, x.eagle, dt, { first: [20, 20], every: [50, 40], stay: [14, 26], spots: perchSpots });
+      } else goHome(f, x.eagle);
+      if (f.stage >= 5) moveGibbon(f, x.gibbon, dt);
+      if (f.stage >= 6 && !x.langur) {
+        const tree = bigCrown(f);
+        if (tree) {
+          const side = tree.crown.cx < f.cols / 2 ? 1 : -1;
+          const { cx, half, bottom } = tree.crown;
+          const at = Math.round(cx + side * half * 0.4);
+          x.langur = percher(f, at, bottom + 1, -side, { reach: { every: [4, 7], lasts: LANGUR_REACH_SECONDS } });
+          // A second branch on the same crown, a leap away toward its far side, if the crown is wide enough.
+          const other = at - side * clamp(Math.round(half * 0.7), LANGUR_GAP[0], LANGUR_GAP[1]);
+          const fits = Math.abs(other - cx) <= half * 0.85 && other > 8 && other < f.cols - 8;
+          x.langur.perches = fits ? [at, other] : [at];
+          x.langur.hop = null;
+          x.langur.next = fits ? f.time + LANGUR_HOPS[0] + f.rand() * (LANGUR_HOPS[1] - LANGUR_HOPS[0]) : Infinity;
+        }
+      }
+      if (x.langur) hopLangur(f, x.langur);
+      // The otters bound at 10 px/s, 5 px a stride (2 strides a second). The lead, when it stops, often stands up on
+      // its hind legs to look round; the others wait on all fours.
+      const [lead, ...trail] = x.otters;
+      const leadX = lead.x;
+      wander(f, lead, dt, { speed: 10, stride: 2, sit: [2, 4], walk: [3, 6] });
+      rest(f, lead, ["stand", "stand", "stay"]);
+      stride(lead, leadX, dt, OTTER_STRIDE[0], OTTER_STRIDE[1]);
+      let ahead = lead;
+      for (const o of trail) {
+        const ox = o.x;
+        follow(o, ahead, dt, 18);
+        o.state = lead.state;
+        o.timer = lead.timer;
+        settle(f, o);
+        stride(o, ox, dt, OTTER_STRIDE[0], OTTER_STRIDE[1]);
+        ahead = o;
+      }
+      const [mother, calf] = x.elephants;
+      stroll(f, mother, dt, 7);
+      follow(calf, mother, dt, 17);
+      calf.state = mother.state;
+      calf.phase = mother.phase + 1;
+    },
+  },
+);
+
+const SPRITES = {
+  ...soarSprites("serpent", "serpent", {}),
+  "clouded-leopard": (g, frame) => felidAt(g, walk(frame, { kind: "clouded" }), 0),
+  "clouded-leopard-sitting": (g, frame) => felidAt(g, walk(frame, { kind: "clouded", state: "sit", pose: "sit" }), 0),
+  "clouded-leopard-arching": (g, frame) => felidAt(g, walk(frame, { kind: "clouded", state: "sit", pose: "arch" }), 0),
+  "clouded-leopard-lying": (g, frame) => felidAt(g, walk(frame, { kind: "clouded", state: "sit", pose: "lie" }), 0),
+  "clouded-leopard-stretching": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "clouded", state: "sit", pose: "bow" }), 0),
+  kingfisher: (g, frame) => kingfisherAt(g, bird(frame), 0),
+  "kingfisher-perched": (g) => perchedSmall(g, "kingfisher", 40, 40, 0, blendPose({})),
+  hornbill: (g, frame) => hornbillAt(g, bird(frame), 0),
+  "hornbill-up": (g, frame) => hornbillAt(g, bird(frame), 0.4),
+  "hornbill-perched": (g) => perchedSmall(g, "hornbill", 40, 40, 0, blendPose({})),
+  monkey: (g, frame) => macaqueAt(g, walk(frame), 0),
+  "monkey-sitting": (g, frame) => macaqueAt(g, walk(frame, { state: "sit", pose: "sit" }), 0),
+  "monkey-yawning": (g, frame) => macaqueAt(g, walk(frame, { state: "sit", act: "yawn", actAt: 0.8 }), 0),
+  elephant: (g, frame) => elephantAt(g, walk(frame, { kind: "asian" }), 0),
+  "elephant-calf": (g, frame) => elephantAt(g, walk(frame, { kind: "asian", scale: 0.55 }), 0),
+  langur: (g) => langurAt(g, { x: 40, y: 34, dir: 1, phase: 0, moves: {} }, 0),
+  "langur-reaching": (g, _frame) =>
+    langurAt(g, { x: 40, y: 34, dir: 1, phase: 0, moves: { reach: { until: 2.3, lasts: 2.9 } } }, 0),
+  "langur-eating": (g, _frame) =>
+    langurAt(g, { x: 40, y: 34, dir: 1, phase: 0, moves: { reach: { until: 1.4, lasts: 2.9 } } }, 0),
+  "langur-leaping": (g, _frame) =>
+    langurAt(
+      g,
+      { x: 27, y: 34, dir: 1, phase: 0, moves: {}, perches: [27, 53], hop: { from: 27, to: 53, start: -2.6 } },
+      0,
+    ),
+  otter: (g, frame) => otterAt(g, walk(frame, { c: 0.6 + frame.phase * 0.25 }), 0),
+  "otter-standing": (g, frame) => otterAt(g, walk(frame, { state: "sit", pose: "stand", still: 1.7, timer: 3 }), 1.7),
+  firefly: (g) => fireflyAt(g, { homeX: 40, homeY: 30, phase: 0, speed: 0, reach: 8 }, 0.75),
+  "firefly-rising": (g) => fireflyAt(g, { homeX: 40, homeY: 30, phase: 0, speed: 0, reach: 8 }, 0.3),
+  "firefly-tree": (g) => {
+    // A crown's fireflies in the middle of a flash that has drawn together.
+    const tree = { cx: 40, half: 24, top: 8, bottom: 34 };
+    const flies = Array.from({ length: 12 }, (_, i) => ({ u: (i % 6) / 2.5 - 1, v: (i % 4) / 3, phase: i }));
+    treeFireflies(g, flies, tree, 6.4, g.pal.fire);
+  },
+  "gibbon-behind": (g) => gibbonAt(g, swinging(0), g.pal),
+  gibbon: (g) => gibbonAt(g, swinging(0.5), g.pal),
+  "gibbon-ahead": (g) => gibbonAt(g, swinging(1), g.pal),
+  "gibbon-calling": (g) => gibbonAt(g, { ...swinging(0), hx: 34, call: 3.0 }, g.pal, 3.0),
+  mist: (g) => mistAt(g, { x0: 90, y: 30, w: 40, h: 6, speed: 0 }, 0, 80),
+};
+
+const PLANT_FAMILIES = {
+  "tree-fig": "wide-canopy",
+  "tree-dipterocarp": "wide-canopy",
+  treefern: "palm-like",
+  banana: "palm-like",
+  cycad: "palm-like",
+  bamboo: "palm-like",
+};
+
+export const META = {
+  id: "rainforest",
+  label: "Thailand Khao Sok Rainforest",
+  group: "woods",
+  tint: ["#9fd6b4", "rgb(56 160 120)"],
+  backdrop: {
+    light: {
+      green: "#8fbf9c",
+      "green-soft": "#c0d9c5",
+      peach: "#e2e4bc",
+      blush: "#d3e2d6",
+      bloom: "#9fc8aa",
+    },
+    dark: {
+      green: "rgb(56 160 120 / 0.42)",
+      "green-soft": "rgb(70 150 100 / 0.22)",
+      peach: "rgb(214 190 90 / 0.15)",
+      blush: "rgb(60 150 140 / 0.14)",
+      bloom: "rgb(70 180 120 / 0.34)",
+    },
   },
 };
 
 export default {
-  id: "rainforest",
-  label: "Thailand Khao Sok Rainforest",
-  group: "woods",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.38, 0.64], dark: [0.5, 0.75] },
   mature: MATURE,

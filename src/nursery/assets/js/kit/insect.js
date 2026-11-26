@@ -172,3 +172,14 @@ export function treeFireflies(g, flies, tree, time, tones) {
   }
   for (const p of lit) fireflyGlow(g, p.x, p.y, p.I, tones);
 }
+
+export const FAMILY = {
+  id: "insects",
+  title: "Insects",
+  group: "Animals",
+  differ: "size, colour, glow",
+  drivers: {
+    butterflyAt: { role: "insect", member: () => "butterfly" },
+    fireflyAt: { role: "insect", member: () => "firefly" },
+  },
+};

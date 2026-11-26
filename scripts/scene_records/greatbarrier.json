@@ -1,0 +1,528 @@
+{
+  "scene": "greatbarrier",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "back:mantaShadow": 36,
+        "back:step:water": 108,
+        "front:fishAt": 84,
+        "front:honuShellAt": 60,
+        "front:inkAt": 11,
+        "front:mantaAt": 36,
+        "front:octopusAt": 96,
+        "front:schoolAt": 84,
+        "front:step:bait-and-spawn": 108,
+        "front:step:school-and-reef": 108,
+        "front:step:sparks": 108,
+        "front:step:turtle-and-wrasse": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:mantaShadow < front:fishAt",
+        "back:mantaShadow < front:honuShellAt",
+        "back:mantaShadow < front:inkAt",
+        "back:mantaShadow < front:mantaAt",
+        "back:mantaShadow < front:octopusAt",
+        "back:mantaShadow < front:schoolAt",
+        "back:mantaShadow < front:step:bait-and-spawn",
+        "back:mantaShadow < front:step:school-and-reef",
+        "back:mantaShadow < front:step:sparks",
+        "back:mantaShadow < front:step:turtle-and-wrasse",
+        "back:mantaShadow < plants",
+        "back:step:water < back:mantaShadow",
+        "back:step:water < front:fishAt",
+        "back:step:water < front:honuShellAt",
+        "back:step:water < front:inkAt",
+        "back:step:water < front:mantaAt",
+        "back:step:water < front:octopusAt",
+        "back:step:water < front:schoolAt",
+        "back:step:water < front:step:bait-and-spawn",
+        "back:step:water < front:step:school-and-reef",
+        "back:step:water < front:step:sparks",
+        "back:step:water < front:step:turtle-and-wrasse",
+        "back:step:water < plants",
+        "front:fishAt < front:inkAt",
+        "front:fishAt < front:octopusAt",
+        "front:honuShellAt < front:fishAt",
+        "front:honuShellAt < front:inkAt",
+        "front:honuShellAt < front:octopusAt",
+        "front:honuShellAt < front:schoolAt",
+        "front:honuShellAt < front:step:school-and-reef",
+        "front:inkAt < front:octopusAt",
+        "front:mantaAt < front:fishAt",
+        "front:mantaAt < front:honuShellAt",
+        "front:mantaAt < front:inkAt",
+        "front:mantaAt < front:octopusAt",
+        "front:mantaAt < front:schoolAt",
+        "front:mantaAt < front:step:school-and-reef",
+        "front:mantaAt < front:step:sparks",
+        "front:mantaAt < front:step:turtle-and-wrasse",
+        "front:schoolAt < front:fishAt",
+        "front:schoolAt < front:inkAt",
+        "front:schoolAt < front:octopusAt",
+        "front:step:bait-and-spawn < front:fishAt",
+        "front:step:bait-and-spawn < front:honuShellAt",
+        "front:step:bait-and-spawn < front:inkAt",
+        "front:step:bait-and-spawn < front:mantaAt",
+        "front:step:bait-and-spawn < front:octopusAt",
+        "front:step:bait-and-spawn < front:schoolAt",
+        "front:step:bait-and-spawn < front:step:school-and-reef",
+        "front:step:bait-and-spawn < front:step:sparks",
+        "front:step:bait-and-spawn < front:step:turtle-and-wrasse",
+        "front:step:school-and-reef < front:fishAt",
+        "front:step:school-and-reef < front:inkAt",
+        "front:step:school-and-reef < front:octopusAt",
+        "front:step:school-and-reef < front:schoolAt",
+        "front:step:sparks < front:fishAt",
+        "front:step:sparks < front:honuShellAt",
+        "front:step:sparks < front:inkAt",
+        "front:step:sparks < front:octopusAt",
+        "front:step:sparks < front:schoolAt",
+        "front:step:sparks < front:step:school-and-reef",
+        "front:step:sparks < front:step:turtle-and-wrasse",
+        "front:step:turtle-and-wrasse < front:fishAt",
+        "front:step:turtle-and-wrasse < front:honuShellAt",
+        "front:step:turtle-and-wrasse < front:inkAt",
+        "front:step:turtle-and-wrasse < front:octopusAt",
+        "front:step:turtle-and-wrasse < front:schoolAt",
+        "front:step:turtle-and-wrasse < front:step:school-and-reef",
+        "plants < front:fishAt",
+        "plants < front:honuShellAt",
+        "plants < front:inkAt",
+        "plants < front:mantaAt",
+        "plants < front:octopusAt",
+        "plants < front:schoolAt",
+        "plants < front:step:bait-and-spawn",
+        "plants < front:step:school-and-reef",
+        "plants < front:step:sparks",
+        "plants < front:step:turtle-and-wrasse"
+      ],
+      "actors": {
+        "mantle": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            33,
+            55
+          ],
+          "speed": 8.4,
+          "poses": [
+            "curl",
+            "look",
+            "walk"
+          ]
+        },
+        "parrot": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            73.5,
+            148.5
+          ],
+          "yRange": [
+            93,
+            97
+          ],
+          "speed": 6
+        },
+        "turtle": {
+          "firstStage": 4,
+          "activeSteps": 60
+        },
+        "manta": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            147,
+            252
+          ],
+          "yRange": [
+            39,
+            39
+          ],
+          "speed": 12,
+          "poses": [
+            "fly"
+          ]
+        },
+        "shark": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -12,
+            246.5
+          ],
+          "yRange": [
+            57.4,
+            57.4
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "trevally": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            10.5,
+            252
+          ],
+          "yRange": [
+            81.8,
+            81.8
+          ],
+          "speed": 42,
+          "poses": [
+            "fly"
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "back:mantaShadow": 36,
+        "back:step:water": 108,
+        "front:fishAt": 84,
+        "front:honuShellAt": 60,
+        "front:inkAt": 11,
+        "front:mantaAt": 36,
+        "front:octopusAt": 96,
+        "front:schoolAt": 84,
+        "front:step:bait-and-spawn": 108,
+        "front:step:school-and-reef": 108,
+        "front:step:sparks": 108,
+        "front:step:turtle-and-wrasse": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:mantaShadow < front:fishAt",
+        "back:mantaShadow < front:honuShellAt",
+        "back:mantaShadow < front:inkAt",
+        "back:mantaShadow < front:mantaAt",
+        "back:mantaShadow < front:octopusAt",
+        "back:mantaShadow < front:schoolAt",
+        "back:mantaShadow < front:step:bait-and-spawn",
+        "back:mantaShadow < front:step:school-and-reef",
+        "back:mantaShadow < front:step:sparks",
+        "back:mantaShadow < front:step:turtle-and-wrasse",
+        "back:mantaShadow < plants",
+        "back:step:water < back:mantaShadow",
+        "back:step:water < front:fishAt",
+        "back:step:water < front:honuShellAt",
+        "back:step:water < front:inkAt",
+        "back:step:water < front:mantaAt",
+        "back:step:water < front:octopusAt",
+        "back:step:water < front:schoolAt",
+        "back:step:water < front:step:bait-and-spawn",
+        "back:step:water < front:step:school-and-reef",
+        "back:step:water < front:step:sparks",
+        "back:step:water < front:step:turtle-and-wrasse",
+        "back:step:water < plants",
+        "front:fishAt < front:inkAt",
+        "front:fishAt < front:octopusAt",
+        "front:honuShellAt < front:fishAt",
+        "front:honuShellAt < front:inkAt",
+        "front:honuShellAt < front:octopusAt",
+        "front:honuShellAt < front:schoolAt",
+        "front:honuShellAt < front:step:school-and-reef",
+        "front:inkAt < front:octopusAt",
+        "front:mantaAt < front:fishAt",
+        "front:mantaAt < front:honuShellAt",
+        "front:mantaAt < front:inkAt",
+        "front:mantaAt < front:octopusAt",
+        "front:mantaAt < front:schoolAt",
+        "front:mantaAt < front:step:school-and-reef",
+        "front:mantaAt < front:step:sparks",
+        "front:mantaAt < front:step:turtle-and-wrasse",
+        "front:schoolAt < front:fishAt",
+        "front:schoolAt < front:inkAt",
+        "front:schoolAt < front:octopusAt",
+        "front:step:bait-and-spawn < front:fishAt",
+        "front:step:bait-and-spawn < front:honuShellAt",
+        "front:step:bait-and-spawn < front:inkAt",
+        "front:step:bait-and-spawn < front:mantaAt",
+        "front:step:bait-and-spawn < front:octopusAt",
+        "front:step:bait-and-spawn < front:schoolAt",
+        "front:step:bait-and-spawn < front:step:school-and-reef",
+        "front:step:bait-and-spawn < front:step:sparks",
+        "front:step:bait-and-spawn < front:step:turtle-and-wrasse",
+        "front:step:school-and-reef < front:fishAt",
+        "front:step:school-and-reef < front:inkAt",
+        "front:step:school-and-reef < front:octopusAt",
+        "front:step:school-and-reef < front:schoolAt",
+        "front:step:sparks < front:fishAt",
+        "front:step:sparks < front:honuShellAt",
+        "front:step:sparks < front:inkAt",
+        "front:step:sparks < front:octopusAt",
+        "front:step:sparks < front:schoolAt",
+        "front:step:sparks < front:step:school-and-reef",
+        "front:step:sparks < front:step:turtle-and-wrasse",
+        "front:step:turtle-and-wrasse < front:fishAt",
+        "front:step:turtle-and-wrasse < front:honuShellAt",
+        "front:step:turtle-and-wrasse < front:inkAt",
+        "front:step:turtle-and-wrasse < front:octopusAt",
+        "front:step:turtle-and-wrasse < front:schoolAt",
+        "front:step:turtle-and-wrasse < front:step:school-and-reef",
+        "plants < front:fishAt",
+        "plants < front:honuShellAt",
+        "plants < front:inkAt",
+        "plants < front:mantaAt",
+        "plants < front:octopusAt",
+        "plants < front:schoolAt",
+        "plants < front:step:bait-and-spawn",
+        "plants < front:step:school-and-reef",
+        "plants < front:step:sparks",
+        "plants < front:step:turtle-and-wrasse"
+      ],
+      "actors": {
+        "mantle": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            22,
+            44.8
+          ],
+          "speed": 8.3,
+          "poses": [
+            "curl",
+            "look",
+            "walk"
+          ]
+        },
+        "parrot": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "turtle": {
+          "firstStage": 4,
+          "activeSteps": 60
+        },
+        "manta": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -3,
+            102
+          ],
+          "yRange": [
+            39,
+            39
+          ],
+          "speed": 12,
+          "poses": [
+            "fly"
+          ]
+        },
+        "shark": {
+          "firstStage": 5,
+          "activeSteps": 22,
+          "xRange": [
+            -12,
+            103.5
+          ],
+          "yRange": [
+            57.4,
+            57.4
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "trevally": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "back:step:water": 108,
+        "front:epauletteAt": 84,
+        "front:fishAt": 84,
+        "front:octopusAt": 96,
+        "front:step:bait-and-spawn": 108,
+        "front:step:school-and-reef": 108,
+        "front:step:sparks": 108,
+        "front:step:turtle-and-wrasse": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:step:water < front:epauletteAt",
+        "back:step:water < front:fishAt",
+        "back:step:water < front:octopusAt",
+        "back:step:water < front:step:bait-and-spawn",
+        "back:step:water < front:step:school-and-reef",
+        "back:step:water < front:step:sparks",
+        "back:step:water < front:step:turtle-and-wrasse",
+        "back:step:water < plants",
+        "front:fishAt < front:epauletteAt",
+        "front:fishAt < front:octopusAt",
+        "front:octopusAt < front:epauletteAt",
+        "front:step:bait-and-spawn < front:epauletteAt",
+        "front:step:bait-and-spawn < front:fishAt",
+        "front:step:bait-and-spawn < front:octopusAt",
+        "front:step:bait-and-spawn < front:step:school-and-reef",
+        "front:step:bait-and-spawn < front:step:sparks",
+        "front:step:bait-and-spawn < front:step:turtle-and-wrasse",
+        "front:step:school-and-reef < front:epauletteAt",
+        "front:step:school-and-reef < front:fishAt",
+        "front:step:school-and-reef < front:octopusAt",
+        "front:step:sparks < front:epauletteAt",
+        "front:step:sparks < front:fishAt",
+        "front:step:sparks < front:octopusAt",
+        "front:step:sparks < front:step:school-and-reef",
+        "front:step:sparks < front:step:turtle-and-wrasse",
+        "front:step:turtle-and-wrasse < front:epauletteAt",
+        "front:step:turtle-and-wrasse < front:fishAt",
+        "front:step:turtle-and-wrasse < front:octopusAt",
+        "front:step:turtle-and-wrasse < front:step:school-and-reef",
+        "plants < front:epauletteAt",
+        "plants < front:fishAt",
+        "plants < front:octopusAt",
+        "plants < front:step:bait-and-spawn",
+        "plants < front:step:school-and-reef",
+        "plants < front:step:sparks",
+        "plants < front:step:turtle-and-wrasse"
+      ],
+      "actors": {
+        "mantle": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            26,
+            33
+          ],
+          "speed": 14
+        },
+        "parrot": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "turtle": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "manta": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "shark": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            -12,
+            246.5
+          ],
+          "yRange": [
+            57.4,
+            57.4
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "trevally": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "back:step:water": 108,
+        "front:epauletteAt": 84,
+        "front:fishAt": 84,
+        "front:octopusAt": 96,
+        "front:step:bait-and-spawn": 108,
+        "front:step:school-and-reef": 108,
+        "front:step:sparks": 108,
+        "front:step:turtle-and-wrasse": 108,
+        "plants": 108
+      },
+      "order": [
+        "back:step:water < front:epauletteAt",
+        "back:step:water < front:fishAt",
+        "back:step:water < front:octopusAt",
+        "back:step:water < front:step:bait-and-spawn",
+        "back:step:water < front:step:school-and-reef",
+        "back:step:water < front:step:sparks",
+        "back:step:water < front:step:turtle-and-wrasse",
+        "back:step:water < plants",
+        "front:fishAt < front:epauletteAt",
+        "front:fishAt < front:octopusAt",
+        "front:octopusAt < front:epauletteAt",
+        "front:step:bait-and-spawn < front:epauletteAt",
+        "front:step:bait-and-spawn < front:fishAt",
+        "front:step:bait-and-spawn < front:octopusAt",
+        "front:step:bait-and-spawn < front:step:school-and-reef",
+        "front:step:bait-and-spawn < front:step:sparks",
+        "front:step:bait-and-spawn < front:step:turtle-and-wrasse",
+        "front:step:school-and-reef < front:epauletteAt",
+        "front:step:school-and-reef < front:fishAt",
+        "front:step:school-and-reef < front:octopusAt",
+        "front:step:sparks < front:epauletteAt",
+        "front:step:sparks < front:fishAt",
+        "front:step:sparks < front:octopusAt",
+        "front:step:sparks < front:step:school-and-reef",
+        "front:step:sparks < front:step:turtle-and-wrasse",
+        "front:step:turtle-and-wrasse < front:epauletteAt",
+        "front:step:turtle-and-wrasse < front:fishAt",
+        "front:step:turtle-and-wrasse < front:octopusAt",
+        "front:step:turtle-and-wrasse < front:step:school-and-reef",
+        "plants < front:epauletteAt",
+        "plants < front:fishAt",
+        "plants < front:octopusAt",
+        "plants < front:step:bait-and-spawn",
+        "plants < front:step:school-and-reef",
+        "plants < front:step:sparks",
+        "plants < front:step:turtle-and-wrasse"
+      ],
+      "actors": {
+        "mantle": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            18,
+            22
+          ],
+          "speed": 8
+        },
+        "parrot": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "turtle": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "manta": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "shark": {
+          "firstStage": 5,
+          "activeSteps": 22,
+          "xRange": [
+            -12,
+            103.5
+          ],
+          "yRange": [
+            57.4,
+            57.4
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "trevally": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    }
+  }
+}

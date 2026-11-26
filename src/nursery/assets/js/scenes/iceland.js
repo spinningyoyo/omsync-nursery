@@ -5,38 +5,26 @@
 // night it is winter: two curtains of aurora hang over it, mirrored in the fjord and lighting the
 // snow, the fox is white and the puffins on the stack sleep.
 // A farm cat wanders the lava field; its coat is one of eleven, picked as the scene loads.
-import {
-  canidAt,
-  cervidAt,
-  felidAt,
-  felidPoses,
-  longNeckStep,
-  SWAN_STRIDE,
-  settleCanid,
-  swanAt,
-  swanPoses,
-  swanSpeed,
-} from "../kit/animals.js";
+
+import { canidAt, settleCanid } from "../kit/canid.js";
 import {
   doing,
-  drift,
   enter,
   enterBehind,
   fidget,
   flock,
-  flyBy,
   follow,
   isNight,
-  narrow,
   percher,
   rest,
-  settle,
   walker,
   wander,
 } from "../kit/critters.js";
+import { cervidAt } from "../kit/deer.js";
 import { mistAt, mistBand } from "../kit/effects.js";
-import { HOUSECAT_COAT_NAMES, HOUSECAT_COATS } from "../kit/felid.js";
+import { felidAt, felidPoses, HOUSECAT_COAT_NAMES, HOUSECAT_COATS } from "../kit/felid.js";
 import { flyerAt, nesterAt, owlFlyAt } from "../kit/flyers.js";
+import { longNeckStep, SWAN_STRIDE, swanAt, swanPoses, swanSpeed } from "../kit/longneck.js";
 import {
   blob,
   clamp,
@@ -45,12 +33,15 @@ import {
   hash,
   makePlant,
   rect,
+  rng,
   row,
   scatter,
   smooth,
   sortPlants,
   stroke,
 } from "../kit/pixel.js";
+import { ANIMAL_BOX, bird, walk } from "../kit/poses.js";
+import { crossingActor, drawStep, followerActor, runCast, walkerActor } from "../kit/runner.js";
 import { broadleafTree } from "../kit/trees.js";
 
 const GLACIER_ROWS = 34;
@@ -604,155 +595,394 @@ function fjord(g, f) {
   }
 }
 
-const extras = {
-  init(f) {
-    const stars = Array.from({ length: STARS }, () => ({
-      x: Math.floor(f.rand() * f.cols),
-      y: 2 + Math.floor(f.rand() * Math.max(10, f.groundY * 0.55)),
-      phase: f.rand() * 6.28,
-      rate: 0.6 + f.rand() * 1.6,
-    }));
-    return {
-      cat: { ...walker(f), pal: `housecat-${HOUSECAT_COAT_NAMES[Math.floor(f.rand() * HOUSECAT_COAT_NAMES.length)]}` },
-      fjord: 0,
-      stars,
-      lum: new Float32Array(f.cols), // how bright the aurora is over each column
-      airglow: null,
-      mists: Array.from({ length: MISTS }, () => mistBand(f, 14, 12)),
-      owl: { next: 2, bird: null },
-      flyingSwan: { next: 6, bird: null },
-      puffins: { next: 3, bird: null },
-      nesters: null,
-      fox: { ...walker(f), kind: "arctic" },
-      pup: { ...walker(f, 0.6), kind: "arctic" },
-      swan: walker(f),
-      mate: walker(f),
-      stag: { ...walker(f), kind: "reindeer", sex: "m" },
-      hind: { ...walker(f, 0.9), kind: "reindeer", sex: "f" },
-    };
+const extras = runCast(
+  [
+    drawStep(
+      "sky-and-fjord",
+      (g, f) => {
+        const dark = f.theme === "dark";
+        if (dark) night(g, f);
+        fjord(g, f);
+        if (dark) reflection(g, f);
+      },
+      { back: true },
+    ),
+    {
+      label: "fjord (water behind the hills)",
+      kind: "effect",
+      layer: "behind the plants (drawBack)",
+      arrives: 3,
+      fixed: `${FJORD_ROWS} rows at full tide`,
+      sprites: ["fjord"],
+    },
+    {
+      label: "stars and aurora (dark theme)",
+      kind: "effect",
+      layer: "behind the plants (drawBack, dark theme only)",
+      arrives: 0,
+      fixed: `${STARS} stars, and the aurora`,
+      sprites: ["night"],
+    },
+    walkerActor({
+      id: "cat",
+      label: "farm cat, in one of eleven coats",
+      kind: "animal",
+      family: "cats",
+      sprites: [
+        "cat",
+        "cat-sitting",
+        "cat-arching",
+        "cat-lying",
+        "cat-stretching",
+        "cat-loafing",
+        "cat-curled",
+        "cat-dozing",
+        "cat-grooming",
+        "cat-white",
+        "cat-silver-tabby",
+        "cat-orange-white",
+        "cat-siamese",
+        "cat-black",
+        "cat-ginger",
+        "cat-calico",
+        "cat-grey",
+        "cat-tortie",
+        "cat-tuxedo",
+        "cat-brown-tabby",
+      ],
+      arrives: 3,
+      phone: "hide",
+      props: (f) => ({ pal: `housecat-${HOUSECAT_COAT_NAMES[Math.floor(f.rand() * HOUSECAT_COAT_NAMES.length)]}` }),
+      move: { speed: 7, stride: 7, sit: [4, 9], walk: [3, 6] },
+      poses: () => felidPoses("housecat"),
+      draw: (g, w, f) => felidAt(g, { ...w, kind: "housecat" }, f.time),
+    }),
+    drawStep("aurora-and-mist", (g, f) => {
+      if (f.theme === "dark") auroraLight(g, f);
+      if (f.stage >= 1) {
+        for (const m of f.extra.mists) mistAt(g, m, f.time, f.cols);
+      }
+    }),
+    {
+      label: "mist bands",
+      kind: "effect",
+      arrives: 1,
+      fixed: `${MISTS} bands`,
+      sprites: ["mist"],
+    },
+    crossingActor({
+      id: "owl",
+      label: "short-eared owl",
+      kind: "bird",
+      family: "owls",
+      sprites: ["owl", "owl-glide"],
+      arrives: 2,
+      first: 2,
+      mode: "drift",
+      every: [9, 5],
+      speed: 15,
+      spawn: (f) => ({ y: f.groundY - 22 - f.rand() * 10 }),
+      draw: (g, b, f) => owlFlyAt(g, b, f.time, "shortEared", isNight(f)),
+    }),
+    {
+      label: "whooper swan pair",
+      kind: "animal",
+      family: "long-necked-birds",
+      presence: ["swan", "mate"],
+      sprites: ["swan", "swan-feeding", "swan-looking", "swan-preening", "swan-flapping"],
+    },
+    crossingActor({
+      id: "puffins",
+      label: "puffins: a flock of three, and three nesting on the sea stack",
+      kind: "bird",
+      family: "small-flyers",
+      sprites: ["puffin", "puffin-nesting", "puffin-preening", "puffin-stretching", "puffin-asleep"],
+      arrives: 3,
+      when: "day",
+      first: 3,
+      every: [5, 6],
+      speed: 36,
+      margin: 40,
+      spawn: (f) => ({ y: f.groundY - 46 - f.rand() * 24, members: flock(f, 3, 9) }),
+      draw: (g, b, f) => flockAt(g, b, f.time),
+    }),
+    drawStep("nesters-and-swans", (g, f) => {
+      const x = f.extra;
+      for (const n of x.nesters ?? []) nesterAt(g, n, f.time, isNight(f));
+      for (const s of [x.swan, x.mate]) if (s.active) swanAt(g, s, f.time);
+    }),
+    crossingActor({
+      id: "flyingSwan",
+      label: "whooper swan flying by",
+      kind: "bird",
+      family: "long-necked-birds",
+      sprites: ["swan-flying"],
+      arrives: 4,
+      when: "day",
+      first: 6,
+      every: [9, 7],
+      speed: 12,
+      spawn: (f) => ({ y: f.groundY - 62 - f.rand() * 16 }),
+      draw: (g, b, f) => swanAt(g, { ...b, pose: "fly" }, f.time),
+    }),
+    walkerActor({
+      id: "stag",
+      label: "wild reindeer (hind and stag)",
+      kind: "animal",
+      family: "deer",
+      presence: ["stag", "hind"],
+      sprites: ["hind", "stag", "stag-grazing", "stag-lying"],
+      arrives: 7,
+      props: { kind: "reindeer", sex: "m" },
+      move: { speed: 7, stride: 6, sit: [4, 8], walk: [3, 6] },
+      draw: (g, w, f) => cervidAt(g, w, f.time),
+    }),
+    followerActor({
+      id: "hind",
+      lead: "stag",
+      gap: 16,
+      arrives: 8,
+      scale: 0.9,
+      props: { kind: "reindeer", sex: "f" },
+      draw: (g, w, f) => cervidAt(g, w, f.time),
+    }),
+    walkerActor({
+      id: "fox",
+      label: "arctic fox and pup",
+      kind: "animal",
+      family: "dogs",
+      presence: ["fox", "pup"],
+      sprites: ["fox", "fox-winter", "fox-pup", "fox-pup-sitting"],
+      arrives: 1,
+      props: { kind: "arctic" },
+      move: { speed: 9, stride: 8, sit: [3, 6], walk: [3, 6] },
+      settleFn: settleCanid,
+      draw: (g, w, f) => canidAt(g, w, f.time),
+    }),
+    followerActor({
+      id: "pup",
+      lead: "fox",
+      gap: 12,
+      arrives: 1,
+      scale: 0.6,
+      props: { kind: "arctic" },
+      settleFn: settleCanid,
+      draw: (g, w, f) => canidAt(g, w, f.time),
+    }),
+  ],
+  {
+    init(f) {
+      const stars = Array.from({ length: STARS }, () => ({
+        x: Math.floor(f.rand() * f.cols),
+        y: 2 + Math.floor(f.rand() * Math.max(10, f.groundY * 0.55)),
+        phase: f.rand() * 6.28,
+        rate: 0.6 + f.rand() * 1.6,
+      }));
+      return {
+        fjord: 0,
+        stars,
+        lum: new Float32Array(f.cols), // how bright the aurora is over each column
+        airglow: null,
+        mists: Array.from({ length: MISTS }, () => mistBand(f, 14, 12)),
+        nesters: null,
+        swan: walker(f),
+        mate: walker(f),
+      };
+    },
+
+    // The fjord rises over the first waterings, and jumps to its level under reduced motion.
+    onGrow(f) {
+      const x = f.extra;
+      if (f.reduced) x.fjord = fjordLevel(f);
+      if (f.stage >= 3) {
+        enter(f, x.swan);
+        enterBehind(f, x.mate, x.swan, 13);
+      }
+    },
+
+    busy: () => true,
+
+    update(f, dt) {
+      const x = f.extra;
+      x.fjord += (fjordLevel(f) - x.fjord) * Math.min(1, dt * 0.8);
+
+      const stack = grownStack(f);
+      if (stack && !x.nesters) {
+        const top = f.groundY + stack.depth - stackHeight(stack);
+        x.nesters = PUFFINS.map((dx, i) =>
+          percher(f, stack.x + dx, top, i === 0 ? 1 : -1, {
+            look: { every: [4, 8], lasts: 1.8 },
+            blink: { every: [2, 5], lasts: 0.3 },
+            bob: { every: [3, 7], lasts: 0.8 },
+            preen: { every: [8, 14], lasts: 2.4 },
+            stretch: { every: [8, 16], lasts: 1.6 },
+            turn: { every: [8, 14], lasts: 2.6 },
+            ...(i === 1 ? { fish: { every: [30, 45], lasts: 10 } } : {}),
+          }),
+        );
+        for (const n of x.nesters) n.carrying = -1;
+      }
+      for (const n of x.nesters ?? []) {
+        const wasFishing = doing(n, "fish", f.time) >= 0;
+        fidget(f, n);
+        if (wasFishing && doing(n, "fish", f.time + dt) < 0) n.carrying = f.time + 6;
+      }
+      const swanX = x.swan.x;
+      const mateX = x.mate.x;
+      wander(f, x.swan, dt, { speed: swanSpeed, sit: [4, 7], walk: [2, 4] });
+      follow(x.mate, x.swan, dt, 13);
+      x.mate.state = x.swan.state;
+      x.mate.timer = x.swan.timer;
+      rest(f, x.swan, swanPoses(x.swan));
+      rest(f, x.mate, swanPoses(x.mate));
+      longNeckStep(x.swan, swanX, dt, SWAN_STRIDE);
+      longNeckStep(x.mate, mateX, dt, SWAN_STRIDE);
+    },
   },
+);
 
-  // The fjord rises over the first waterings, and jumps to its level under reduced motion.
-  onGrow(f) {
-    if (f.stage >= 3 && !narrow(f)) enter(f, f.extra.cat);
-    const x = f.extra;
-    if (f.reduced) x.fjord = fjordLevel(f);
-    if (f.stage >= 1) {
-      enter(f, x.fox);
-      enterBehind(f, x.pup, x.fox, 12);
-    }
-    if (f.stage >= 3) {
-      enter(f, x.swan);
-      enterBehind(f, x.mate, x.swan, 13);
-    }
-    if (f.stage >= 7) enter(f, x.stag);
-    if (f.stage >= 8) enterBehind(f, x.hind, x.stag, 16);
+const SPRITES = {
+  cat: (g, frame) => felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby" }), 0),
+  "cat-sitting": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "sit" }), 0),
+  "cat-arching": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "arch" }), 0),
+  "cat-lying": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "lie" }), 0),
+  "cat-stretching": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "bow" }), 0),
+  "cat-loafing": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "loaf" }), 0),
+  "cat-curled": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "curl" }), 0),
+  "cat-dozing": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "doze" }), 0),
+  "cat-grooming": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "groom" }), 0),
+  "cat-white": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-white", state: "sit", pose: "sit" }), 0),
+  "cat-silver-tabby": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-silver-tabby", state: "sit", pose: "sit" }), 0),
+  "cat-orange-white": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-orange-white", state: "sit", pose: "sit" }), 0),
+  "cat-siamese": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-siamese", state: "sit", pose: "sit" }), 0),
+  "cat-black": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-black", state: "sit", pose: "sit" }), 0),
+  "cat-ginger": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-ginger", state: "sit", pose: "sit" }), 0),
+  "cat-calico": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-calico", state: "sit", pose: "sit" }), 0),
+  "cat-grey": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-grey", state: "sit", pose: "sit" }), 0),
+  "cat-tortie": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-tortie", state: "sit", pose: "sit" }), 0),
+  "cat-tuxedo": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-tuxedo", state: "sit", pose: "sit" }), 0),
+  "cat-brown-tabby": (g, frame) =>
+    felidAt(g, walk(frame, { kind: "housecat", pal: "housecat-brown-tabby", state: "sit", pose: "sit" }), 0),
+  fjord: (g) => {
+    extras.drawBack(g, {
+      groundY: ANIMAL_BOX.ground,
+      cols: ANIMAL_BOX.w,
+      stage: 4,
+      time: 0,
+      reduced: false,
+      theme: "light",
+      extra: { fjord: 16 },
+    });
   },
-
-  busy: () => true,
-
-  update(f, dt) {
-    wander(f, f.extra.cat, dt, { speed: 7, stride: 7, sit: [4, 9], walk: [3, 6] });
-    rest(f, f.extra.cat, felidPoses("housecat"));
-    const x = f.extra;
-    x.fjord += (fjordLevel(f) - x.fjord) * Math.min(1, dt * 0.8);
-    if (f.stage >= 2) {
-      drift(f, x.owl, dt, {
-        every: [9, 5],
-        speed: 15,
-        spawn: () => ({ y: f.groundY - 22 - f.rand() * 10 }),
-      });
-    }
-    if (f.stage >= 4 && !isNight(f)) {
-      flyBy(f, x.flyingSwan, dt, { every: [9, 7], speed: 12, spawn: () => ({ y: f.groundY - 62 - f.rand() * 16 }) });
-    }
-    // Puffins are at sea through the winter nights, so the flock flies by day only.
-    if (f.stage >= 3 && !isNight(f)) {
-      flyBy(f, x.puffins, dt, {
-        every: [5, 6],
-        speed: 36,
-        margin: 40,
-        spawn: () => ({ y: f.groundY - 46 - f.rand() * 24, members: flock(f, 3, 9) }),
-      });
-    }
-    const stack = grownStack(f);
-    if (stack && !x.nesters) {
-      const top = f.groundY + stack.depth - stackHeight(stack);
-      x.nesters = PUFFINS.map((dx, i) =>
-        percher(f, stack.x + dx, top, i === 0 ? 1 : -1, {
-          look: { every: [4, 8], lasts: 1.8 },
-          blink: { every: [2, 5], lasts: 0.3 },
-          bob: { every: [3, 7], lasts: 0.8 },
-          preen: { every: [8, 14], lasts: 2.4 },
-          stretch: { every: [8, 16], lasts: 1.6 },
-          turn: { every: [8, 14], lasts: 2.6 },
-          ...(i === 1 ? { fish: { every: [30, 45], lasts: 10 } } : {}),
-        }),
-      );
-      for (const n of x.nesters) n.carrying = -1;
-    }
-    for (const n of x.nesters ?? []) {
-      const wasFishing = doing(n, "fish", f.time) >= 0;
-      fidget(f, n);
-      if (wasFishing && doing(n, "fish", f.time + dt) < 0) n.carrying = f.time + 6;
-    }
-    wander(f, x.fox, dt, { speed: 9, stride: 8, sit: [3, 6], walk: [3, 6] });
-    follow(x.pup, x.fox, dt, 12);
-    x.pup.state = x.fox.state;
-    x.pup.phase = x.fox.phase;
-    settleCanid(f, x.fox);
-    settleCanid(f, x.pup, x.fox);
-    const swanX = x.swan.x;
-    const mateX = x.mate.x;
-    wander(f, x.swan, dt, { speed: swanSpeed, sit: [4, 7], walk: [2, 4] });
-    follow(x.mate, x.swan, dt, 13);
-    x.mate.state = x.swan.state;
-    x.mate.timer = x.swan.timer;
-    rest(f, x.swan, swanPoses(x.swan));
-    rest(f, x.mate, swanPoses(x.mate));
-    longNeckStep(x.swan, swanX, dt, SWAN_STRIDE);
-    longNeckStep(x.mate, mateX, dt, SWAN_STRIDE);
-    wander(f, x.stag, dt, { speed: 7, stride: 6, sit: [4, 8], walk: [3, 6] });
-    follow(x.hind, x.stag, dt, 16);
-    x.hind.state = x.stag.state;
-    x.hind.phase = x.stag.phase;
-    x.hind.timer = x.stag.timer;
-    settle(f, x.stag);
-    settle(f, x.hind);
+  night: (g) => {
+    g.pal = DARK;
+    extras.drawBack(g, {
+      groundY: ANIMAL_BOX.ground,
+      cols: ANIMAL_BOX.w,
+      stage: 0,
+      time: 0,
+      reduced: false,
+      theme: "dark",
+      extra: extras.init({
+        rand: rng(3),
+        cols: ANIMAL_BOX.w,
+        groundY: ANIMAL_BOX.ground,
+      }),
+    });
   },
-
-  // Behind the plants: the night sky in dark mode, then the fjord with the aurora mirrored in it.
-  // All of it is still under reduced motion.
-  drawBack(g, f) {
-    const dark = f.theme === "dark";
-    if (dark) night(g, f);
-    fjord(g, f);
-    if (dark) reflection(g, f);
+  mist: (g) => mistAt(g, { x0: 90, y: 30, w: 40, h: 6, speed: 0 }, 0, 80),
+  fox: (g, frame) => canidAt(g, walk(frame, { kind: "arctic" })),
+  "fox-winter": (g, frame) => {
+    g.pal = DARK;
+    canidAt(g, walk(frame, { kind: "arctic", state: "sit" }));
   },
+  "fox-pup": (g, frame) => canidAt(g, walk(frame, { kind: "arctic", scale: 0.6 })),
+  "fox-pup-sitting": (g, frame) => canidAt(g, walk(frame, { kind: "arctic", scale: 0.6, state: "sit" })),
+  owl: (g, frame) => owlFlyAt(g, bird(frame), 0.4, "shortEared"),
+  "owl-glide": (g, frame) => owlFlyAt(g, bird(frame), 2.2, "shortEared"),
+  swan: (g, frame) => swanAt(g, walk(frame), 0),
+  "swan-feeding": (g, frame) => swanAt(g, walk(frame, { state: "sit", since: -2, timer: 20 }), 0),
+  "swan-looking": (g, frame) => swanAt(g, walk(frame, { state: "sit", pose: "look", since: -2, timer: 20 }), 0),
+  "swan-preening": (g, frame) => swanAt(g, walk(frame, { state: "sit", pose: "preen", since: -2, timer: 20 }), 0),
+  "swan-flapping": (g, frame) => swanAt(g, walk(frame, { state: "sit", pose: "flap", since: -1.4, timer: 20 }), 0),
+  "swan-flying": (g, frame) => swanAt(g, bird(frame, { pose: "fly" }), 0),
+  puffin: (g, frame) =>
+    flockAt(
+      g,
+      bird(frame, {
+        members: [
+          { back: 0, up: 0, phase: 0 },
+          { back: 9, up: -2, phase: 1 },
+          { back: 19, up: 2, phase: 2 },
+        ],
+      }),
+      0,
+    ),
+  "puffin-nesting": (g) => nesterAt(g, { x: 40, y: 40, dir: 1, moves: {}, carrying: 99 }, 0, false),
+  "puffin-preening": (g, _frame) =>
+    nesterAt(g, { x: 40, y: 40, dir: 1, moves: { preen: { until: 1.25, lasts: 2.4 } }, carrying: -1 }, 0, false),
+  "puffin-stretching": (g, _frame) =>
+    nesterAt(g, { x: 40, y: 40, dir: 1, moves: { stretch: { until: 0.8, lasts: 1.6 } }, carrying: -1 }, 0, false),
+  "puffin-asleep": (g) => {
+    g.pal = DARK;
+    nesterAt(g, { x: 40, y: 40, dir: 1, moves: {}, carrying: -1 }, 0, true);
+  },
+  hind: (g, frame) => cervidAt(g, walk(frame, { kind: "reindeer", sex: "f", scale: 0.9 })),
+  stag: (g, frame) => cervidAt(g, walk(frame, { kind: "reindeer", sex: "m" })),
+  "stag-grazing": (g, frame) => cervidAt(g, walk(frame, { kind: "reindeer", sex: "m", state: "sit" })),
+  "stag-lying": (g, frame) => cervidAt(g, walk(frame, { kind: "reindeer", sex: "m", state: "sit", pose: "lie" })),
+};
 
-  draw(g, f) {
-    if (f.extra.cat.active) felidAt(g, { ...f.extra.cat, kind: "housecat" }, f.time);
-    const x = f.extra;
-    if (f.theme === "dark") auroraLight(g, f);
-    if (f.stage >= 1) {
-      for (const m of x.mists) mistAt(g, m, f.time, f.cols);
-    }
-    if (x.owl.bird) owlFlyAt(g, x.owl.bird, f.time, "shortEared", isNight(f));
-    if (x.puffins.bird && !isNight(f)) flockAt(g, x.puffins.bird, f.time);
-    for (const n of x.nesters ?? []) nesterAt(g, n, f.time, isNight(f));
-    for (const s of [x.swan, x.mate]) if (s.active) swanAt(g, s, f.time);
-    if (x.flyingSwan.bird && !isNight(f)) swanAt(g, { ...x.flyingSwan.bird, pose: "fly" }, f.time);
-    if (x.stag.active) cervidAt(g, x.stag, f.time);
-    if (x.hind.active) cervidAt(g, x.hind, f.time);
-    if (x.fox.active) canidAt(g, x.fox, f.time);
-    if (x.pup.active) canidAt(g, x.pup, f.time);
+const PLANT_FAMILIES = {
+  birch: "broadleaf",
+};
+
+export const META = {
+  id: "iceland",
+  label: "Icelandic Lava Field",
+  group: "coastal",
+  tint: ["#bfe0ec", "rgb(70 130 170)"],
+  backdrop: {
+    light: {
+      green: "#c9e3ee",
+      "green-soft": "#e8f4f1",
+      peach: "#d5e9b2",
+      blush: "#dccbef",
+      bloom: "#f0d98e",
+    },
+    dark: {
+      green: "rgb(80 140 170 / 0.32)",
+      "green-soft": "rgb(90 150 130 / 0.18)",
+      peach: "rgb(120 160 80 / 0.2)",
+      blush: "rgb(130 100 180 / 0.2)",
+      bloom: "rgb(90 230 170 / 0.28)",
+    },
   },
 };
 
 export default {
-  id: "iceland",
-  label: "Icelandic Lava Field",
-  group: "coastal",
+  ...META,
+  cast: extras.cast,
+  sprites: SPRITES,
+  plantFamilies: PLANT_FAMILIES,
   palettes: { light: LIGHT, dark: DARK },
   fade: { light: [0.35, 0.6], dark: [0.45, 0.68] },
   mature: {

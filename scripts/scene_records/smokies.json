@@ -1,0 +1,955 @@
+{
+  "scene": "smokies",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "back:step:milky-way": 108,
+        "front:bearAt": 36,
+        "front:cervidAt": 60,
+        "front:circlerAt": 48,
+        "front:eagleFlyAt": 82,
+        "front:felidAt": 48,
+        "front:flyerAt": 45,
+        "front:hareAt": 96,
+        "front:step:bears": 108,
+        "front:step:deer-elk": 108,
+        "front:step:leaves": 108,
+        "front:step:mists": 108,
+        "front:step:owl": 108,
+        "front:turkeyAt": 72,
+        "plants": 108
+      },
+      "order": [
+        "back:step:milky-way < front:bearAt",
+        "back:step:milky-way < front:cervidAt",
+        "back:step:milky-way < front:circlerAt",
+        "back:step:milky-way < front:eagleFlyAt",
+        "back:step:milky-way < front:felidAt",
+        "back:step:milky-way < front:flyerAt",
+        "back:step:milky-way < front:hareAt",
+        "back:step:milky-way < front:step:bears",
+        "back:step:milky-way < front:step:deer-elk",
+        "back:step:milky-way < front:step:leaves",
+        "back:step:milky-way < front:step:mists",
+        "back:step:milky-way < front:step:owl",
+        "back:step:milky-way < front:turkeyAt",
+        "back:step:milky-way < plants",
+        "front:bearAt < front:circlerAt",
+        "front:bearAt < front:eagleFlyAt",
+        "front:bearAt < front:flyerAt",
+        "front:bearAt < front:step:leaves",
+        "front:bearAt < front:step:owl",
+        "front:cervidAt < front:bearAt",
+        "front:cervidAt < front:circlerAt",
+        "front:cervidAt < front:eagleFlyAt",
+        "front:cervidAt < front:flyerAt",
+        "front:cervidAt < front:hareAt",
+        "front:cervidAt < front:step:bears",
+        "front:cervidAt < front:step:leaves",
+        "front:cervidAt < front:step:owl",
+        "front:circlerAt < front:flyerAt",
+        "front:circlerAt < front:step:leaves",
+        "front:eagleFlyAt < front:circlerAt",
+        "front:eagleFlyAt < front:flyerAt",
+        "front:eagleFlyAt < front:step:leaves",
+        "front:felidAt < front:bearAt",
+        "front:felidAt < front:cervidAt",
+        "front:felidAt < front:circlerAt",
+        "front:felidAt < front:eagleFlyAt",
+        "front:felidAt < front:flyerAt",
+        "front:felidAt < front:hareAt",
+        "front:felidAt < front:step:bears",
+        "front:felidAt < front:step:deer-elk",
+        "front:felidAt < front:step:leaves",
+        "front:felidAt < front:step:mists",
+        "front:felidAt < front:step:owl",
+        "front:felidAt < front:turkeyAt",
+        "front:flyerAt < front:step:leaves",
+        "front:hareAt < front:bearAt",
+        "front:hareAt < front:circlerAt",
+        "front:hareAt < front:eagleFlyAt",
+        "front:hareAt < front:flyerAt",
+        "front:hareAt < front:step:bears",
+        "front:hareAt < front:step:leaves",
+        "front:hareAt < front:step:owl",
+        "front:step:bears < front:bearAt",
+        "front:step:bears < front:circlerAt",
+        "front:step:bears < front:eagleFlyAt",
+        "front:step:bears < front:flyerAt",
+        "front:step:bears < front:step:leaves",
+        "front:step:bears < front:step:owl",
+        "front:step:deer-elk < front:bearAt",
+        "front:step:deer-elk < front:cervidAt",
+        "front:step:deer-elk < front:circlerAt",
+        "front:step:deer-elk < front:eagleFlyAt",
+        "front:step:deer-elk < front:flyerAt",
+        "front:step:deer-elk < front:hareAt",
+        "front:step:deer-elk < front:step:bears",
+        "front:step:deer-elk < front:step:leaves",
+        "front:step:deer-elk < front:step:owl",
+        "front:step:mists < front:bearAt",
+        "front:step:mists < front:cervidAt",
+        "front:step:mists < front:circlerAt",
+        "front:step:mists < front:eagleFlyAt",
+        "front:step:mists < front:flyerAt",
+        "front:step:mists < front:hareAt",
+        "front:step:mists < front:step:bears",
+        "front:step:mists < front:step:deer-elk",
+        "front:step:mists < front:step:leaves",
+        "front:step:mists < front:step:owl",
+        "front:step:mists < front:turkeyAt",
+        "front:step:owl < front:circlerAt",
+        "front:step:owl < front:eagleFlyAt",
+        "front:step:owl < front:flyerAt",
+        "front:step:owl < front:step:leaves",
+        "front:turkeyAt < front:bearAt",
+        "front:turkeyAt < front:cervidAt",
+        "front:turkeyAt < front:circlerAt",
+        "front:turkeyAt < front:eagleFlyAt",
+        "front:turkeyAt < front:flyerAt",
+        "front:turkeyAt < front:hareAt",
+        "front:turkeyAt < front:step:bears",
+        "front:turkeyAt < front:step:deer-elk",
+        "front:turkeyAt < front:step:leaves",
+        "front:turkeyAt < front:step:owl",
+        "plants < front:bearAt",
+        "plants < front:cervidAt",
+        "plants < front:circlerAt",
+        "plants < front:eagleFlyAt",
+        "plants < front:felidAt",
+        "plants < front:flyerAt",
+        "plants < front:hareAt",
+        "plants < front:step:bears",
+        "plants < front:step:deer-elk",
+        "plants < front:step:leaves",
+        "plants < front:step:mists",
+        "plants < front:step:owl",
+        "plants < front:turkeyAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            228,
+            250
+          ],
+          "speed": 8,
+          "poses": [
+            "arch",
+            "walk"
+          ]
+        },
+        "turkey": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            198.7,
+            250.3
+          ],
+          "speed": 6.7,
+          "poses": [
+            "preen",
+            "stand",
+            "walk"
+          ]
+        },
+        "groundhog": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -10.5,
+            25.5
+          ],
+          "speed": 6,
+          "poses": [
+            "hunch",
+            "up",
+            "walk"
+          ]
+        },
+        "eagle": {
+          "firstStage": 2,
+          "activeSteps": 82,
+          "xRange": [
+            -12,
+            251.3
+          ],
+          "yRange": [
+            43.5,
+            43.5
+          ],
+          "speed": 13,
+          "poses": [
+            "fly"
+          ]
+        },
+        "soarer": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            157.4,
+            157.4
+          ],
+          "yRange": [
+            56.9,
+            56.9
+          ]
+        },
+        "cardinal": {
+          "firstStage": 3,
+          "activeSteps": 45,
+          "xRange": [
+            -12,
+            252
+          ],
+          "yRange": [
+            40.9,
+            40.9
+          ],
+          "speed": 24,
+          "poses": [
+            "fly"
+          ]
+        },
+        "swift": {
+          "firstStage": 4,
+          "activeSteps": 24,
+          "xRange": [
+            -12.5,
+            252
+          ],
+          "yRange": [
+            1.3,
+            1.3
+          ],
+          "speed": 46,
+          "poses": [
+            "fly"
+          ]
+        },
+        "deer[0]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            228,
+            250
+          ],
+          "speed": 8,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "deer[1]": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            210.8,
+            256
+          ],
+          "speed": 11.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "bears[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -10.7,
+            18
+          ],
+          "speed": 5,
+          "poses": [
+            "rear",
+            "walk"
+          ]
+        },
+        "bears[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -18.5,
+            -6.1
+          ],
+          "speed": 4.5,
+          "poses": [
+            "walk"
+          ]
+        },
+        "elk": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -12,
+            -12
+          ],
+          "poses": [
+            "bugle",
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "back:step:milky-way": 108,
+        "front:bearAt": 36,
+        "front:cervidAt": 60,
+        "front:circlerAt": 48,
+        "front:eagleFlyAt": 41,
+        "front:flyerAt": 34,
+        "front:hareAt": 96,
+        "front:step:bears": 108,
+        "front:step:deer-elk": 108,
+        "front:step:leaves": 108,
+        "front:step:mists": 108,
+        "front:step:owl": 108,
+        "front:turkeyAt": 72,
+        "plants": 108
+      },
+      "order": [
+        "back:step:milky-way < front:bearAt",
+        "back:step:milky-way < front:cervidAt",
+        "back:step:milky-way < front:circlerAt",
+        "back:step:milky-way < front:eagleFlyAt",
+        "back:step:milky-way < front:flyerAt",
+        "back:step:milky-way < front:hareAt",
+        "back:step:milky-way < front:step:bears",
+        "back:step:milky-way < front:step:deer-elk",
+        "back:step:milky-way < front:step:leaves",
+        "back:step:milky-way < front:step:mists",
+        "back:step:milky-way < front:step:owl",
+        "back:step:milky-way < front:turkeyAt",
+        "back:step:milky-way < plants",
+        "front:bearAt < front:circlerAt",
+        "front:bearAt < front:eagleFlyAt",
+        "front:bearAt < front:flyerAt",
+        "front:bearAt < front:step:leaves",
+        "front:bearAt < front:step:owl",
+        "front:cervidAt < front:bearAt",
+        "front:cervidAt < front:circlerAt",
+        "front:cervidAt < front:eagleFlyAt",
+        "front:cervidAt < front:flyerAt",
+        "front:cervidAt < front:hareAt",
+        "front:cervidAt < front:step:bears",
+        "front:cervidAt < front:step:leaves",
+        "front:cervidAt < front:step:owl",
+        "front:circlerAt < front:flyerAt",
+        "front:circlerAt < front:step:leaves",
+        "front:eagleFlyAt < front:circlerAt",
+        "front:eagleFlyAt < front:flyerAt",
+        "front:eagleFlyAt < front:step:leaves",
+        "front:flyerAt < front:step:leaves",
+        "front:hareAt < front:bearAt",
+        "front:hareAt < front:circlerAt",
+        "front:hareAt < front:eagleFlyAt",
+        "front:hareAt < front:flyerAt",
+        "front:hareAt < front:step:bears",
+        "front:hareAt < front:step:leaves",
+        "front:hareAt < front:step:owl",
+        "front:step:bears < front:bearAt",
+        "front:step:bears < front:circlerAt",
+        "front:step:bears < front:eagleFlyAt",
+        "front:step:bears < front:flyerAt",
+        "front:step:bears < front:step:leaves",
+        "front:step:bears < front:step:owl",
+        "front:step:deer-elk < front:bearAt",
+        "front:step:deer-elk < front:cervidAt",
+        "front:step:deer-elk < front:circlerAt",
+        "front:step:deer-elk < front:eagleFlyAt",
+        "front:step:deer-elk < front:flyerAt",
+        "front:step:deer-elk < front:hareAt",
+        "front:step:deer-elk < front:step:bears",
+        "front:step:deer-elk < front:step:leaves",
+        "front:step:deer-elk < front:step:owl",
+        "front:step:mists < front:bearAt",
+        "front:step:mists < front:cervidAt",
+        "front:step:mists < front:circlerAt",
+        "front:step:mists < front:eagleFlyAt",
+        "front:step:mists < front:flyerAt",
+        "front:step:mists < front:hareAt",
+        "front:step:mists < front:step:bears",
+        "front:step:mists < front:step:deer-elk",
+        "front:step:mists < front:step:leaves",
+        "front:step:mists < front:step:owl",
+        "front:step:mists < front:turkeyAt",
+        "front:step:owl < front:circlerAt",
+        "front:step:owl < front:eagleFlyAt",
+        "front:step:owl < front:flyerAt",
+        "front:step:owl < front:step:leaves",
+        "front:turkeyAt < front:bearAt",
+        "front:turkeyAt < front:cervidAt",
+        "front:turkeyAt < front:circlerAt",
+        "front:turkeyAt < front:eagleFlyAt",
+        "front:turkeyAt < front:flyerAt",
+        "front:turkeyAt < front:hareAt",
+        "front:turkeyAt < front:step:bears",
+        "front:turkeyAt < front:step:deer-elk",
+        "front:turkeyAt < front:step:leaves",
+        "front:turkeyAt < front:step:owl",
+        "plants < front:bearAt",
+        "plants < front:cervidAt",
+        "plants < front:circlerAt",
+        "plants < front:eagleFlyAt",
+        "plants < front:flyerAt",
+        "plants < front:hareAt",
+        "plants < front:step:bears",
+        "plants < front:step:deer-elk",
+        "plants < front:step:leaves",
+        "plants < front:step:mists",
+        "plants < front:step:owl",
+        "plants < front:turkeyAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "turkey": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            48.7,
+            100.3
+          ],
+          "speed": 6.7,
+          "poses": [
+            "preen",
+            "stand",
+            "walk"
+          ]
+        },
+        "groundhog": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -10.5,
+            25.5
+          ],
+          "speed": 6,
+          "poses": [
+            "hunch",
+            "up",
+            "walk"
+          ]
+        },
+        "eagle": {
+          "firstStage": 2,
+          "activeSteps": 41,
+          "xRange": [
+            -12,
+            101.8
+          ],
+          "yRange": [
+            32.8,
+            43.5
+          ],
+          "speed": 13,
+          "poses": [
+            "fly"
+          ]
+        },
+        "soarer": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            59,
+            59
+          ],
+          "yRange": [
+            56.9,
+            56.9
+          ]
+        },
+        "cardinal": {
+          "firstStage": 3,
+          "activeSteps": 31,
+          "xRange": [
+            -12,
+            102
+          ],
+          "yRange": [
+            27.8,
+            40.9
+          ],
+          "speed": 24,
+          "poses": [
+            "fly"
+          ]
+        },
+        "swift": {
+          "firstStage": 4,
+          "activeSteps": 17,
+          "xRange": [
+            -13,
+            102
+          ],
+          "yRange": [
+            1.3,
+            11.7
+          ],
+          "speed": 46,
+          "poses": [
+            "fly"
+          ]
+        },
+        "deer[0]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            78,
+            100
+          ],
+          "speed": 8,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "deer[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "bears[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -10.7,
+            18
+          ],
+          "speed": 5,
+          "poses": [
+            "rear",
+            "walk"
+          ]
+        },
+        "bears[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -18.5,
+            -6.1
+          ],
+          "speed": 4.5,
+          "poses": [
+            "walk"
+          ]
+        },
+        "elk": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -12,
+            -12
+          ],
+          "poses": [
+            "bugle",
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "back:step:milky-way": 108,
+        "front:bearAt": 36,
+        "front:cervidAt": 60,
+        "front:felidAt": 48,
+        "front:hareAt": 96,
+        "front:owlPerchAt": 72,
+        "front:step:bears": 108,
+        "front:step:deer-elk": 108,
+        "front:step:leaves": 108,
+        "front:step:mists": 108,
+        "front:step:owl": 108,
+        "front:turkeyAt": 72,
+        "plants": 108
+      },
+      "order": [
+        "back:step:milky-way < front:bearAt",
+        "back:step:milky-way < front:cervidAt",
+        "back:step:milky-way < front:felidAt",
+        "back:step:milky-way < front:hareAt",
+        "back:step:milky-way < front:owlPerchAt",
+        "back:step:milky-way < front:step:bears",
+        "back:step:milky-way < front:step:deer-elk",
+        "back:step:milky-way < front:step:leaves",
+        "back:step:milky-way < front:step:mists",
+        "back:step:milky-way < front:step:owl",
+        "back:step:milky-way < front:turkeyAt",
+        "back:step:milky-way < plants",
+        "front:bearAt < front:owlPerchAt",
+        "front:bearAt < front:step:leaves",
+        "front:bearAt < front:step:owl",
+        "front:cervidAt < front:bearAt",
+        "front:cervidAt < front:hareAt",
+        "front:cervidAt < front:owlPerchAt",
+        "front:cervidAt < front:step:bears",
+        "front:cervidAt < front:step:leaves",
+        "front:cervidAt < front:step:owl",
+        "front:felidAt < front:bearAt",
+        "front:felidAt < front:cervidAt",
+        "front:felidAt < front:hareAt",
+        "front:felidAt < front:owlPerchAt",
+        "front:felidAt < front:step:bears",
+        "front:felidAt < front:step:deer-elk",
+        "front:felidAt < front:step:leaves",
+        "front:felidAt < front:step:mists",
+        "front:felidAt < front:step:owl",
+        "front:felidAt < front:turkeyAt",
+        "front:hareAt < front:bearAt",
+        "front:hareAt < front:owlPerchAt",
+        "front:hareAt < front:step:bears",
+        "front:hareAt < front:step:leaves",
+        "front:hareAt < front:step:owl",
+        "front:owlPerchAt < front:step:leaves",
+        "front:step:bears < front:bearAt",
+        "front:step:bears < front:owlPerchAt",
+        "front:step:bears < front:step:leaves",
+        "front:step:bears < front:step:owl",
+        "front:step:deer-elk < front:bearAt",
+        "front:step:deer-elk < front:cervidAt",
+        "front:step:deer-elk < front:hareAt",
+        "front:step:deer-elk < front:owlPerchAt",
+        "front:step:deer-elk < front:step:bears",
+        "front:step:deer-elk < front:step:leaves",
+        "front:step:deer-elk < front:step:owl",
+        "front:step:mists < front:bearAt",
+        "front:step:mists < front:cervidAt",
+        "front:step:mists < front:hareAt",
+        "front:step:mists < front:owlPerchAt",
+        "front:step:mists < front:step:bears",
+        "front:step:mists < front:step:deer-elk",
+        "front:step:mists < front:step:leaves",
+        "front:step:mists < front:step:owl",
+        "front:step:mists < front:turkeyAt",
+        "front:step:owl < front:owlPerchAt",
+        "front:step:owl < front:step:leaves",
+        "front:turkeyAt < front:bearAt",
+        "front:turkeyAt < front:cervidAt",
+        "front:turkeyAt < front:hareAt",
+        "front:turkeyAt < front:owlPerchAt",
+        "front:turkeyAt < front:step:bears",
+        "front:turkeyAt < front:step:deer-elk",
+        "front:turkeyAt < front:step:leaves",
+        "front:turkeyAt < front:step:owl",
+        "plants < front:bearAt",
+        "plants < front:cervidAt",
+        "plants < front:felidAt",
+        "plants < front:hareAt",
+        "plants < front:owlPerchAt",
+        "plants < front:step:bears",
+        "plants < front:step:deer-elk",
+        "plants < front:step:leaves",
+        "plants < front:step:mists",
+        "plants < front:step:owl",
+        "plants < front:turkeyAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            228,
+            250
+          ],
+          "speed": 8,
+          "poses": [
+            "arch",
+            "walk"
+          ]
+        },
+        "turkey": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            198.7,
+            250.3
+          ],
+          "speed": 6.7,
+          "poses": [
+            "preen",
+            "stand",
+            "walk"
+          ]
+        },
+        "groundhog": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -10.5,
+            25.5
+          ],
+          "speed": 6,
+          "poses": [
+            "hunch",
+            "up",
+            "walk"
+          ]
+        },
+        "eagle": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "soarer": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "cardinal": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "swift": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "deer[0]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            228,
+            250
+          ],
+          "speed": 8,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "deer[1]": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            210.8,
+            256
+          ],
+          "speed": 11.3,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "bears[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -10.7,
+            18
+          ],
+          "speed": 5,
+          "poses": [
+            "rear",
+            "walk"
+          ]
+        },
+        "bears[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -18.5,
+            -6.1
+          ],
+          "speed": 4.5,
+          "poses": [
+            "walk"
+          ]
+        },
+        "elk": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -12,
+            -12
+          ],
+          "poses": [
+            "bugle",
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "back:step:milky-way": 108,
+        "front:bearAt": 36,
+        "front:cervidAt": 60,
+        "front:hareAt": 96,
+        "front:step:bears": 108,
+        "front:step:deer-elk": 108,
+        "front:step:leaves": 108,
+        "front:step:mists": 108,
+        "front:step:owl": 108,
+        "front:turkeyAt": 72,
+        "plants": 108
+      },
+      "order": [
+        "back:step:milky-way < front:bearAt",
+        "back:step:milky-way < front:cervidAt",
+        "back:step:milky-way < front:hareAt",
+        "back:step:milky-way < front:step:bears",
+        "back:step:milky-way < front:step:deer-elk",
+        "back:step:milky-way < front:step:leaves",
+        "back:step:milky-way < front:step:mists",
+        "back:step:milky-way < front:step:owl",
+        "back:step:milky-way < front:turkeyAt",
+        "back:step:milky-way < plants",
+        "front:bearAt < front:step:leaves",
+        "front:bearAt < front:step:owl",
+        "front:cervidAt < front:bearAt",
+        "front:cervidAt < front:hareAt",
+        "front:cervidAt < front:step:bears",
+        "front:cervidAt < front:step:leaves",
+        "front:cervidAt < front:step:owl",
+        "front:hareAt < front:bearAt",
+        "front:hareAt < front:step:bears",
+        "front:hareAt < front:step:leaves",
+        "front:hareAt < front:step:owl",
+        "front:step:bears < front:bearAt",
+        "front:step:bears < front:step:leaves",
+        "front:step:bears < front:step:owl",
+        "front:step:deer-elk < front:bearAt",
+        "front:step:deer-elk < front:cervidAt",
+        "front:step:deer-elk < front:hareAt",
+        "front:step:deer-elk < front:step:bears",
+        "front:step:deer-elk < front:step:leaves",
+        "front:step:deer-elk < front:step:owl",
+        "front:step:mists < front:bearAt",
+        "front:step:mists < front:cervidAt",
+        "front:step:mists < front:hareAt",
+        "front:step:mists < front:step:bears",
+        "front:step:mists < front:step:deer-elk",
+        "front:step:mists < front:step:leaves",
+        "front:step:mists < front:step:owl",
+        "front:step:mists < front:turkeyAt",
+        "front:step:owl < front:step:leaves",
+        "front:turkeyAt < front:bearAt",
+        "front:turkeyAt < front:cervidAt",
+        "front:turkeyAt < front:hareAt",
+        "front:turkeyAt < front:step:bears",
+        "front:turkeyAt < front:step:deer-elk",
+        "front:turkeyAt < front:step:leaves",
+        "front:turkeyAt < front:step:owl",
+        "plants < front:bearAt",
+        "plants < front:cervidAt",
+        "plants < front:hareAt",
+        "plants < front:step:bears",
+        "plants < front:step:deer-elk",
+        "plants < front:step:leaves",
+        "plants < front:step:mists",
+        "plants < front:step:owl",
+        "plants < front:turkeyAt"
+      ],
+      "actors": {
+        "cat": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "turkey": {
+          "firstStage": 3,
+          "activeSteps": 72,
+          "xRange": [
+            48.7,
+            100.3
+          ],
+          "speed": 6.7,
+          "poses": [
+            "preen",
+            "stand",
+            "walk"
+          ]
+        },
+        "groundhog": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            -10.5,
+            25.5
+          ],
+          "speed": 6,
+          "poses": [
+            "hunch",
+            "up",
+            "walk"
+          ]
+        },
+        "eagle": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "soarer": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "cardinal": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "swift": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "deer[0]": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            78,
+            100
+          ],
+          "speed": 8,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "deer[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "bears[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            -10.7,
+            18
+          ],
+          "speed": 5,
+          "poses": [
+            "rear",
+            "walk"
+          ]
+        },
+        "bears[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            -18.5,
+            -6.1
+          ],
+          "speed": 4.5,
+          "poses": [
+            "walk"
+          ]
+        },
+        "elk": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -12,
+            -12
+          ],
+          "poses": [
+            "bugle",
+            "sit",
+            "walk"
+          ]
+        }
+      }
+    }
+  }
+}

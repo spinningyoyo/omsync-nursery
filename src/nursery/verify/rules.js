@@ -17,11 +17,10 @@
 // id, prev } where box is the solid pixels' { x0, y0, x1, y1, w, h, footRow, shadowRow }. To add a
 // rule, add an entry to RULES; nothing else needs to change.
 
+import { REAL_LENGTH, SCALE, SPECS, scaleOf } from "../js/kit/families.js";
 import { P } from "../js/kit/pixel.js";
 import { MAX_STAGE, Nursery, SCENES } from "../js/nursery.js";
-import { REAL_LENGTH, SCALE, scaleOf } from "../shared/families.js";
 import { airborne } from "./actors.js";
-import { SPECS } from "./scale.js";
 
 const CADENCE = [0.5, 3]; // strides a second
 const CADENCE_WINDOW = 1; // seconds of steady walking each measure covers
@@ -37,8 +36,8 @@ const scale = {
   says: `Every adult's body is drawn as long as the scale gives for its real head-and-body length: ${SCALE.a} x metres^${SCALE.k} px, within ${SCALE.tolerance * 100}% (at least ${SCALE.least} px either way).`,
   harm: "Animals out of proportion with each other: the cheetah drawn longer than the lion, the bears a size too big.",
   scope:
-    "Each adult build in verify/scale.js with a real length in families.js REAL_LENGTH: the cats, dogs, bears, deer, bison and bighorn, zebra and elephants. It reads the spec's body length (len), so it holds in every pose. Not on the scale: the young, the storybook cast, the giraffe, and the birds and small animals whose builds have no body length.",
-  covers: ["studio/shared/families.js SCALE, REAL_LENGTH", "verify/scale.js", "each build's member specs (len)"],
+    "Each adult build in kit/families.js with a real length in REAL_LENGTH: the cats, dogs, bears, deer, bison and bighorn, zebra and elephants. It reads the spec's body length (len), so it holds in every pose. Not on the scale: the young, the storybook cast, the giraffe, and the birds and small animals whose builds have no body length.",
+  covers: ["kit/families.js SCALE, REAL_LENGTH, SPECS", "each build's member specs (len)"],
   static() {
     const found = [];
     for (const [key, spec] of Object.entries(SPECS)) {
@@ -75,7 +74,7 @@ const pose = {
   harm: "A pose that stretches or grows the animal out of shape, a part drawn bigger or twice.",
   scope: `Every walker in every scene, theme, width, stage and frame, against the largest area it has covered walking or standing so far in the run (a pose before it first walks is not checked). Area is its solid pixels, each counted once. Poses that open wings or fan a tail (${[...SPREAD].join(", ")}) are left out.`,
   covers: [
-    "kit/animals.js drivers and the builds' rest poses (sit, lie, howl, rear, ...)",
+    "kit/<family>.js drivers and the builds' rest poses (sit, lie, howl, rear, ...)",
     "harness.js measure (area)",
   ],
   frame({ draws, run }) {
@@ -250,7 +249,7 @@ const grounded = {
   harm: "Floating sprites.",
   scope:
     "Every walker (role walker in actors.js) in every scene, theme, width, stage and frame. The ground row is the row above the lowest row of the driver's own soft shadow. States that leave the ground (a pounce, a run's bound, a climb, a lift, flight) are skipped; actors.js airborne() lists them.",
-  covers: ["kit/animals.js drivers and their shadows", "kit/critters.js walker", "actors.js airborne"],
+  covers: ["kit/<family>.js drivers and their shadows", "kit/critters.js walker", "actors.js airborne"],
   frame({ draws, run }) {
     for (const d of draws) {
       if (d.role !== "walker" || !d.box || airborne(d.actor)) continue;
@@ -350,6 +349,7 @@ const night = {
     }
     for (const [name, slot] of Object.entries(nursery.extra ?? {})) {
       if (!slot || typeof slot !== "object" || NIGHT_SLOT.test(name) || NOT_A_BIRD.test(name)) continue;
+      if (slot.when === "night" || slot.when === "always") continue;
       const alive = ("bird" in slot && slot.bird) || (SOAR_SLOT.test(name) && slot.active === true);
       if (!alive) continue;
       run.report("night", `updated:${name}`, {

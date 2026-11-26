@@ -471,3 +471,10 @@ export function softTree(g, p, s, base) {
     }
   }
 }
+
+export const FAMILY = {
+  id: "corals",
+  title: "Corals and reef plants",
+  group: "Trees",
+  differ: "growth form (pillar, table, branching, boulder, soft, fan, blades), size, colour",
+};

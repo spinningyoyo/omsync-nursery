@@ -1,0 +1,979 @@
+{
+  "scene": "wonderland",
+  "runs": {
+    "light:240": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:flyerAt": 60,
+        "front:step:cat-caterpillar-tea-hare": 108,
+        "front:step:sky-things": 108,
+        "front:step:soldiers": 108,
+        "front:step:vultures": 108,
+        "front:wonderlandCatAt": 31,
+        "front:wonderlandCaterpillarAt": 72,
+        "front:wonderlandDodoAt": 48,
+        "front:wonderlandFlockAt": 36,
+        "front:wonderlandHareAt": 60,
+        "front:wonderlandHatAt": 60,
+        "front:wonderlandRabbitAt": 96,
+        "front:wonderlandSoldierAt": 36,
+        "front:wonderlandVultureAt": 12,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:flyerAt",
+        "back:step:sky < front:step:cat-caterpillar-tea-hare",
+        "back:step:sky < front:step:sky-things",
+        "back:step:sky < front:step:soldiers",
+        "back:step:sky < front:step:vultures",
+        "back:step:sky < front:wonderlandCatAt",
+        "back:step:sky < front:wonderlandCaterpillarAt",
+        "back:step:sky < front:wonderlandDodoAt",
+        "back:step:sky < front:wonderlandFlockAt",
+        "back:step:sky < front:wonderlandHareAt",
+        "back:step:sky < front:wonderlandHatAt",
+        "back:step:sky < front:wonderlandRabbitAt",
+        "back:step:sky < front:wonderlandSoldierAt",
+        "back:step:sky < front:wonderlandVultureAt",
+        "back:step:sky < plants",
+        "front:flyerAt < front:step:cat-caterpillar-tea-hare",
+        "front:flyerAt < front:step:soldiers",
+        "front:flyerAt < front:wonderlandCatAt",
+        "front:flyerAt < front:wonderlandCaterpillarAt",
+        "front:flyerAt < front:wonderlandDodoAt",
+        "front:flyerAt < front:wonderlandHareAt",
+        "front:flyerAt < front:wonderlandHatAt",
+        "front:flyerAt < front:wonderlandRabbitAt",
+        "front:flyerAt < front:wonderlandSoldierAt",
+        "front:step:cat-caterpillar-tea-hare < front:step:soldiers",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandCatAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandCaterpillarAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandDodoAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandHareAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandHatAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandRabbitAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandSoldierAt",
+        "front:step:sky-things < front:flyerAt",
+        "front:step:sky-things < front:step:cat-caterpillar-tea-hare",
+        "front:step:sky-things < front:step:soldiers",
+        "front:step:sky-things < front:step:vultures",
+        "front:step:sky-things < front:wonderlandCatAt",
+        "front:step:sky-things < front:wonderlandCaterpillarAt",
+        "front:step:sky-things < front:wonderlandDodoAt",
+        "front:step:sky-things < front:wonderlandFlockAt",
+        "front:step:sky-things < front:wonderlandHareAt",
+        "front:step:sky-things < front:wonderlandHatAt",
+        "front:step:sky-things < front:wonderlandRabbitAt",
+        "front:step:sky-things < front:wonderlandSoldierAt",
+        "front:step:sky-things < front:wonderlandVultureAt",
+        "front:step:soldiers < front:wonderlandRabbitAt",
+        "front:step:soldiers < front:wonderlandSoldierAt",
+        "front:step:vultures < front:flyerAt",
+        "front:step:vultures < front:step:cat-caterpillar-tea-hare",
+        "front:step:vultures < front:step:soldiers",
+        "front:step:vultures < front:wonderlandCatAt",
+        "front:step:vultures < front:wonderlandCaterpillarAt",
+        "front:step:vultures < front:wonderlandDodoAt",
+        "front:step:vultures < front:wonderlandHareAt",
+        "front:step:vultures < front:wonderlandHatAt",
+        "front:step:vultures < front:wonderlandRabbitAt",
+        "front:step:vultures < front:wonderlandSoldierAt",
+        "front:step:vultures < front:wonderlandVultureAt",
+        "front:wonderlandCatAt < front:step:soldiers",
+        "front:wonderlandCatAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandCatAt < front:wonderlandDodoAt",
+        "front:wonderlandCatAt < front:wonderlandHareAt",
+        "front:wonderlandCatAt < front:wonderlandHatAt",
+        "front:wonderlandCatAt < front:wonderlandRabbitAt",
+        "front:wonderlandCatAt < front:wonderlandSoldierAt",
+        "front:wonderlandCaterpillarAt < front:step:soldiers",
+        "front:wonderlandCaterpillarAt < front:wonderlandDodoAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandHareAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandHatAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandRabbitAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandSoldierAt",
+        "front:wonderlandDodoAt < front:step:soldiers",
+        "front:wonderlandDodoAt < front:wonderlandRabbitAt",
+        "front:wonderlandDodoAt < front:wonderlandSoldierAt",
+        "front:wonderlandFlockAt < front:flyerAt",
+        "front:wonderlandFlockAt < front:step:cat-caterpillar-tea-hare",
+        "front:wonderlandFlockAt < front:step:soldiers",
+        "front:wonderlandFlockAt < front:step:vultures",
+        "front:wonderlandFlockAt < front:wonderlandCatAt",
+        "front:wonderlandFlockAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandFlockAt < front:wonderlandDodoAt",
+        "front:wonderlandFlockAt < front:wonderlandHareAt",
+        "front:wonderlandFlockAt < front:wonderlandHatAt",
+        "front:wonderlandFlockAt < front:wonderlandRabbitAt",
+        "front:wonderlandFlockAt < front:wonderlandSoldierAt",
+        "front:wonderlandFlockAt < front:wonderlandVultureAt",
+        "front:wonderlandHareAt < front:step:soldiers",
+        "front:wonderlandHareAt < front:wonderlandDodoAt",
+        "front:wonderlandHareAt < front:wonderlandRabbitAt",
+        "front:wonderlandHareAt < front:wonderlandSoldierAt",
+        "front:wonderlandHatAt < front:step:soldiers",
+        "front:wonderlandHatAt < front:wonderlandDodoAt",
+        "front:wonderlandHatAt < front:wonderlandHareAt",
+        "front:wonderlandHatAt < front:wonderlandRabbitAt",
+        "front:wonderlandHatAt < front:wonderlandSoldierAt",
+        "front:wonderlandSoldierAt < front:wonderlandRabbitAt",
+        "front:wonderlandVultureAt < front:flyerAt",
+        "front:wonderlandVultureAt < front:step:cat-caterpillar-tea-hare",
+        "front:wonderlandVultureAt < front:step:soldiers",
+        "front:wonderlandVultureAt < front:wonderlandCatAt",
+        "front:wonderlandVultureAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandVultureAt < front:wonderlandDodoAt",
+        "front:wonderlandVultureAt < front:wonderlandHareAt",
+        "front:wonderlandVultureAt < front:wonderlandHatAt",
+        "front:wonderlandVultureAt < front:wonderlandRabbitAt",
+        "front:wonderlandVultureAt < front:wonderlandSoldierAt",
+        "plants < front:flyerAt",
+        "plants < front:step:cat-caterpillar-tea-hare",
+        "plants < front:step:sky-things",
+        "plants < front:step:soldiers",
+        "plants < front:step:vultures",
+        "plants < front:wonderlandCatAt",
+        "plants < front:wonderlandCaterpillarAt",
+        "plants < front:wonderlandDodoAt",
+        "plants < front:wonderlandFlockAt",
+        "plants < front:wonderlandHareAt",
+        "plants < front:wonderlandHatAt",
+        "plants < front:wonderlandRabbitAt",
+        "plants < front:wonderlandSoldierAt",
+        "plants < front:wonderlandVultureAt"
+      ],
+      "actors": {
+        "flock": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            164.5,
+            252
+          ],
+          "yRange": [
+            31.9,
+            31.9
+          ],
+          "speed": 10,
+          "poses": [
+            "fly"
+          ]
+        },
+        "pigeon": {
+          "firstStage": 4,
+          "activeSteps": 49,
+          "xRange": [
+            -12,
+            252
+          ],
+          "yRange": [
+            24.5,
+            24.5
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "lory": {
+          "firstStage": 7,
+          "activeSteps": 24,
+          "xRange": [
+            -12,
+            206.5
+          ],
+          "yRange": [
+            53.2,
+            53.2
+          ],
+          "speed": 38,
+          "poses": [
+            "fly"
+          ]
+        },
+        "dodo": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            203,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            144,
+            248
+          ],
+          "speed": 16,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "hare": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            168,
+            249
+          ],
+          "speed": 12,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "soldiers[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            180,
+            250
+          ],
+          "speed": 8,
+          "poses": [
+            "walk"
+          ]
+        },
+        "soldiers[1]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            194.3,
+            262.3
+          ],
+          "speed": 7.8,
+          "poses": [
+            "walk"
+          ]
+        },
+        "vultures[0]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            119.8,
+            119.8
+          ],
+          "yRange": [
+            49.9,
+            49.9
+          ]
+        },
+        "vultures[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            119.8,
+            119.8
+          ],
+          "yRange": [
+            57.9,
+            57.9
+          ]
+        }
+      }
+    },
+    "light:90": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:flyerAt": 35,
+        "front:step:cat-caterpillar-tea-hare": 108,
+        "front:step:sky-things": 108,
+        "front:step:soldiers": 108,
+        "front:step:vultures": 108,
+        "front:wonderlandCatAt": 31,
+        "front:wonderlandCaterpillarAt": 72,
+        "front:wonderlandDodoAt": 48,
+        "front:wonderlandFlockAt": 36,
+        "front:wonderlandHareAt": 60,
+        "front:wonderlandHatAt": 60,
+        "front:wonderlandRabbitAt": 96,
+        "front:wonderlandSoldierAt": 36,
+        "front:wonderlandVultureAt": 12,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:flyerAt",
+        "back:step:sky < front:step:cat-caterpillar-tea-hare",
+        "back:step:sky < front:step:sky-things",
+        "back:step:sky < front:step:soldiers",
+        "back:step:sky < front:step:vultures",
+        "back:step:sky < front:wonderlandCatAt",
+        "back:step:sky < front:wonderlandCaterpillarAt",
+        "back:step:sky < front:wonderlandDodoAt",
+        "back:step:sky < front:wonderlandFlockAt",
+        "back:step:sky < front:wonderlandHareAt",
+        "back:step:sky < front:wonderlandHatAt",
+        "back:step:sky < front:wonderlandRabbitAt",
+        "back:step:sky < front:wonderlandSoldierAt",
+        "back:step:sky < front:wonderlandVultureAt",
+        "back:step:sky < plants",
+        "front:flyerAt < front:step:cat-caterpillar-tea-hare",
+        "front:flyerAt < front:step:soldiers",
+        "front:flyerAt < front:wonderlandCatAt",
+        "front:flyerAt < front:wonderlandCaterpillarAt",
+        "front:flyerAt < front:wonderlandDodoAt",
+        "front:flyerAt < front:wonderlandHareAt",
+        "front:flyerAt < front:wonderlandHatAt",
+        "front:flyerAt < front:wonderlandRabbitAt",
+        "front:flyerAt < front:wonderlandSoldierAt",
+        "front:step:cat-caterpillar-tea-hare < front:step:soldiers",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandCatAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandCaterpillarAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandDodoAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandHareAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandHatAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandRabbitAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandSoldierAt",
+        "front:step:sky-things < front:flyerAt",
+        "front:step:sky-things < front:step:cat-caterpillar-tea-hare",
+        "front:step:sky-things < front:step:soldiers",
+        "front:step:sky-things < front:step:vultures",
+        "front:step:sky-things < front:wonderlandCatAt",
+        "front:step:sky-things < front:wonderlandCaterpillarAt",
+        "front:step:sky-things < front:wonderlandDodoAt",
+        "front:step:sky-things < front:wonderlandFlockAt",
+        "front:step:sky-things < front:wonderlandHareAt",
+        "front:step:sky-things < front:wonderlandHatAt",
+        "front:step:sky-things < front:wonderlandRabbitAt",
+        "front:step:sky-things < front:wonderlandSoldierAt",
+        "front:step:sky-things < front:wonderlandVultureAt",
+        "front:step:soldiers < front:wonderlandRabbitAt",
+        "front:step:soldiers < front:wonderlandSoldierAt",
+        "front:step:vultures < front:flyerAt",
+        "front:step:vultures < front:step:cat-caterpillar-tea-hare",
+        "front:step:vultures < front:step:soldiers",
+        "front:step:vultures < front:wonderlandCatAt",
+        "front:step:vultures < front:wonderlandCaterpillarAt",
+        "front:step:vultures < front:wonderlandDodoAt",
+        "front:step:vultures < front:wonderlandHareAt",
+        "front:step:vultures < front:wonderlandHatAt",
+        "front:step:vultures < front:wonderlandRabbitAt",
+        "front:step:vultures < front:wonderlandSoldierAt",
+        "front:step:vultures < front:wonderlandVultureAt",
+        "front:wonderlandCatAt < front:step:soldiers",
+        "front:wonderlandCatAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandCatAt < front:wonderlandDodoAt",
+        "front:wonderlandCatAt < front:wonderlandHareAt",
+        "front:wonderlandCatAt < front:wonderlandHatAt",
+        "front:wonderlandCatAt < front:wonderlandRabbitAt",
+        "front:wonderlandCatAt < front:wonderlandSoldierAt",
+        "front:wonderlandCaterpillarAt < front:step:soldiers",
+        "front:wonderlandCaterpillarAt < front:wonderlandDodoAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandHareAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandHatAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandRabbitAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandSoldierAt",
+        "front:wonderlandDodoAt < front:step:soldiers",
+        "front:wonderlandDodoAt < front:wonderlandRabbitAt",
+        "front:wonderlandDodoAt < front:wonderlandSoldierAt",
+        "front:wonderlandFlockAt < front:flyerAt",
+        "front:wonderlandFlockAt < front:step:cat-caterpillar-tea-hare",
+        "front:wonderlandFlockAt < front:step:soldiers",
+        "front:wonderlandFlockAt < front:step:vultures",
+        "front:wonderlandFlockAt < front:wonderlandCatAt",
+        "front:wonderlandFlockAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandFlockAt < front:wonderlandDodoAt",
+        "front:wonderlandFlockAt < front:wonderlandHareAt",
+        "front:wonderlandFlockAt < front:wonderlandHatAt",
+        "front:wonderlandFlockAt < front:wonderlandRabbitAt",
+        "front:wonderlandFlockAt < front:wonderlandSoldierAt",
+        "front:wonderlandFlockAt < front:wonderlandVultureAt",
+        "front:wonderlandHareAt < front:step:soldiers",
+        "front:wonderlandHareAt < front:wonderlandDodoAt",
+        "front:wonderlandHareAt < front:wonderlandRabbitAt",
+        "front:wonderlandHareAt < front:wonderlandSoldierAt",
+        "front:wonderlandHatAt < front:step:soldiers",
+        "front:wonderlandHatAt < front:wonderlandDodoAt",
+        "front:wonderlandHatAt < front:wonderlandHareAt",
+        "front:wonderlandHatAt < front:wonderlandRabbitAt",
+        "front:wonderlandHatAt < front:wonderlandSoldierAt",
+        "front:wonderlandSoldierAt < front:wonderlandRabbitAt",
+        "front:wonderlandVultureAt < front:flyerAt",
+        "front:wonderlandVultureAt < front:step:cat-caterpillar-tea-hare",
+        "front:wonderlandVultureAt < front:step:soldiers",
+        "front:wonderlandVultureAt < front:wonderlandCatAt",
+        "front:wonderlandVultureAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandVultureAt < front:wonderlandDodoAt",
+        "front:wonderlandVultureAt < front:wonderlandHareAt",
+        "front:wonderlandVultureAt < front:wonderlandHatAt",
+        "front:wonderlandVultureAt < front:wonderlandRabbitAt",
+        "front:wonderlandVultureAt < front:wonderlandSoldierAt",
+        "plants < front:flyerAt",
+        "plants < front:step:cat-caterpillar-tea-hare",
+        "plants < front:step:sky-things",
+        "plants < front:step:soldiers",
+        "plants < front:step:vultures",
+        "plants < front:wonderlandCatAt",
+        "plants < front:wonderlandCaterpillarAt",
+        "plants < front:wonderlandDodoAt",
+        "plants < front:wonderlandFlockAt",
+        "plants < front:wonderlandHareAt",
+        "plants < front:wonderlandHatAt",
+        "plants < front:wonderlandRabbitAt",
+        "plants < front:wonderlandSoldierAt",
+        "plants < front:wonderlandVultureAt"
+      ],
+      "actors": {
+        "flock": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            14.5,
+            102
+          ],
+          "yRange": [
+            31.9,
+            31.9
+          ],
+          "speed": 10,
+          "poses": [
+            "fly"
+          ]
+        },
+        "pigeon": {
+          "firstStage": 4,
+          "activeSteps": 22,
+          "xRange": [
+            -12,
+            103.5
+          ],
+          "yRange": [
+            24.5,
+            24.5
+          ],
+          "speed": 22,
+          "poses": [
+            "fly"
+          ]
+        },
+        "lory": {
+          "firstStage": 7,
+          "activeSteps": 13,
+          "xRange": [
+            -12,
+            102
+          ],
+          "yRange": [
+            53.2,
+            53.2
+          ],
+          "speed": 38,
+          "poses": [
+            "fly"
+          ]
+        },
+        "dodo": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            53,
+            100.3
+          ],
+          "speed": 7,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            2,
+            98
+          ],
+          "speed": 16,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "hare": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            18,
+            99
+          ],
+          "speed": 12,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "soldiers[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            30,
+            100
+          ],
+          "speed": 8,
+          "poses": [
+            "walk"
+          ]
+        },
+        "soldiers[1]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            44.3,
+            112.3
+          ],
+          "speed": 7.8,
+          "poses": [
+            "walk"
+          ]
+        },
+        "vultures[0]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            44.9,
+            44.9
+          ],
+          "yRange": [
+            49.9,
+            49.9
+          ]
+        },
+        "vultures[1]": {
+          "firstStage": 8,
+          "activeSteps": 12,
+          "xRange": [
+            44.9,
+            44.9
+          ],
+          "yRange": [
+            57.9,
+            57.9
+          ]
+        }
+      }
+    },
+    "dark:240": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:step:cat-caterpillar-tea-hare": 108,
+        "front:step:sky-things": 108,
+        "front:step:soldiers": 108,
+        "front:step:vultures": 108,
+        "front:wonderlandCatAt": 31,
+        "front:wonderlandCaterpillarAt": 72,
+        "front:wonderlandDodoAt": 48,
+        "front:wonderlandFlockAt": 36,
+        "front:wonderlandHareAt": 60,
+        "front:wonderlandHatAt": 60,
+        "front:wonderlandRabbitAt": 96,
+        "front:wonderlandSoldierAt": 36,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:step:cat-caterpillar-tea-hare",
+        "back:step:sky < front:step:sky-things",
+        "back:step:sky < front:step:soldiers",
+        "back:step:sky < front:step:vultures",
+        "back:step:sky < front:wonderlandCatAt",
+        "back:step:sky < front:wonderlandCaterpillarAt",
+        "back:step:sky < front:wonderlandDodoAt",
+        "back:step:sky < front:wonderlandFlockAt",
+        "back:step:sky < front:wonderlandHareAt",
+        "back:step:sky < front:wonderlandHatAt",
+        "back:step:sky < front:wonderlandRabbitAt",
+        "back:step:sky < front:wonderlandSoldierAt",
+        "back:step:sky < plants",
+        "front:step:cat-caterpillar-tea-hare < front:step:soldiers",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandCatAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandCaterpillarAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandDodoAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandHareAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandHatAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandRabbitAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandSoldierAt",
+        "front:step:sky-things < front:step:cat-caterpillar-tea-hare",
+        "front:step:sky-things < front:step:soldiers",
+        "front:step:sky-things < front:step:vultures",
+        "front:step:sky-things < front:wonderlandCatAt",
+        "front:step:sky-things < front:wonderlandCaterpillarAt",
+        "front:step:sky-things < front:wonderlandDodoAt",
+        "front:step:sky-things < front:wonderlandFlockAt",
+        "front:step:sky-things < front:wonderlandHareAt",
+        "front:step:sky-things < front:wonderlandHatAt",
+        "front:step:sky-things < front:wonderlandRabbitAt",
+        "front:step:sky-things < front:wonderlandSoldierAt",
+        "front:step:soldiers < front:wonderlandRabbitAt",
+        "front:step:soldiers < front:wonderlandSoldierAt",
+        "front:step:vultures < front:step:cat-caterpillar-tea-hare",
+        "front:step:vultures < front:step:soldiers",
+        "front:step:vultures < front:wonderlandCatAt",
+        "front:step:vultures < front:wonderlandCaterpillarAt",
+        "front:step:vultures < front:wonderlandDodoAt",
+        "front:step:vultures < front:wonderlandHareAt",
+        "front:step:vultures < front:wonderlandHatAt",
+        "front:step:vultures < front:wonderlandRabbitAt",
+        "front:step:vultures < front:wonderlandSoldierAt",
+        "front:wonderlandCatAt < front:step:soldiers",
+        "front:wonderlandCatAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandCatAt < front:wonderlandDodoAt",
+        "front:wonderlandCatAt < front:wonderlandHareAt",
+        "front:wonderlandCatAt < front:wonderlandHatAt",
+        "front:wonderlandCatAt < front:wonderlandRabbitAt",
+        "front:wonderlandCatAt < front:wonderlandSoldierAt",
+        "front:wonderlandCaterpillarAt < front:step:soldiers",
+        "front:wonderlandCaterpillarAt < front:wonderlandDodoAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandHareAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandHatAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandRabbitAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandSoldierAt",
+        "front:wonderlandDodoAt < front:step:soldiers",
+        "front:wonderlandDodoAt < front:wonderlandRabbitAt",
+        "front:wonderlandDodoAt < front:wonderlandSoldierAt",
+        "front:wonderlandFlockAt < front:step:cat-caterpillar-tea-hare",
+        "front:wonderlandFlockAt < front:step:soldiers",
+        "front:wonderlandFlockAt < front:step:vultures",
+        "front:wonderlandFlockAt < front:wonderlandCatAt",
+        "front:wonderlandFlockAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandFlockAt < front:wonderlandDodoAt",
+        "front:wonderlandFlockAt < front:wonderlandHareAt",
+        "front:wonderlandFlockAt < front:wonderlandHatAt",
+        "front:wonderlandFlockAt < front:wonderlandRabbitAt",
+        "front:wonderlandFlockAt < front:wonderlandSoldierAt",
+        "front:wonderlandHareAt < front:step:soldiers",
+        "front:wonderlandHareAt < front:wonderlandDodoAt",
+        "front:wonderlandHareAt < front:wonderlandRabbitAt",
+        "front:wonderlandHareAt < front:wonderlandSoldierAt",
+        "front:wonderlandHatAt < front:step:soldiers",
+        "front:wonderlandHatAt < front:wonderlandDodoAt",
+        "front:wonderlandHatAt < front:wonderlandHareAt",
+        "front:wonderlandHatAt < front:wonderlandRabbitAt",
+        "front:wonderlandHatAt < front:wonderlandSoldierAt",
+        "front:wonderlandSoldierAt < front:wonderlandRabbitAt",
+        "plants < front:step:cat-caterpillar-tea-hare",
+        "plants < front:step:sky-things",
+        "plants < front:step:soldiers",
+        "plants < front:step:vultures",
+        "plants < front:wonderlandCatAt",
+        "plants < front:wonderlandCaterpillarAt",
+        "plants < front:wonderlandDodoAt",
+        "plants < front:wonderlandFlockAt",
+        "plants < front:wonderlandHareAt",
+        "plants < front:wonderlandHatAt",
+        "plants < front:wonderlandRabbitAt",
+        "plants < front:wonderlandSoldierAt"
+      ],
+      "actors": {
+        "flock": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            164.5,
+            252
+          ],
+          "yRange": [
+            31.9,
+            31.9
+          ],
+          "speed": 10,
+          "poses": [
+            "fly"
+          ]
+        },
+        "pigeon": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "lory": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "dodo": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            203,
+            250.3
+          ],
+          "speed": 7,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            144,
+            248
+          ],
+          "speed": 16,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "hare": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            168,
+            249
+          ],
+          "speed": 12,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "soldiers[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            180,
+            250
+          ],
+          "speed": 8,
+          "poses": [
+            "walk"
+          ]
+        },
+        "soldiers[1]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            194.3,
+            262.3
+          ],
+          "speed": 7.8,
+          "poses": [
+            "walk"
+          ]
+        },
+        "vultures[0]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "vultures[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    },
+    "dark:90": {
+      "drawn": {
+        "back:step:sky": 108,
+        "front:step:cat-caterpillar-tea-hare": 108,
+        "front:step:sky-things": 108,
+        "front:step:soldiers": 108,
+        "front:step:vultures": 108,
+        "front:wonderlandCatAt": 31,
+        "front:wonderlandCaterpillarAt": 72,
+        "front:wonderlandDodoAt": 48,
+        "front:wonderlandFlockAt": 36,
+        "front:wonderlandHareAt": 60,
+        "front:wonderlandHatAt": 60,
+        "front:wonderlandRabbitAt": 96,
+        "front:wonderlandSoldierAt": 36,
+        "plants": 108
+      },
+      "order": [
+        "back:step:sky < front:step:cat-caterpillar-tea-hare",
+        "back:step:sky < front:step:sky-things",
+        "back:step:sky < front:step:soldiers",
+        "back:step:sky < front:step:vultures",
+        "back:step:sky < front:wonderlandCatAt",
+        "back:step:sky < front:wonderlandCaterpillarAt",
+        "back:step:sky < front:wonderlandDodoAt",
+        "back:step:sky < front:wonderlandFlockAt",
+        "back:step:sky < front:wonderlandHareAt",
+        "back:step:sky < front:wonderlandHatAt",
+        "back:step:sky < front:wonderlandRabbitAt",
+        "back:step:sky < front:wonderlandSoldierAt",
+        "back:step:sky < plants",
+        "front:step:cat-caterpillar-tea-hare < front:step:soldiers",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandCatAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandCaterpillarAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandDodoAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandHareAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandHatAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandRabbitAt",
+        "front:step:cat-caterpillar-tea-hare < front:wonderlandSoldierAt",
+        "front:step:sky-things < front:step:cat-caterpillar-tea-hare",
+        "front:step:sky-things < front:step:soldiers",
+        "front:step:sky-things < front:step:vultures",
+        "front:step:sky-things < front:wonderlandCatAt",
+        "front:step:sky-things < front:wonderlandCaterpillarAt",
+        "front:step:sky-things < front:wonderlandDodoAt",
+        "front:step:sky-things < front:wonderlandFlockAt",
+        "front:step:sky-things < front:wonderlandHareAt",
+        "front:step:sky-things < front:wonderlandHatAt",
+        "front:step:sky-things < front:wonderlandRabbitAt",
+        "front:step:sky-things < front:wonderlandSoldierAt",
+        "front:step:soldiers < front:wonderlandRabbitAt",
+        "front:step:soldiers < front:wonderlandSoldierAt",
+        "front:step:vultures < front:step:cat-caterpillar-tea-hare",
+        "front:step:vultures < front:step:soldiers",
+        "front:step:vultures < front:wonderlandCatAt",
+        "front:step:vultures < front:wonderlandCaterpillarAt",
+        "front:step:vultures < front:wonderlandDodoAt",
+        "front:step:vultures < front:wonderlandHareAt",
+        "front:step:vultures < front:wonderlandHatAt",
+        "front:step:vultures < front:wonderlandRabbitAt",
+        "front:step:vultures < front:wonderlandSoldierAt",
+        "front:wonderlandCatAt < front:step:soldiers",
+        "front:wonderlandCatAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandCatAt < front:wonderlandDodoAt",
+        "front:wonderlandCatAt < front:wonderlandHareAt",
+        "front:wonderlandCatAt < front:wonderlandHatAt",
+        "front:wonderlandCatAt < front:wonderlandRabbitAt",
+        "front:wonderlandCatAt < front:wonderlandSoldierAt",
+        "front:wonderlandCaterpillarAt < front:step:soldiers",
+        "front:wonderlandCaterpillarAt < front:wonderlandDodoAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandHareAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandHatAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandRabbitAt",
+        "front:wonderlandCaterpillarAt < front:wonderlandSoldierAt",
+        "front:wonderlandDodoAt < front:step:soldiers",
+        "front:wonderlandDodoAt < front:wonderlandRabbitAt",
+        "front:wonderlandDodoAt < front:wonderlandSoldierAt",
+        "front:wonderlandFlockAt < front:step:cat-caterpillar-tea-hare",
+        "front:wonderlandFlockAt < front:step:soldiers",
+        "front:wonderlandFlockAt < front:step:vultures",
+        "front:wonderlandFlockAt < front:wonderlandCatAt",
+        "front:wonderlandFlockAt < front:wonderlandCaterpillarAt",
+        "front:wonderlandFlockAt < front:wonderlandDodoAt",
+        "front:wonderlandFlockAt < front:wonderlandHareAt",
+        "front:wonderlandFlockAt < front:wonderlandHatAt",
+        "front:wonderlandFlockAt < front:wonderlandRabbitAt",
+        "front:wonderlandFlockAt < front:wonderlandSoldierAt",
+        "front:wonderlandHareAt < front:step:soldiers",
+        "front:wonderlandHareAt < front:wonderlandDodoAt",
+        "front:wonderlandHareAt < front:wonderlandRabbitAt",
+        "front:wonderlandHareAt < front:wonderlandSoldierAt",
+        "front:wonderlandHatAt < front:step:soldiers",
+        "front:wonderlandHatAt < front:wonderlandDodoAt",
+        "front:wonderlandHatAt < front:wonderlandHareAt",
+        "front:wonderlandHatAt < front:wonderlandRabbitAt",
+        "front:wonderlandHatAt < front:wonderlandSoldierAt",
+        "front:wonderlandSoldierAt < front:wonderlandRabbitAt",
+        "plants < front:step:cat-caterpillar-tea-hare",
+        "plants < front:step:sky-things",
+        "plants < front:step:soldiers",
+        "plants < front:step:vultures",
+        "plants < front:wonderlandCatAt",
+        "plants < front:wonderlandCaterpillarAt",
+        "plants < front:wonderlandDodoAt",
+        "plants < front:wonderlandFlockAt",
+        "plants < front:wonderlandHareAt",
+        "plants < front:wonderlandHatAt",
+        "plants < front:wonderlandRabbitAt",
+        "plants < front:wonderlandSoldierAt"
+      ],
+      "actors": {
+        "flock": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            14.5,
+            102
+          ],
+          "yRange": [
+            31.9,
+            31.9
+          ],
+          "speed": 10,
+          "poses": [
+            "fly"
+          ]
+        },
+        "pigeon": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "lory": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "dodo": {
+          "firstStage": 5,
+          "activeSteps": 48,
+          "xRange": [
+            53,
+            100.3
+          ],
+          "speed": 7,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "rabbit": {
+          "firstStage": 1,
+          "activeSteps": 96,
+          "xRange": [
+            2,
+            98
+          ],
+          "speed": 16,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "hare": {
+          "firstStage": 4,
+          "activeSteps": 60,
+          "xRange": [
+            18,
+            99
+          ],
+          "speed": 12,
+          "poses": [
+            "sit",
+            "walk"
+          ]
+        },
+        "soldiers[0]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            30,
+            100
+          ],
+          "speed": 8,
+          "poses": [
+            "walk"
+          ]
+        },
+        "soldiers[1]": {
+          "firstStage": 6,
+          "activeSteps": 36,
+          "xRange": [
+            44.3,
+            112.3
+          ],
+          "speed": 7.8,
+          "poses": [
+            "walk"
+          ]
+        },
+        "vultures[0]": {
+          "firstStage": null,
+          "activeSteps": 0
+        },
+        "vultures[1]": {
+          "firstStage": null,
+          "activeSteps": 0
+        }
+      }
+    }
+  }
+}

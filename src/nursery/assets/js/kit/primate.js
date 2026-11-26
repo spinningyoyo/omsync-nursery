@@ -4,11 +4,12 @@
 // level, sits upright and hangs, so the torso is a capsule from hip to shoulder at any angle, and each
 // limb reaches from its root on the torso to a hand or foot placed by the pose. Coordinates are the
 // animal's own: x forward, h up from the ground, the branch or the hold; `plot(x, h, colour)` paints
-// a pixel, so the caller places and mirrors it. animals.js's macaqueAt, langurAt and gibbonAt drive
+// a pixel, so the caller places and mirrors it. macaqueAt, langurAt and gibbonAt (below) drive
 // it from the scene's state. The design is the approved studio proposal primates-family (rev. 1).
 import { STANCE, yawnAt } from "./body.js";
 import { bone, bump, curve, ease, joint, mixPose, plant, rowFill, stepAt, straighten, walkDips } from "./build.js";
-import { clamp, frac, lerp, mix, rgba, smooth } from "./pixel.js";
+import { clamp, frac, hash, lerp, mix, rgba, shadowColour, smooth } from "./pixel.js";
+import { blinkAt, breathAt, paintAt, plotter, sinceOf, tonesFor, ease as walkEase } from "./place.js";
 
 export { yawnAt };
 
@@ -640,3 +641,162 @@ export function gibbonCallAt(c, { near = true, time = 0 } = {}) {
     blink: !calling && (time / 2.9) % 1 < 0.04,
   };
 }
+
+// Primates
+
+// Built from parts (primate.js): a macaque that walks the ground, a langur that sits on a branch and
+// now and then hops to another, and a gibbon that brachiates under the crowns. Each palette is the
+// scene's array under the animal's name (monkey, langur, gibbon) with the scene's `primate` entry
+// beside it (the mouth, the call's song, and dark at night), and its groundShadow. Tones are cached per array.
+const primateTones = (colours, make) => tonesFor(colours, "primate", make);
+
+// A painter at origin (x0, base), own unit dx forward of it and h up.
+const primatePlot = (g, x0, base, dir) => plotter(g, x0, base + 1, dir);
+
+const MACAQUE_EASE = 0.25; // seconds a walk takes to start or stop
+const MACAQUE_SIT = [0.3, 0.8]; // into a stop: it sits down over this
+const MACAQUE_YAWN_AT = 1.6;
+const MACAQUE_YAWN = 2.0;
+const MACAQUE_SHADOW = [-2, 12]; // the columns its shadow spans
+
+// The macaque walks on all fours with its feet planted (a diagonal-sequence walk), eases to a stop,
+// sits down on its rump for a stop of 2 s or more and stands before it walks on, and in a long stop
+// may yawn, showing its canines. Standing or sitting it breathes, blinks and looks up. m.since
+// (settle, critters.js) is when its state last changed and m.timer the seconds its stop has left;
+// m.pose "sit" sits it down and m.act "yawn" (with m.actAt seconds in) shows the yawn on demand. Its
+// feet stand on m.y, or four rows below the soil line.
+export function macaqueAt(g, m, time) {
+  if (g.trace) return g.trace.draw(macaqueAt, g, m, time);
+  const own = g.pal.primate;
+  const pal = primateTones(g.pal.monkey, () => macaqueTones(g.pal.monkey, own));
+  const walking = m.state === "walk";
+  const since = sinceOf(m, time);
+  const x = Math.round(m.x);
+  const bodyX = m.x * m.dir;
+  const phase = bodyX / (MACAQUE.stride / STANCE);
+  const state = {
+    phase,
+    amp: walkEase(walking, since, MACAQUE_EASE),
+    bodyX,
+    sway: walking ? Math.sin(phase * 2 * Math.PI) * 0.6 : Math.sin(time * 1.4) * 0.6,
+    breath: breathAt(time, 2.2, !walking),
+    blink: blinkAt(time, m.phase ?? 0, 3.1),
+    headUp: 0,
+  };
+  if (!walking) {
+    const stop = since + (m.timer ?? 0);
+    const [d0, d1] = MACAQUE_SIT;
+    let sit = 0;
+    if (m.pose === "sit" || m.act) sit = 1;
+    else if (stop >= 2) {
+      const up = stop - 0.8;
+      sit =
+        since < d0 ? 0 : since < d1 ? (since - d0) / (d1 - d0) : since < up ? 1 : Math.max(0, 1 - (since - up) / 0.5);
+    }
+    state.rest = { from: "stand", to: "sit", u: sit };
+    const r = hash(Math.round((m.since ?? 0) * 100), x, 7);
+    const yawning =
+      m.act === "yawn"
+        ? (m.actAt ?? 0.8)
+        : stop >= MACAQUE_YAWN_AT + MACAQUE_YAWN + 1.2 && r < 0.7
+          ? since - MACAQUE_YAWN_AT
+          : -1;
+    const yawn = yawnAt(yawning);
+    if (yawn) Object.assign(state, yawn, { blink: yawn.blink ?? false });
+    else if (since > 1 && since < 2) state.headUp = Math.min(1, (since - 1) / 0.25, (2 - since) / 0.25);
+  }
+  // Its feet stand on m.y, or four rows below the soil line.
+  const fy = (m.y ?? g.groundY + 4) + 1;
+  const shadow = { colour: shadowColour(g.pal), span: MACAQUE_SHADOW };
+  paintAt(g, x, fy, m.dir, (plot) => drawPrimate(MACAQUE, pal, plot, macaquePose(state)), shadow);
+}
+
+export const LANGUR_HOP_SECONDS = HOP[HOP.length - 1][1];
+
+// A dusky langur sitting on a branch under a crown (l.x, its feet on the row above l.y, facing
+// l.dir), its tail hanging behind the branch and swaying. Its reach move (l.moves.reach, see percher
+// and fidget in critters.js) takes it up into the crown for a leaf that it eats. While l.hop
+// ({ from, to, start }) runs, it rises onto all fours, leaps to the branch at `to` and sits there.
+// The branch is drawn under each of l.perches (or l.x). Its palette is langur: [fur, face, white,
+// belly], with the scene's leaf tones for the leaf.
+export function langurAt(g, l, time) {
+  if (g.trace) return g.trace.draw(langurAt, g, l, time);
+  const own = g.pal.primate;
+  const pal = primateTones(g.pal.langur, () => langurTones(g.pal.langur, [g.pal.leaf[1], g.pal.leaf[2]], own));
+  let x = l.x;
+  let lift = 0;
+  let dir = l.dir;
+  const state = {
+    rest: { from: "sit", to: "sit", u: 0 },
+    sway: Math.sin(time * 1.3 + (l.phase ?? 0)) * 1.5,
+    breath: breathAt(time),
+    blink: blinkAt(time, l.phase ?? 0, 3.3),
+  };
+  const hopping = l.hop && time >= l.hop.start && time < l.hop.start + LANGUR_HOP_SECONDS;
+  if (hopping) {
+    const hop = langurHop(time - l.hop.start, l.hop.from, l.hop.to);
+    dir = l.hop.to > l.hop.from ? 1 : -1;
+    x = hop.x;
+    lift = hop.h;
+    state.rest = hop.rest;
+    if (hop.rest.from === "fly" || hop.rest.to === "fly") state.sway = 0;
+    state.breath = hop.rest.from === "sit" && hop.rest.to === "sit" && state.breath;
+  } else {
+    const m = l.moves?.reach;
+    const reach = m && time < m.until ? reachAt(m.lasts - (m.until - time)) : null;
+    if (reach) Object.assign(state, reach);
+  }
+  // Own x 5 is the langur's middle, so it turns where it sits.
+  const plot = primatePlot(g, Math.round(x) - dir * 5, l.y - 1 - lift, dir);
+  const P = langurPose(state);
+  drawPrimate(LANGUR, pal, plot, P, "back");
+  for (const px of l.perches ?? [l.x]) {
+    g.ctx.fillStyle = g.pal.trunk[0];
+    g.ctx.fillRect(Math.round(px) - 8, l.y, 17, 1);
+    g.ctx.fillStyle = g.pal.trunk[1];
+    g.ctx.fillRect(Math.round(px) - 8, l.y + 1, 17, 1);
+  }
+  drawPrimate(LANGUR, pal, plot, P, "front");
+}
+
+export const GIBBON_CALL_SECONDS = CALL_SECONDS;
+export const LANGUR_REACH_SECONDS = REACH_SECONDS;
+
+// A white-handed gibbon brachiating under the crowns: one hand holds (b.hx, b.hy) while its body
+// swings under it like a pendulum (b.t from 0, behind, to 1, ahead), the hands taking turns (b.count
+// swings so far) and the free one letting go of the last hold (when b.prevOk) and taking the next.
+// b.leap ({ fromX, fromY, x, y }) flies it across a gap; b.call (seconds in) stops it for its great
+// call, hanging by both hands. holdAt(x) is the row a hand can hold at x, or null; `pal` holds its
+// gibbon array [fur, face, white] and the primate entry.
+export function gibbonAt(g, b, pal, time = 0, holdAt = () => null) {
+  if (g.trace) return g.trace.draw(gibbonAt, g, b, pal, time, holdAt);
+  const tones = primateTones(pal.gibbon, () => gibbonTones(pal.gibbon, pal.primate));
+  const near = (b.count ?? 0) % 2 === 0;
+  let P;
+  let x0 = b.hx;
+  let base = b.hy;
+  if (b.call != null) P = gibbonCallAt(b.call, { near, time });
+  else if (b.leap) {
+    x0 = b.leap.fromX;
+    base = b.leap.fromY;
+    P = gibbonLeap(b.t, Math.abs(b.leap.x - b.leap.fromX), b.leap.fromY - b.leap.y, { near });
+  } else {
+    const prevY = b.prevOk ? holdAt(b.hx - b.dir * REACH) : null;
+    const nextY = holdAt(b.hx + b.dir * REACH);
+    P = gibbonSwing(b.t, { prev: prevY === null ? null : b.hy - prevY, next: nextY === null ? 0 : b.hy - nextY, near });
+    P.blink = blinkAt(time, 0, 2.9);
+  }
+  drawPrimate(GIBBON, tones, primatePlot(g, Math.round(x0), Math.round(base), b.dir), P);
+}
+
+export const FAMILY = {
+  id: "primates",
+  title: "Primates",
+  group: "Animals",
+  differ: "size, colour, arm length",
+  drivers: {
+    macaqueAt: { role: "climber", member: () => "monkey" },
+    langurAt: { role: "climber", member: () => "langur" },
+    gibbonAt: { role: "climber", member: () => "gibbon" },
+  },
+};

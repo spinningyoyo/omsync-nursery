@@ -4,7 +4,7 @@
 // owl (drawPerch) takes a pose { s: swivel -1..1, blink 0..1, fluff 0..1, shiver, breath }; its neck
 // row fills whenever the head lifts, so the head stays joined to the body. A flying owl (drawFlight)
 // has wings rooted on its shoulders that change shape through a soft beat and a long glide (beatAt,
-// flightPose). Palette, from the scene: owl [brown, shade, face, eyes, beak]. animals.js drives them.
+// flightPose). Palette, from the scene: owl [brown, shade, face, eyes, beak]. flyers.js's owlPerchAt and owlFlyAt drive them.
 
 import { clamp, mix, rect } from "./pixel.js";
 

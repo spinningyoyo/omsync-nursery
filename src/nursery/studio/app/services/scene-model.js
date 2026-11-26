@@ -42,11 +42,15 @@ export function meta() {
   return metaPromise;
 }
 
+// A painter's source link: its function's line in the scene module, when the server found it.
+function painterWhere(info, fn) {
+  return { path: info.path, line: info.functions?.[fn] ?? null, fn };
+}
+
 // ---- Rendering --------------------------------------------------------------------------------
 
-// Draws one job in a theme at a frame, with a pose toolkit (today's /sprites.js, or the last
-// commit's through /head/sprites.js) and a scene module copy.
-function drawRender(job, kit, M, theme, f) {
+// Draws one job in a theme at a frame, from a scene module (today's or /head/js/scenes/<id>.js).
+function drawRender(job, kit, scene, theme, f) {
   const canvas = document.createElement("canvas");
   canvas.width = job.box.w;
   canvas.height = job.box.h;
@@ -58,8 +62,8 @@ function drawRender(job, kit, M, theme, f) {
   }
   Object.assign(kit.frame, FRAMES[f]);
   try {
-    if (job.plant) kit.paintPlant(ctx, M, job.plant, pal);
-    else kit.paintSprite(ctx, kit.SPRITES[job.sid][job.name], M, pal);
+    if (job.plant) kit.paintPlant(ctx, scene, job.plant, pal);
+    else kit.paintSprite(ctx, scene.sprites[job.stem], pal);
   } finally {
     Object.assign(kit.frame, FRAMES[0]);
   }
@@ -68,13 +72,13 @@ function drawRender(job, kit, M, theme, f) {
 
 // Draws a job in both themes at each frame, keeping the frames that differ. A proposal keeps every
 // frame, so frame numbers stay times.
-export function renderJob(job, kit = poses, M = job.M) {
+export function renderJob(job, kit = poses, scene = job.scene) {
   job.renders = new Map();
   job.frames = [];
   job.error = null;
   try {
     for (let f = 0; f < (job.count ?? FRAMES.length); f += 1) {
-      const imgs = THEMES.map((t) => drawRender(job, kit, M, t, f));
+      const imgs = THEMES.map((t) => drawRender(job, kit, scene, t, f));
       // A proposal keeps every frame, so only a scene's own sprites need the duplicate check.
       if (
         !job.proposal &&
@@ -111,7 +115,7 @@ const FULL = ["renders", "frames", "bbox", "themes", "same"];
 export function renderFirst(job) {
   job.error = null;
   try {
-    job.first = new Map(THEMES.map((t) => [t, drawRender(job, poses, job.M, t, 0)]));
+    job.first = new Map(THEMES.map((t) => [t, drawRender(job, poses, job.scene, t, 0)]));
   } catch (error) {
     job.error = String(error?.message ?? error);
     return job;
@@ -213,13 +217,12 @@ export class SceneModel {
   async build() {
     const info = (await meta()).scenes.find((s) => s.id === this.sid);
     this.info = info;
-    this.M = await import(`/copies/${this.sid}.js`);
     this.groups = this.buildGroups(info);
     this.jobs = new Map();
     for (const group of this.groups) {
       for (const item of group.items) {
         for (const job of item.jobs) {
-          Object.assign(job, { item, M: this.M, sid: this.sid, pals: job.pals ?? this.scene.palettes });
+          Object.assign(job, { item, scene: this.scene, sid: this.sid, pals: job.pals ?? this.scene.palettes });
           renderJob(job);
           if (job.error) this.errors.push(`${job.name}: ${job.error}`);
           this.jobs.set(job.name, job);
@@ -255,14 +258,13 @@ export class SceneModel {
         const stat = inv[kind];
         const farOnly = stat.layers.length === 1 && stat.layers[0] === "far";
         const group = farOnly || (stat.counts[240] ?? 0) <= 2 ? "landmarks" : "plants";
-        const painter = info.painters[kind];
         const counts = [240, 160, 90].map((c) => stat.counts[c] ?? 0).join(" / ");
         const [a, b] = stat.first;
         const item = {
           id: `plant:${kind}`,
           label: kind,
           group,
-          where: painter?.where ? { ...painter.where, fn: painter.fn } : null,
+          where: info ? painterWhere(info, scene.paint[kind]?.name ?? kind) : null,
           facts: [
             `${stat.layers.join(", ")} row`,
             `${counts} on 240 / 160 / 90 px pages`,
@@ -282,20 +284,21 @@ export class SceneModel {
       });
     }
     const used = new Set();
-    for (const element of info.elements) {
-      const jobs = element.sprites
-        .filter((name) => poses.SPRITES[sid][name])
-        .map((name) => {
-          used.add(name);
-          return { name, title: strip(sid, name), box: poses.ANIMAL_BOX };
+    const sprites = scene.sprites ?? {};
+    for (const element of scene.cast ?? []) {
+      const jobs = (element.sprites ?? [])
+        .filter((stem) => sprites[stem])
+        .map((stem) => {
+          used.add(stem);
+          return { name: `${sid}-${stem}`, stem, title: stem, box: poses.ANIMAL_BOX };
         });
       const group = KIND_GROUP[element.kind] ?? "effects";
       groups[group].push({
         id: `el:${element.label}`,
         label: element.label,
         group,
-        where: element.where ? { ...element.where, fn: element.fn } : null,
-        facts: [element.layer],
+        where: info ? { path: info.path, line: info.labels?.[element.label] ?? null } : null,
+        facts: [element.layer ?? "in front of the plants"],
         family: jobs[0] ? familyOf(sid, jobs[0].name) : null,
         jobs,
       });
@@ -304,21 +307,21 @@ export class SceneModel {
       id: "icon",
       label: "Scene icon",
       group: "icon",
-      where: { path: info.path, line: null },
+      where: info ? { path: info.path, line: null } : null,
       facts: ["the picker's pixel icon"],
       family: null,
       jobs: [iconJob(scene)],
     });
-    const rest = Object.keys(poses.SPRITES[sid]).filter((name) => !used.has(name));
+    const rest = Object.keys(sprites).filter((stem) => !used.has(stem));
     if (rest.length) {
       groups.unlisted.push({
         id: "unlisted",
         label: "Poses with no element",
         group: "unlisted",
         where: null,
-        facts: ["in sprites.js but not in the catalogue's element list"],
+        facts: ["in scene.sprites but not in scene.cast"],
         family: null,
-        jobs: rest.map((name) => ({ name, title: strip(sid, name), box: poses.ANIMAL_BOX })),
+        jobs: rest.map((stem) => ({ name: `${sid}-${stem}`, stem, title: stem, box: poses.ANIMAL_BOX })),
       });
     }
     return GROUPS.map((g) => ({ ...g, items: groups[g.id] })).filter((g) => g.items.length);
@@ -379,18 +382,22 @@ export class SceneModel {
   // changed straight in code, without a proposal, shows up here. Empty when the scene is new.
   async headChanges() {
     if (this.head) return this.head;
-    let kit;
-    let M;
+    let oldScene;
     try {
-      [kit, M] = await Promise.all([import("/head/sprites.js"), import(`/head/copies/${this.sid}.js`)]);
+      oldScene = (await import(`/head/js/scenes/${this.sid}.js`)).default;
     } catch {
+      this.head = [];
+      return this.head;
+    }
+    if (!oldScene?.sprites) {
       this.head = [];
       return this.head;
     }
     const out = [];
     for (const job of this.jobs.values()) {
       if (job.proposal || job.icon || job.error) continue;
-      const old = renderJob({ ...job, renders: null }, kit, M);
+      if (!job.plant && !oldScene.sprites[job.stem]) continue;
+      const old = renderJob({ ...job, renders: null }, poses, oldScene);
       if (old.error) continue;
       for (const f of job.frames) {
         for (const theme of job.themes) {
@@ -451,7 +458,7 @@ export class SceneModel {
         name: `${info.name}--${title}`,
         title,
         sid: this.sid,
-        M: this.M,
+        scene: this.scene,
         proposal: info.name,
         variant: v,
         box,

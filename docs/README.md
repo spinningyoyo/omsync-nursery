@@ -3,17 +3,14 @@
 ```mermaid
 flowchart TD
     Readme["README.md<br/>what this is, how to start"] --> Overview["overview.md<br/>parts, workflows, release, contract"]
-    Overview --> Scenes["scenes/<br/>one catalogue file for each scene"]
     Overview --> Adr["adr/<br/>the reasons behind the layout"]
     Overview --> Skill[".claude/skills/nursery-scene/<br/>design rules for agents"]
     Overview --> VerifySkill[".claude/skills/verify-nursery/<br/>art verification rules"]
-    Skill --> Scenes
 ```
 
 | Document | What it tells you |
 |---|---|
 | [overview.md](overview.md) | The parts and how they depend on each other, the two workflows between owner and agent, the release rules, the mascot, and the contract with omsync. |
-| [scenes/](scenes/) | For each scene: what grows at each stage, and the line of code that draws each element. `nursery catalog` writes these files. |
 | [adr/0001-sibling-repository.md](adr/0001-sibling-repository.md) | Why the scenes live in their own repository. |
 | [adr/0002-python-and-lit.md](adr/0002-python-and-lit.md) | Why the tools use Python and the studio uses Lit. |
 | [../CHANGELOG.md](../CHANGELOG.md) | What changed in each release. |
@@ -33,4 +30,3 @@ flowchart TD
 - A document has no time-bound words such as "today" or "next release". `CHANGELOG.md` holds the
   history.
 - The only ADRs are the two above. A new decision goes in `overview.md`.
-- `scenes/` is generated. Do not edit it by hand.

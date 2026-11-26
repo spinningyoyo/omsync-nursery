@@ -7,8 +7,9 @@
 // A character is drawn in its own coordinates, x forward from its back and y up from the sole of its
 // feet, onto a small canvas that drawCast() puts on the page, mirrored when it faces left.
 // castPose(id, walker, time) turns a walker (critters.js, settle()) into the pose to draw, and
-// animals.js's poohAt, pigletAt, tiggerAt, rabbitAt and rooAt call the two.
+// poohAt, pigletAt, tiggerAt, rabbitAt and rooAt below call the two.
 import { clamp, frac, lerp, mix, shadowColour, smooth, TAU } from "./pixel.js";
+import { tonesFor } from "./place.js";
 
 const R = Math.round;
 
@@ -643,6 +644,7 @@ export function drawLooseBalloon(g, ox, oy, colours, ink, sway = 0) {
 // pale wing blurring over its back and a sting at the front on the lead one. s: { x, y, dir } is the
 // head of the stream on the page; the bees trail behind it.
 export function swarmAt(g, s, time) {
+  if (g.trace) return g.trace.draw(swarmAt, g, s, time);
   const [yellow, dark, wing] = g.pal.bee;
   const hi = mix(yellow, "#ffffff", 0.3);
   const lo = mix(yellow, dark, 0.35);
@@ -760,3 +762,66 @@ export function drawCast(g, K, id, p, x, ground, lift, dir, colours) {
   m.draw(c, K, p);
   flush(g, c, x, ground - lift, dir);
 }
+
+// The Hundred Acre cast
+
+// Built from parts (cast.js): Pooh, Piglet, Tigger, Rabbit and Roo, each walking its own way (Pooh waddles,
+// Piglet trots, Tigger bounds on all fours, Rabbit and Roo hop) with its feet planted, easing into and out
+// of a stop. Stopped, each stands, breathes, blinks and glances about, and when the stop is long enough
+// Pooh, Piglet, Tigger and Roo sit and Rabbit relaxes, with a small habit (Pooh's paw to his mouth,
+// Piglet's ear and tail, Tigger's flicking tail, Rabbit washing his face, Roo's ear). w.since (settle,
+// critters.js) is when the walker's state last changed and w.timer the seconds its stop has left;
+// w.pose "sit" or "stand" shows one on demand. Pooh and Piglet with w.held (a balloon frame, 0 to 3) hold
+// a balloon up in a raised paw, and with w.lift > 1.5 (rows off the ground) hang from it. Their palettes
+// are the scene's pooh, honey, piglet, tigger, rabbit, roo, balloon, balloon2 and bee arrays, and its
+// groundShadow beside them.
+function castAt(g, id, w, time) {
+  if (g.trace) return g.trace.draw(castAt, g, id, w, time);
+  drawCast(
+    g,
+    tonesFor(g.pal, "cast", () => castTones(g.pal)),
+    id,
+    castPose(id, w, time),
+    Math.round(w.x),
+    g.groundY + 8,
+    Math.round(w.lift ?? 0),
+    w.dir,
+    id === "piglet" ? g.pal.balloon2 : g.pal.balloon,
+  );
+}
+
+export function poohAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(poohAt, g, w, time);
+  castAt(g, "pooh", w, time);
+}
+export function pigletAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(pigletAt, g, w, time);
+  castAt(g, "piglet", w, time);
+}
+
+export function tiggerAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(tiggerAt, g, w, time);
+  castAt(g, "tigger", w, time);
+}
+
+export function rabbitAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(rabbitAt, g, w, time);
+  castAt(g, "rabbit", w, time);
+}
+
+export function rooAt(g, w, time = 0) {
+  if (g.trace) return g.trace.draw(rooAt, g, w, time);
+  castAt(g, "roo", w, time);
+}
+
+export const FAMILY = {
+  id: "hundredacre-cast",
+  drivers: {
+    poohAt: { family: "bears", role: "walker", member: () => "pooh" },
+    pigletAt: { family: "pigs", role: "walker", member: () => "piglet" },
+    tiggerAt: { family: "cats", role: "walker", member: () => "tigger" },
+    rabbitAt: { family: "hares-rodents", role: "walker", member: () => "rabbit" },
+    rooAt: { family: "hares-rodents", role: "walker", member: () => "roo" },
+    swarmAt: { family: "insects", role: "group", member: () => "bees", day: false },
+  },
+};

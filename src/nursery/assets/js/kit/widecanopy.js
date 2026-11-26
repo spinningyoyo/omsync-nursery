@@ -431,3 +431,10 @@ export function dipterocarpTree(g, p, s, base) {
   p.crown = { cx, top, half: W >> 1, bottom: top + Hh };
   return boxes;
 }
+
+export const FAMILY = {
+  id: "wide-canopy",
+  title: "Wide-canopy trees",
+  group: "Trees",
+  differ: "flatness, roots, height",
+};

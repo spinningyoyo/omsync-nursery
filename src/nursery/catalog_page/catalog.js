@@ -1,13 +1,14 @@
-// The catalogue page. `nursery catalog` serves it in headless Chrome beside the scene copies it
-// writes, runs each scene through its stages and leaves the findings in window.__result.
+// The catalogue page. `nursery catalog` serves it in headless Chrome, runs each scene through its
+// stages and leaves the findings in window.__result. Reads scene.cast and scene.sprites directly
+// from the scene modules (no copied/rewritten source files).
 
-// copies.js is written by nursery catalog: each scene module, and the ids this run covers.
-import { COPIES, IDS } from "./copies.js";
 import { rng } from "./js/kit/pixel.js";
 import { MAX_STAGE, Nursery, SCENES } from "./js/nursery.js";
-import { ANIMAL_BOX, inventory, PLANT_BOX, paintPlant, paintSprite, plantExamples, SPRITES } from "./sprites.js";
+import { ANIMAL_BOX, inventory, PLANT_BOX, paintPlant, paintSprite, plantExamples } from "./sprites.js";
 
 const SIM = { seconds: 60, dt: 0.1 };
+const params = new URLSearchParams(location.search);
+const IDS = params.get("ids") ? params.get("ids").split(",") : SCENES.map((s) => s.id);
 
 // Draws on a clear art canvas and throws when nothing was drawn, so a pose that breaks shows up.
 function drawOnce(width, height, draw) {
@@ -21,12 +22,12 @@ function drawOnce(width, height, draw) {
   throw new Error("nothing was drawn");
 }
 
-function plantSprite(scene, M, plant) {
-  drawOnce(PLANT_BOX.w, PLANT_BOX.h, (ctx) => paintPlant(ctx, M, plant, scene.palettes.light));
+function plantSprite(scene, plant) {
+  drawOnce(PLANT_BOX.w, PLANT_BOX.h, (ctx) => paintPlant(ctx, scene, plant, scene.palettes.light));
 }
 
-function animalSprite(scene, M, draw) {
-  drawOnce(ANIMAL_BOX.w, ANIMAL_BOX.h, (ctx) => paintSprite(ctx, draw, M, scene.palettes.light));
+function animalSprite(scene, draw) {
+  drawOnce(ANIMAL_BOX.w, ANIMAL_BOX.h, (ctx) => paintSprite(ctx, draw, scene.palettes.light));
 }
 
 function present(item) {
@@ -97,20 +98,27 @@ async function main() {
   const result = { viewport: [window.innerWidth, window.innerHeight], scenes: {} };
   for (const scene of SCENES.filter((s) => IDS.includes(s.id))) {
     const id = scene.id;
-    const M = COPIES[id];
-    const entry = { inventory: inventory(scene), drawn: [], errors: [], presence: {}, soil: {} };
+    const entry = {
+      inventory: inventory(scene),
+      cast: (scene.cast ?? []).map(({ sprites, ...rest }) => ({ ...rest, sprites: sprites ?? [] })),
+      drawn: [],
+      errors: [],
+      presence: {},
+      soil: {},
+    };
     for (const [key, { plant }] of Object.entries(plantExamples(scene))) {
       const name = `${id}-${key.replace("/", "-")}`;
       try {
-        plantSprite(scene, M, plant);
+        plantSprite(scene, plant);
         entry.drawn.push(name);
       } catch (error) {
         entry.errors.push(`${name}: ${error}`);
       }
     }
-    for (const [name, draw] of Object.entries(SPRITES[id])) {
+    for (const [stem, draw] of Object.entries(scene.sprites ?? {})) {
+      const name = `${id}-${stem}`;
       try {
-        animalSprite(scene, M, draw);
+        animalSprite(scene, draw);
         entry.drawn.push(name);
       } catch (error) {
         entry.errors.push(`${name}: ${error}`);

@@ -29,6 +29,7 @@ flowchart LR
         Verify
         Release
         BrandBuild["Brand build"]
+        ScenesBuild["Scenes build"]
     end
     Studio --> Package
     Catalogue --> Package
@@ -36,7 +37,7 @@ flowchart LR
     Verify --> Package
     Release --> Package
     BrandBuild -- writes --> Files
-    Catalogue -- writes --> Docs["docs/scenes/"]
+    ScenesBuild -- writes --> Files
     Studio -- writes --> Work[".nursery/"]
     omsync -- reads --> Assets
 ```
@@ -52,9 +53,8 @@ enforces these rules. omsync reads the package through `nursery.assets` only.
 | Garden | `src/nursery/assets/js/garden/`, `css/garden.css` | The parts around a scene that a host shows. See [The garden](#the-garden). |
 | Mascot | `src/nursery/assets/brand/` | The grid of omsync's pixel mascot, and the files that `nursery brand` builds from it. |
 | Studio | `uv run nursery` | Shows each scene and each sprite from the code on disk. You edit pixels and review proposals here. |
-| Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `brand`, `preview`, `verify` and `release`. Agents use most of them. |
+| Tools | `uv run nursery --help` | `check`, `render`, `proposals`, `catalog`, `brand`, `scenes`, `preview`, `verify` and `release`. Agents use most of them. |
 | Working folder | `.nursery/<scene>/` | Your saved edits, the proposals and your reviews. Git ignores this folder. |
-| Catalogue | `docs/scenes/<scene>.md` | One file for each scene. It lists each element and the line of code that draws it. |
 | Skills | `.claude/skills/` | The design rules (`nursery-scene`) and verification rules (`verify-nursery`). |
 
 ## Workflow 1: you edit pixels
@@ -159,8 +159,8 @@ flowchart LR
    that version.
 
 [`release.py`](../src/nursery/release.py) is the full list of checks and steps. The release stops
-when a saved edit is not in the code, when an approved proposal is not built, or when a brand file
-is not what the grid builds.
+when a saved edit is not in the code, when an approved proposal is not built, when a brand file
+is not what the grid builds, or when `scenes.json` or `scenes.css` is stale.
 
 **Decision: omsync follows a branch.** The `main` branch holds work in progress. The `release`
 branch holds only tagged releases, and it moves forward only. omsync names the branch, and its

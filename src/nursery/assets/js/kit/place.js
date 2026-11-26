@@ -1,10 +1,40 @@
-// Placing an animal drawn from parts: what every driver in animals.js does round its pose. A family's
+// Placing an animal drawn from parts: what every family driver does round its pose. A family's
 // build draws in its own units, facing right, through plot(dx, h, colour) (dx forward of the animal's
 // origin, h rows above its feet); paintAt lays those cells on the page facing `dir`, under a soft ground
-// shadow. The timers here (sinceOf, ease, blinkAt, breathAt) are the shared parts of a pose.
+// shadow. The timers and loops here are the shared parts of a pose.
+import { smooth } from "./pixel.js";
+
+// The row an animal's feet stand on: the soil line, or a perch's top when it has a `y`.
+export const feet = (g, a) => a.y ?? g.groundY + 7;
 
 // Seconds since a's state last changed (a.since, see settle in critters.js); `none` when it has no record.
 export const sinceOf = (a, time, none = 100) => (a.since == null ? none : time - a.since);
+
+// Seconds it has been at rest: a.still when the scene keeps it, else since its state changed.
+export const stillOf = (a, time) => a.still ?? sinceOf(a, time);
+
+export const easeIn = (a, b) => smooth(Math.min(1, Math.max(0, a / b)));
+export const within = (t, a, b) => t >= a && t < b;
+export const bump = (t, a, b, rise) => smooth(Math.max(0, Math.min(1, Math.min((t - a) / rise, (b - t) / rise))));
+
+// A stop as holds and moves: [start, end, from, to] in seconds into it.
+export const lyingLoop = (stop) => [
+  [0, 0.4, "stand", "stand"],
+  [0.4, 1.5, "stand", "lie"],
+  [1.5, stop - 1.5, "lie", "lie"],
+  [stop - 1.5, stop - 0.3, "lie", "stand"],
+];
+export const grazingLoop = (stop) => [
+  [0, 0.3, "stand", "stand"],
+  [0.3, 1.1, "stand", "graze"],
+  [1.1, stop - 0.8, "graze", "graze"],
+  [stop - 0.8, stop - 0.1, "graze", "stand"],
+];
+export function loopAt(loop, t) {
+  const seg = loop.find(([a, b]) => t >= a && t < b) ?? loop[loop.length - 1];
+  const [a, b, from, to] = seg;
+  return { from, to, u: from === to ? 0 : Math.min(1, Math.max(0, (t - a) / (b - a))) };
+}
 
 // The share of a walk left in the legs: it grows over `seconds` as a walk starts and shrinks as it stops.
 export const ease = (moving, since, seconds) =>

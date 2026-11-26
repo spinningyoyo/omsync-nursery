@@ -159,7 +159,8 @@ export class Nursery {
     this.gctx = ground.getContext("2d");
     this.wctx = water.getContext("2d");
     this.reduced = reducedMotion;
-    this.rand = rng(Math.floor(Math.random() * 2 ** 32));
+    this.seed = Math.floor(Math.random() * 2 ** 32);
+    this.rand = rng(this.seed);
     this.time = 0;
     this.last = performance.now();
     this.clock = 0;

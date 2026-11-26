@@ -7,10 +7,11 @@
 // in their own tone. Coordinates are the animal's own: x runs from the rump toward the nose and h is
 // the height above the ground; `plot(x, h, colour)` paints a pixel, so the caller places and mirrors
 // it. A pose is a set of numbers (hip, shoulder, head, feet, tail, ears) and any two blend, so every
-// move between poses eases. animals.js's hareAt places and poses it; beastFrame says which pose and
+// move between poses eases. hareAt (below) places and poses it; beastFrame says which pose and
 // where, from a walker's state.
 import { bump, ease } from "./build.js";
-import { clamp, frac, lerp, mix } from "./pixel.js";
+import { clamp, frac, lerp, mix, shadowColour } from "./pixel.js";
+import { feet, paintAt, tonesFor } from "./place.js";
 
 // ---- Raster helpers -----------------------------------------------------------------------------
 
@@ -771,3 +772,38 @@ export function beastFrame(kind, r, time) {
   }
   return finish(P, x, bx);
 }
+
+// Hares and rodents
+
+// Built from parts (beast.js): the cottontail (meadow), the jackrabbit (desert) and the groundhog
+// (smokies). A hare hops in whole hops with its feet planted where they land (push off, stretch,
+// land on the forefeet, hind feet swung forward); a groundhog walks on four short drawn legs. Stopped
+// (state "sit") each gathers, then takes the pose r.pose names (harePoses(kind), picked by rest() in
+// critters.js) and eases back before it moves on: a hare sits up tall (the jackrabbit stands to look
+// out) with its ears turning, grazes, washes its face, loafs or lies out; a groundhog stands up to look
+// about, sits to eat or sprawls in the sun. While r.frozen holds seconds (the desert hawk's stoop) a
+// hare presses flat with its ears back. r.since and r.timer come from settle() and wander(); r.kind
+// is "cottontail" (the default), "jackrabbit" or "groundhog". Its palette is [fur, dark, white], or
+// for a groundhog [fur, dark, grizzle], with the scene's `groundShadow` beside it.
+export function hareAt(g, r, time = 0) {
+  if (g.trace) return g.trace.draw(hareAt, g, r, time);
+  const kind = r.kind ?? "cottontail";
+  const colours = g.pal[r.pal ?? (kind === "groundhog" ? "groundhog" : "rabbit")];
+  const pal = tonesFor(colours, "beast", () => beastTones(colours, kind === "groundhog" ? { H: colours[2] } : {}));
+  const f = beastFrame(kind, r, time);
+  const [s0, s1] = f.shadow;
+  const shadow = { colour: shadowColour(g.pal), span: [s0, s1 - 1] };
+  // f.at is its origin in its own mirrored coordinates, so the page column is -f.at facing left.
+  const ox = Math.round(f.at) * r.dir;
+  paintAt(g, ox, feet(g, r), r.dir, (plot) => drawBeast(BEASTS[kind].spec, pal, plot, f.P, f.x), shadow);
+}
+
+export const FAMILY = {
+  id: "hares-rodents",
+  title: "Hares and rodents",
+  group: "Animals",
+  differ: "size, ears",
+  drivers: {
+    hareAt: { role: "walker", member: (a) => a.kind ?? "rabbit" },
+  },
+};
